@@ -61,11 +61,7 @@ interface AppState {
     socket: WebSocket | null;
 }
 
-// WebSocket
-socket: WebSocket | null,
-    connectStream: (ticker: string) => void,
-        disconnectStream: () => void,
-}));
+
 
 export const useAppStore = create<AppState>((set, get) => ({
     // Initial state

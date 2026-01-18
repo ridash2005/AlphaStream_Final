@@ -10,7 +10,6 @@ import {
 } from '@/components/trading';
 import { MarketHeatmap } from '@/components/trading/MarketHeatmap';
 import { NetworkGraph } from '@/components/trading/NetworkGraph';
-import { useAppStore } from '@/store/appStore';
 
 function App() {
   const { error, clearError } = useAppStore();

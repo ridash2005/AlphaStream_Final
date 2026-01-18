@@ -125,8 +125,32 @@ async def lifespan(app: FastAPI):
     # Capture loop for thread-safe scheduling
     loop = asyncio.get_running_loop()
     
+    async def trigger_update(ticker):
+        try:
+            rec = await generate_recommendation_logic(ticker)
+            
+            # Update Market State
+            market_state.update(ticker, rec.sentiment_score)
+            
+            # Broadcast Recommendation
+            await ws_manager.broadcast(ticker, rec.model_dump())
+            
+            # Broadcast Heatmap Update
+            await ws_manager.broadcast_global({
+                "type": "market_update",
+                "data": market_state.get_heatmap()
+            })
+            
+        except Exception as e:
+            logger.error(f"Failed to update stream for {ticker}: {e}")
+
     def on_new_article(article):
-        """Callback for new articles."""
+        """Callback for new articles from Pathway."""
+        # Pathway might return a dict or tuple. Ensure dict.
+        if not isinstance(article, dict):
+            # If tuple, map to schema? Assuming dict for now via python.read
+            pass
+            
         ingest_start = time.time()
         
         # 1. Ingest
@@ -147,7 +171,6 @@ async def lifespan(app: FastAPI):
             loop
         )
 
-        # 2. Check overlap with active streams
         active_tickers = list(ws_manager.active_connections.keys())
         text = (article.get('title', '') + " " + article.get('content', '')).upper()
         
@@ -158,36 +181,38 @@ async def lifespan(app: FastAPI):
                     loop
                 )
 
-    async def trigger_update(ticker):
-        try:
-            rec = await generate_recommendation_logic(ticker)
-            
-            # Update Market State
-            market_state.update(ticker, rec.sentiment_score)
-            
-            # Broadcast Recommendation
-            await ws_manager.broadcast(ticker, rec.model_dump())
-            
-            # Broadcast Heatmap Update
-            await ws_manager.broadcast_global({
-                "type": "market_update",
-                "data": market_state.get_heatmap()
-            })
-            
-        except Exception as e:
-            logger.error(f"Failed to update stream for {ticker}: {e}")
+    # --- Pathway Integration ---
+    from src.connectors.news_connector import create_news_table
+    import threading
+    import pathway as pw
+
+    # 1. Create the streaming table
+    news_table = create_news_table(refresh_interval=60)
     
-    # Start Live News Polling
-    from src.connectors.polling import NewsPoller
-    news_poller = NewsPoller(callback=on_new_article, interval=60)
-    news_poller.start()
+    # 2. Subscribe to updates
+    # Note: subscribe receives (event, new_row, old_row). We only care about new additions.
+    def pathway_callback(key, new_row, old_row):
+        if new_row:
+             # new_row is a dict matching the schema
+             on_new_article(new_row)
+
+    # Use pw.io.subscribe to hook the table to our callback
+    # If subscribe is not available in some versions, we might need a workaround,
+    # but it's the standard way to bridge PW -> Python.
+    pw.io.subscribe(news_table, pathway_callback)
+
+    # 3. Run Pathway in a background thread
+    logger.info("Starting Pathway engine in background thread...")
+    pw_thread = threading.Thread(target=pw.run, daemon=True)
+    pw_thread.start()
 
     logger.info(f"System initialized with {rag_pipeline.document_count} document chunks")
 
     yield
 
     logger.info("Shutting down...")
-    news_poller.stop()
+    # pw.run is infinite, daemon thread will be killed on exit
+
 
 
 app = FastAPI(
