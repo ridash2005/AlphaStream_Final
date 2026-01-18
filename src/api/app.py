@@ -4,6 +4,10 @@ FastAPI application for AlphaStream Live AI.
 Provides REST API endpoints for trading recommendations.
 """
 
+import os
+# Force CPU usage to avoid CUDA driver issues
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 import logging
 import time
 from contextlib import asynccontextmanager

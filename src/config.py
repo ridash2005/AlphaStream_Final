@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     )
 
     # News API
-    newsapi_key: str = Field(..., alias="NEWSAPI_KEY")
+    newsapi_key: str = Field(..., alias="NEWS_API_KEY")
 
     # System Configuration
     log_level: str = Field(default="info", alias="LOG_LEVEL")
