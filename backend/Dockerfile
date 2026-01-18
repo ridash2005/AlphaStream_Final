@@ -1,4 +1,4 @@
-# AlphaStream Live AI - Docker Build
+# AlphaStream Backend - Docker Build
 FROM python:3.11-slim
 
 # Set working directory
@@ -15,7 +15,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:${PATH}"
 
 # Copy dependency files
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock README.md ./
 
 # Install Python dependencies
 RUN uv sync --frozen

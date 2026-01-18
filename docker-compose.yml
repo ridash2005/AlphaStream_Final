@@ -5,17 +5,17 @@ services:
   # Backend API
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     env_file:
-      - .env
+      - ./backend/.env
     environment:
       - PYTHONUNBUFFERED=1
       - CUDA_VISIBLE_DEVICES=""
     volumes:
-      - ./reports:/app/reports
+      - ./backend/reports:/app/reports
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
