@@ -9,13 +9,14 @@ import {
   SystemStatus,
 } from '@/components/trading';
 import { MarketHeatmap } from '@/components/trading/MarketHeatmap';
-import { NetworkGraph } from '@/components/trading/NetworkGraph';
+import { AgentRadar } from '@/components/trading/AgentRadar';
+import { Footer } from '@/components/Footer';
 
 function App() {
   const { error, clearError } = useAppStore();
 
   return (
-    <div className="min-h-screen terminal-bg">
+    <div className="min-h-screen terminal-bg flex flex-col">
       {/* Header */}
       <header className="glass border-b border-border/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -33,7 +34,7 @@ function App() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
         {/* Error alert */}
         {error && (
           <Alert variant="destructive" className="mb-4 glass-card">
@@ -59,7 +60,7 @@ function App() {
             <RecommendationCard />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <MarketHeatmap />
-              <NetworkGraph />
+              <AgentRadar />
             </div>
             <HistoryPanel />
           </div>
@@ -71,15 +72,7 @@ function App() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border/30 mt-12">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between text-xs text-muted-foreground">
-          <div>
-            Powered by <span className="text-primary font-medium">Pathway</span> Real-Time RAG
-          </div>
-          <div>DataQuest 2026</div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

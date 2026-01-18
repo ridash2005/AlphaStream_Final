@@ -8,6 +8,8 @@ export interface Recommendation {
     confidence: number;
     sentiment_score: number;
     sentiment_label: 'BEARISH' | 'NEUTRAL' | 'BULLISH';
+    technical_score: number;
+    risk_score: number;
     key_factors: string[];
     sources: string[];
     latency_ms: number;

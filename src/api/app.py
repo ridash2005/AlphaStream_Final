@@ -249,6 +249,8 @@ class RecommendationResponse(BaseModel):
     confidence: float  # 0-100
     sentiment_score: float  # -1.0 to +1.0
     sentiment_label: str  # BEARISH, NEUTRAL, BULLISH
+    technical_score: float = 0.0 # -1.0 to +1.0
+    risk_score: float = 0.0 # 0.0 to 10.0 (or normalized)
     key_factors: list[str]
     sources: list[str]
     latency_ms: float
@@ -335,6 +337,8 @@ async def generate_recommendation_logic(ticker: str) -> RecommendationResponse:
         confidence=final_decision.get("confidence", 0.0) * 100,
         sentiment_score=sentiment["sentiment_score"],
         sentiment_label=sentiment["sentiment_label"],
+        technical_score=technical.get("technical_score", 0.0),
+        risk_score=risk.get("risk_score", 0.0),
         key_factors=combined_factors[:5],
         sources=[doc.get("source", "Unknown") for doc in retrieved_docs],
         latency_ms=round(latency_ms, 2),
