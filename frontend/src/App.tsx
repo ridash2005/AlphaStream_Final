@@ -8,6 +8,8 @@ import {
   ArticlesList,
   HistoryPanel,
   SystemStatus,
+  InsiderActivity,
+  ReportDownload,
 } from '@/components/trading';
 import { MarketHeatmap } from '@/components/trading/MarketHeatmap';
 import { AgentRadar } from '@/components/trading/AgentRadar';
@@ -64,6 +66,10 @@ function App() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <MarketHeatmap />
                 <AgentRadar />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InsiderActivity />
+                <ReportDownload />
               </div>
               <HistoryPanel />
             </div>
