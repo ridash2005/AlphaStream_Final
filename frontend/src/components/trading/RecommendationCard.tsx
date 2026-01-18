@@ -87,14 +87,16 @@ export function RecommendationCard() {
                         <TrendingUp className="h-4 w-4 text-primary" />
                         Key Drivers
                     </h4>
-                    <ul className="space-y-1">
-                        {recommendation.key_factors.map((factor, i) => (
-                            <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                <span className="text-primary mt-1">•</span>
-                                {factor}
-                            </li>
-                        ))}
-                    </ul>
+                    <div className="h-[150px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+                        <ul className="space-y-1">
+                            {recommendation.key_factors.map((factor, i) => (
+                                <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                    <span className="text-primary mt-1">•</span>
+                                    {factor}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                 </div>
 
                 <Separator className="bg-border/50" />

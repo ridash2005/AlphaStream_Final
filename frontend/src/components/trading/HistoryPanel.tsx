@@ -9,7 +9,7 @@ export function HistoryPanel() {
 
     if (recommendationHistory.length === 0) {
         return (
-            <Card className="glass-card h-full">
+            <Card className="glass-card">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
                         <History className="h-4 w-4" />

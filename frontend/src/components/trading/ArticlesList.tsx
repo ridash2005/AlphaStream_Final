@@ -58,7 +58,7 @@ export function ArticlesList() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-                <ScrollArea className="h-[300px] px-4 pb-4">
+                <ScrollArea className="h-[500px] px-4 pb-4">
                     <div className="space-y-3">
                         {articles.map((article, i) => (
                             <div
