@@ -15,6 +15,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from src.agents.sentiment_agent import SentimentAgent
+from src.agents.technical_agent import TechnicalAgent
+from src.agents.risk_agent import RiskAgent
+from src.agents.decision_agent import DecisionAgent
 from src.pipeline.rag_core import RAGPipeline
 
 logger = logging.getLogger(__name__)
@@ -29,6 +32,9 @@ logging.basicConfig(
 # Global components
 rag_pipeline: RAGPipeline | None = None
 sentiment_agent: SentimentAgent | None = None
+technical_agent: TechnicalAgent | None = None
+risk_agent: RiskAgent | None = None
+decision_agent: DecisionAgent | None = None
 
 
 @asynccontextmanager
@@ -41,6 +47,9 @@ async def lifespan(app: FastAPI):
     # Initialize components
     rag_pipeline = RAGPipeline()
     sentiment_agent = SentimentAgent()
+    technical_agent = TechnicalAgent()
+    risk_agent = RiskAgent()
+    decision_agent = DecisionAgent()
 
     # Ingest some demo data for testing
     demo_articles = get_demo_articles()
@@ -112,6 +121,9 @@ async def health_check() -> HealthResponse:
         components={
             "rag_pipeline": rag_pipeline is not None,
             "sentiment_agent": sentiment_agent is not None,
+            "technical_agent": technical_agent is not None,
+            "risk_agent": risk_agent is not None,
+            "decision_agent": decision_agent is not None,
         },
     )
 
@@ -145,23 +157,40 @@ async def get_recommendation(request: RecommendationRequest) -> RecommendationRe
         if not retrieved_docs:
             raise HTTPException(status_code=404, detail=f"No articles found for {ticker}")
 
-        # Analyze sentiment
+        # 1. Sentiment Analysis
         sentiment = sentiment_agent.analyze(retrieved_docs)
 
-        # Generate recommendation from sentiment
-        recommendation = score_to_recommendation(sentiment["sentiment_score"])
+        # 2. Technical Analysis
+        technical = technical_agent.analyze(ticker)
+        
+        # 3. Risk Assessment
+        risk = risk_agent.analyze(ticker, technical)
+        
+        # 4. Final Decision
+        final_decision = decision_agent.decide(
+            ticker, 
+            sentiment, 
+            technical, 
+            risk
+        )
 
         # Calculate latency
         latency_ms = (time.time() - start_time) * 1000
+        
+        # Format key factors (combine reasoning + specific factors)
+        combined_factors = [final_decision.get("reasoning", "")]
+        combined_factors.extend(sentiment.get("key_factors", [])[:2])
+        combined_factors.extend(technical.get("key_signals", [])[:2])
+        combined_factors = [f for f in combined_factors if f] # Filter empty
 
         return RecommendationResponse(
             ticker=ticker,
             timestamp=datetime.utcnow().isoformat(),
-            recommendation=recommendation,
-            confidence=abs(sentiment["sentiment_score"]) * 100 * sentiment["confidence"],
+            recommendation=final_decision.get("recommendation", "HOLD").upper(),
+            confidence=final_decision.get("confidence", 0.0) * 100,
             sentiment_score=sentiment["sentiment_score"],
             sentiment_label=sentiment["sentiment_label"],
-            key_factors=sentiment["key_factors"],
+            key_factors=combined_factors[:5], # Limit to 5
             sources=[doc.get("source", "Unknown") for doc in retrieved_docs],
             latency_ms=round(latency_ms, 2),
         )

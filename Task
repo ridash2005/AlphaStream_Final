@@ -1,0 +1,101 @@
+AlphaStream Live AI Agent - DataQuest 2026
+Overview
+Building a real-time streaming RAG system for financial trading recommendations using Pathway framework. Deadline: January 18, 2026, 11:59 PM IST.
+
+Stage 1: Foundation & MVP (Must Ship First)
+Core infrastructure and minimal working demo
+
+ Project structure setup
+ Create modular folder structure (src/, tests/, data/, docs/)
+ Set up 
+pyproject.toml
+ with dependencies (Pathway, FastAPI, etc.)
+ Create 
+.env.example
+ and config management
+ Pathway streaming connector
+ Custom Python connector for NewsAPI.org polling
+ Basic streaming mode with 30s refresh interval
+ Article deduplication logic
+ Basic RAG pipeline
+ Simple chunking (sentence-based)
+ Embedding generation (sentence-transformers, local)
+ In-memory vector index with cosine similarity
+ MVP API endpoint
+ FastAPI /recommend POST endpoint
+ Basic sentiment extraction with LLM
+ Health check endpoint
+Initial tests
+ Unit tests for connector
+ Unit tests for RAG retrieval
+ Manual test: query returns recommendation
+ Frontend Dashboard
+ React + Vite + Shadcn setup
+ Bloomberg terminal dark theme
+ Dashboard components (Ticker, News, Chart placeholders)
+ Integrate API with frontend
+Stage 2: Enhanced RAG & Multi-Agent System
+Improve accuracy and add reasoning capabilities
+
+ Adaptive chunking
+ Semantic boundary detection
+ Ticker extraction from articles
+ Metadata enrichment (source, date, tickers)
+ Hybrid retrieval
+ Dense retrieval (embeddings)
+ Sparse retrieval (BM25)
+ Combined scoring (0.7 dense + 0.3 sparse)
+ Reranking layer
+ Cross-encoder reranking
+ Top-k final selection
+ Multi-Agent reasoning system
+ Sentiment Analysis Agent
+ Technical Analysis Agent
+ Risk Assessment Agent
+ Trading Decision Agent (orchestrator)
+ Agent tests
+ Mock LLM responses for deterministic tests
+ Integration test: full pipeline flow
+Stage 3: Real-Time Features & Demo Polish
+Proof of dynamism for judges
+
+ WebSocket streaming
+ /ws/stream/{ticker} endpoint
+ Real-time sentiment updates push
+ Latency tracking
+ Measure time from article arrival to index
+ Track end-to-end query latency
+ Display metrics in response
+ Demo dashboard (optional)
+ Simple HTML/JS visualization
+ Real-time sentiment heatmap
+ Explainability
+ Track which articles influenced decision
+ Reasoning trace generation
+ Dynamism proof
+ Script to inject new article
+ Show recommendation change in <2s
+Stage 4: Documentation & Submission
+Final deliverables
+
+ README.md
+ Architecture overview
+ Setup instructions
+ API documentation
+ ARCHITECTURE.md
+ Component diagrams
+ Data flow explanation
+ Docker deployment
+ Dockerfile
+ docker-compose.yml
+ Video demonstration
+ 3-minute demo recording
+ Show real-time dynamism
+ Final cleanup
+ Remove debug code
+ Ensure all tests pass
+ Push to GitHub
+Testing Strategy
+Unit tests: pytest for individual components
+Integration tests: Full pipeline flow with mock data
+Manual demo test: Inject article → verify recommendation change

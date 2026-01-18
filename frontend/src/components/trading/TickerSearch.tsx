@@ -9,8 +9,8 @@ export function TickerSearch() {
     const [inputValue, setInputValue] = useState('');
     const { setTicker, setRecommendation, setArticles, setLoading, setError, isLoading } = useAppStore();
 
-    const handleSearch = async () => {
-        const ticker = inputValue.trim().toUpperCase();
+    const executeSearch = async (tickerToSearch: string) => {
+        const ticker = tickerToSearch.trim().toUpperCase();
         if (!ticker) return;
 
         setTicker(ticker);
@@ -34,9 +34,13 @@ export function TickerSearch() {
         }
     };
 
+    const handleSearchClick = () => {
+        executeSearch(inputValue);
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
-            handleSearch();
+            executeSearch(inputValue);
         }
     };
 
@@ -56,7 +60,7 @@ export function TickerSearch() {
                         disabled={isLoading}
                     />
                 </div>
-                <Button onClick={handleSearch} disabled={isLoading || !inputValue.trim()} className="px-6">
+                <Button onClick={handleSearchClick} disabled={isLoading || !inputValue.trim()} className="px-6">
                     {isLoading ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -78,6 +82,7 @@ export function TickerSearch() {
                         size="sm"
                         onClick={() => {
                             setInputValue(ticker);
+                            executeSearch(ticker);
                         }}
                         className="font-mono text-xs h-7 px-2 bg-secondary/30 hover:bg-secondary/50"
                     >

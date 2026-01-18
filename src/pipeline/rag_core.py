@@ -8,68 +8,22 @@ import logging
 from typing import Any
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
+
+try:
+    from sentence_transformers import SentenceTransformer
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+    logger.warning("sentence-transformers not installed. RAG pipeline will fail unless using API embeddings.")
 
 from src.config import get_settings
+from src.pipeline.chunking import AdaptiveChunker
+from src.pipeline.retrieval import HybridRetriever
 
 logger = logging.getLogger(__name__)
 
 
-class ChunkProcessor:
-    """
-    Process documents into chunks for embedding.
-    
-    Uses sentence-based chunking to preserve semantic boundaries.
-    """
 
-    def __init__(self, max_chunk_size: int = 512, overlap: int = 50):
-        self.max_chunk_size = max_chunk_size
-        self.overlap = overlap
-
-    def chunk_text(self, text: str) -> list[str]:
-        """
-        Split text into chunks by sentences, respecting token limits.
-
-        Args:
-            text: Raw text to chunk
-
-        Returns:
-            List of text chunks
-        """
-        if not text or not text.strip():
-            return []
-
-        # Simple sentence splitting (nltk can be used for better results)
-        sentences = self._split_sentences(text)
-
-        chunks = []
-        current_chunk: list[str] = []
-        current_length = 0
-
-        for sentence in sentences:
-            sentence_length = len(sentence.split())
-
-            if current_length + sentence_length > self.max_chunk_size:
-                if current_chunk:
-                    chunks.append(" ".join(current_chunk))
-                current_chunk = [sentence]
-                current_length = sentence_length
-            else:
-                current_chunk.append(sentence)
-                current_length += sentence_length
-
-        if current_chunk:
-            chunks.append(" ".join(current_chunk))
-
-        return chunks
-
-    def _split_sentences(self, text: str) -> list[str]:
-        """Split text into sentences."""
-        # Simple sentence splitting by common delimiters
-        import re
-
-        sentences = re.split(r"(?<=[.!?])\s+", text)
-        return [s.strip() for s in sentences if s.strip()]
 
 
 class EmbeddingGenerator:
@@ -85,9 +39,14 @@ class EmbeddingGenerator:
         self._model: SentenceTransformer | None = None
 
     @property
-    def model(self) -> SentenceTransformer:
+    def model(self) -> Any:
         """Lazy load the embedding model."""
         if self._model is None:
+            if not SENTENCE_TRANSFORMERS_AVAILABLE:
+                raise RuntimeError(
+                    "sentence-transformers not installed. "
+                    "Please install it with: uv pip install sentence-transformers"
+                )
             logger.info(f"Loading embedding model: {self.model_name}")
             self._model = SentenceTransformer(self.model_name)
         return self._model
@@ -216,9 +175,14 @@ class RAGPipeline:
     """
 
     def __init__(self):
-        self.chunk_processor = ChunkProcessor()
+        self.chunk_processor = AdaptiveChunker()
         self.embedding_generator = EmbeddingGenerator()
+        
+        # Initialize lower-level stores
         self.vector_store = VectorStore(self.embedding_generator)
+        
+        # High-level retriever
+        self.retriever = HybridRetriever(self.vector_store)
 
     def ingest_article(self, article: dict[str, Any]) -> int:
         """
@@ -231,23 +195,24 @@ class RAGPipeline:
             Number of chunks created
         """
         # Combine title and content for better context
-        full_text = f"{article.get('title', '')}. {article.get('content', '')}"
-        chunks = self.chunk_processor.chunk_text(full_text)
+        # chunk_document handles combination internally if needed, but we pass title explicitly
+        chunks_data = self.chunk_processor.chunk_document(article.get('content', ''), article.get('title', ''))
 
         docs = []
-        for i, chunk in enumerate(chunks):
+        for i, chunk_data in enumerate(chunks_data):
             docs.append({
-                "text": chunk,
+                "text": chunk_data["text"],
                 "article_id": article.get("id", ""),
                 "title": article.get("title", ""),
                 "source": article.get("source", ""),
                 "url": article.get("url", ""),
                 "published_at": article.get("published_at", ""),
                 "chunk_index": i,
+                "tickers": chunk_data["metadata"]["tickers"],  # New field
             })
 
-        self.vector_store.add_documents(docs)
-        return len(chunks)
+        self.retriever.add_documents(docs)
+        return len(chunks_data)
 
     def ingest_articles(self, articles: list[dict[str, Any]]) -> int:
         """
@@ -276,7 +241,7 @@ class RAGPipeline:
         Returns:
             List of relevant document chunks
         """
-        return self.vector_store.search(query, k=k)
+        return self.retriever.retrieve(query, k=k)
 
     def format_context(self, documents: list[dict[str, Any]]) -> str:
         """
