@@ -126,16 +126,16 @@ async def lifespan(app: FastAPI):
     chart_agent = ChartAgent()
     report_agent = ReportAgent()
 
-    # Ingest demo data
-    demo_articles = get_demo_articles()
-    rag_pipeline.ingest_articles(demo_articles)
+    # Seed initial articles for RAG index (these will be replaced by live news)
+    # NOTE: Demo articles provide initial context before live news arrives
+    # They will be superseded by real-time NewsAPI data via Pathway
+    initial_articles = get_demo_articles()
+    rag_pipeline.ingest_articles(initial_articles)
+    logger.info("Seeded RAG with initial articles. Live news will supersede these.")
     
-    # Initialize market state with demo data logic (mock)
-    market_state.update("AAPL", 0.6)
-    market_state.update("MSFT", 0.8) 
-    market_state.update("TSLA", -0.4)
-    market_state.update("GOOGL", 0.3)
-    market_state.update("AMZN", 0.5)
+    # Market state will be populated dynamically as recommendations are generated
+    # No hardcoded values - sentiment scores come from real agent analysis
+    # The heatmap will populate as users query different tickers
     
     # Capture loop for thread-safe scheduling
     loop = asyncio.get_running_loop()

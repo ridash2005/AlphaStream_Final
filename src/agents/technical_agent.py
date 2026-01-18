@@ -18,7 +18,7 @@ try:
     YFINANCE_AVAILABLE = True
 except ImportError:
     YFINANCE_AVAILABLE = False
-    logger.warning("yfinance not installed. Technical agent will use mock data.")
+    logger.warning("yfinance not installed. Technical agent requires it for real market data.")
 
 try:
     import ta
@@ -97,7 +97,7 @@ class TechnicalAgent:
         }
 
     def _get_price_data(self, ticker: str) -> Any:
-        """Fetch price data or return mock."""
+        """Fetch real price data from yfinance."""
         import pandas as pd
         
         if YFINANCE_AVAILABLE:
