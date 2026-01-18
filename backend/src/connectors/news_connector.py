@@ -55,12 +55,13 @@ class NewsAPISubject(pw.io.python.ConnectorSubject):
         self._running = True
 
     def run(self) -> None:
-        """Main loop - polls NewsAPI and pushes new articles."""
-        logger.info(f"Starting NewsAPI connector with {self.refresh_interval}s interval")
+        """Main loop - uses Herd of Knowledge aggregator for articles."""
+        logger.info(f"📰 Starting Herd of Knowledge connector with {self.refresh_interval}s interval")
 
         while self._running:
             try:
-                articles = self._fetch_articles()
+                # PRIMARY ENGINE: Use news aggregator (all sources in parallel)
+                articles = self._fetch_from_herd()
                 new_count = 0
 
                 for article in articles:
@@ -72,15 +73,25 @@ class NewsAPISubject(pw.io.python.ConnectorSubject):
                         new_count += 1
 
                 if new_count > 0:
-                    logger.info(f"Ingested {new_count} new articles")
+                    logger.info(f"📥 Ingested {new_count} new articles from Herd of Knowledge")
 
                 # Commit the batch
                 self._commit()
 
             except Exception as e:
-                logger.error(f"Error fetching articles: {e}")
+                logger.error(f"Error in Herd of Knowledge: {e}")
 
             time.sleep(self.refresh_interval)
+    
+    def _fetch_from_herd(self) -> list[dict[str, Any]]:
+        """PRIMARY: Fetch from all sources via news aggregator."""
+        try:
+            from src.connectors.news_aggregator import get_news_aggregator
+            aggregator = get_news_aggregator()
+            return aggregator.fetch_all(self.query)
+        except Exception as e:
+            logger.error(f"News aggregator error: {e}")
+            return []
 
     def on_stop(self) -> None:
         """Called when the connector is stopped."""

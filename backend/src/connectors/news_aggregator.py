@@ -1,12 +1,21 @@
 """
-Multi-Source News Aggregator - Combines multiple free news APIs.
+Multi-Source News Aggregator - "Herd of Knowledge" Engine.
 
-Provides fallback across multiple news sources:
-- NewsAPI.org (primary - rate limited)
+Aggregates news from ALL available sources simultaneously for comprehensive
+market intelligence. This is the PRIMARY news engine, not a fallback.
+
+Sources:
+- NewsAPI.org (breaking news)
 - Finnhub (60 calls/min free)
 - Alpha Vantage News (500 calls/day free)
 - MediaStack (500 calls/month free)
 - RSS Feeds (unlimited, free)
+
+The "herd of knowledge" approach ensures:
+1. No single point of failure
+2. Broader news coverage
+3. Multiple perspectives on the same events
+4. Resilience to rate limits
 """
 
 import logging
@@ -15,6 +24,7 @@ import hashlib
 from datetime import datetime, timedelta
 from typing import Any, Optional
 from abc import ABC, abstractmethod
+import concurrent.futures
 
 import requests
 
@@ -45,6 +55,70 @@ class NewsSource(ABC):
             "source": article.get("source", self.name),
             "url": article.get("url", ""),
             "publishedAt": article.get("publishedAt", datetime.now().isoformat()),
+            "urlToImage": article.get("urlToImage", "")
+        }
+
+
+class NewsAPISource(NewsSource):
+    """
+    NewsAPI.org - Breaking news and articles.
+    Free tier limited, but included in the herd for coverage.
+    """
+    
+    name = "NewsAPI"
+    BASE_URL = "https://newsapi.org/v2/everything"
+    
+    def __init__(self, api_key: str = None):
+        self.api_key = api_key or get_settings().newsapi_key
+        self._rate_limited = False
+    
+    def fetch(self, query: str = None) -> list[dict[str, Any]]:
+        if not self.api_key or self._rate_limited:
+            return []
+        
+        try:
+            from_date = (datetime.utcnow() - timedelta(hours=24)).isoformat()
+            
+            response = requests.get(
+                self.BASE_URL,
+                params={
+                    "q": query or "stock market earnings trading",
+                    "sortBy": "publishedAt",
+                    "pageSize": 50,
+                    "apiKey": self.api_key,
+                    "from": from_date,
+                    "language": "en",
+                },
+                timeout=15
+            )
+            
+            if response.status_code == 429:
+                logger.warning("NewsAPI rate limited - will skip in future calls")
+                self._rate_limited = True
+                return []
+            
+            if response.status_code != 200:
+                return []
+            
+            data = response.json()
+            articles = data.get("articles", [])
+            return [self._convert(a) for a in articles[:30]]
+            
+        except Exception as e:
+            logger.debug(f"NewsAPI error: {e}")
+            return []
+    
+    def _convert(self, article: dict) -> dict[str, Any]:
+        """Convert NewsAPI format to standard format."""
+        source = article.get("source", {})
+        source_name = source.get("name", "NewsAPI") if isinstance(source, dict) else str(source)
+        return {
+            "title": article.get("title", ""),
+            "description": article.get("description", "")[:500] if article.get("description") else "",
+            "content": article.get("content", "") or article.get("description", ""),
+            "source": {"name": source_name},
+            "url": article.get("url", ""),
+            "publishedAt": article.get("publishedAt", ""),
             "urlToImage": article.get("urlToImage", "")
         }
 
@@ -248,30 +322,38 @@ class MediaStackSource(NewsSource):
 
 class NewsAggregator:
     """
-    Aggregates news from multiple sources with automatic failover.
+    "Herd of Knowledge" News Engine.
     
-    Priority order:
-    1. NewsAPI (if not rate limited)
-    2. Finnhub
-    3. Alpha Vantage
-    4. MediaStack
-    5. RSS Feeds (always available)
+    Aggregates news from ALL available sources simultaneously.
+    This is the PRIMARY news engine, not a fallback.
+    
+    All sources contribute to comprehensive market intelligence:
+    - NewsAPI (breaking news)
+    - Finnhub (company-specific news)
+    - Alpha Vantage (sentiment-tagged news)
+    - MediaStack (general business news)
+    - RSS (free, always available)
     """
     
     def __init__(self):
         self.sources: list[NewsSource] = []
         self.seen_ids: set[str] = set()
         
-        # Initialize all available sources
+        # Initialize ALL sources - "Herd of Knowledge" approach
         settings = get_settings()
+        
+        # NewsAPI is part of the herd (not special primary)
+        if hasattr(settings, 'newsapi_key') and settings.newsapi_key:
+            self.sources.append(NewsAPISource())
+            logger.info("☁️ NewsAPI source enabled")
         
         if hasattr(settings, 'finnhub_api_key') and settings.finnhub_api_key:
             self.sources.append(FinnhubSource())
-            logger.info("Finnhub source enabled")
+            logger.info("📊 Finnhub source enabled")
             
         if hasattr(settings, 'alphavantage_api_key') and settings.alphavantage_api_key:
             self.sources.append(AlphaVantageSource())
-            logger.info("Alpha Vantage source enabled")
+            logger.info("📈 Alpha Vantage source enabled")
             
         if hasattr(settings, 'mediastack_api_key') and settings.mediastack_api_key:
             self.sources.append(MediaStackSource())
@@ -279,25 +361,37 @@ class NewsAggregator:
     
     def fetch_all(self, query: str = None) -> list[dict[str, Any]]:
         """
-        Fetch from all available sources, deduplicate, and return.
+        Fetch from ALL available sources in PARALLEL, deduplicate, and return.
+        
+        This is the "herd of knowledge" - all sources contribute simultaneously.
         """
         all_articles = []
+        source_stats = {}
         
-        for source in self.sources:
+        # Parallel fetch from all API sources
+        def fetch_source(source):
             try:
                 articles = source.fetch(query)
-                logger.info(f"{source.name}: fetched {len(articles)} articles")
-                all_articles.extend(articles)
+                return source.name, articles
             except Exception as e:
                 logger.warning(f"{source.name} failed: {e}")
-                continue
+                return source.name, []
         
-        # Add RSS as final fallback
+        # Use ThreadPoolExecutor for parallel fetching
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            futures = {executor.submit(fetch_source, src): src for src in self.sources}
+            
+            for future in concurrent.futures.as_completed(futures):
+                source_name, articles = future.result()
+                source_stats[source_name] = len(articles)
+                all_articles.extend(articles)
+        
+        # Add RSS (always free, no rate limits)
         try:
             from src.connectors.rss_connector import get_rss_connector
             rss = get_rss_connector()
             rss_articles = rss.fetch_articles(query)
-            logger.info(f"RSS: fetched {len(rss_articles)} articles")
+            source_stats["RSS"] = len(rss_articles)
             
             # Convert RSS format
             for a in rss_articles:
@@ -311,9 +405,10 @@ class NewsAggregator:
                     "urlToImage": a.get("image_url", "")
                 })
         except Exception as e:
-            logger.warning(f"RSS fallback failed: {e}")
+            logger.warning(f"RSS fetch failed: {e}")
+            source_stats["RSS"] = 0
         
-        # Deduplicate
+        # Deduplicate by title/URL hash
         unique = []
         for article in all_articles:
             article_id = self._generate_id(article)
@@ -321,7 +416,9 @@ class NewsAggregator:
                 self.seen_ids.add(article_id)
                 unique.append(article)
         
-        logger.info(f"News aggregator: {len(unique)} unique articles from {len(self.sources) + 1} sources")
+        # Log aggregation stats
+        active_sources = [f"{k}:{v}" for k, v in source_stats.items() if v > 0]
+        logger.info(f"📰 Herd of Knowledge: {len(unique)} unique articles from {len(active_sources)} sources ({', '.join(active_sources)})")
         return unique
     
     def _generate_id(self, article: dict) -> str:
