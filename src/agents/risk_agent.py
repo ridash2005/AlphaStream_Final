@@ -61,8 +61,13 @@ class RiskAgent:
         else:
             position_size = 0.01
             
+        # Normalize risk score (0.0 to 1.0) for the UI
+        risk_score_map = {"LOW": 0.2, "MEDIUM": 0.5, "HIGH": 0.9}
+        risk_score = risk_score_map.get(risk_level, 0.5)
+
         return {
             "risk_level": risk_level,
+            "risk_score": risk_score,
             "volatility_annualized": volatility * np.sqrt(252),
             "suggested_position_size": position_size,
             "stop_loss_pct": volatility * 2  # 2 std devs

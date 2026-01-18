@@ -23,17 +23,17 @@ export function AgentRadar() {
     }
 
     // Normalize scores to 0-100 scale for chart
-    // Sentiment: -1 to 1 -> 0 to 100 (.5 + s/2) * 100
-    // Technical: -1 to 1 -> 0 to 100
-    // Risk: 0 to 1 -> 0 to 100 (assuming it comes normalized, but risk_agent usually returns low/med/high or 0-1. Let's assume 0-1 or we normalize)
-    // Actually our backend returns raw scores. Let's assume standard normalization.
+    // Respect actual backend data - avoid fake defaults unless necessary for rendering safety
 
-    const sentimentNorm = Math.round(((recommendation.sentiment_score + 1) / 2) * 100);
-    const technicalNorm = Math.round(((recommendation.technical_score + 1) / 2) * 100);
-    // Risk is usually "Risk Level". If score is high (risky) -> we might want to plot "Safety"? 
-    // Let's plot "Risk Score" directly (0-100). If low risk = 0, high = 100.
-    const riskNorm = Math.round(recommendation.risk_score * 100);
-    const confidence = Math.round(recommendation.confidence);
+    const rawSentiment = recommendation.sentiment_score ?? 0; // -1 to 1
+    const rawTechnical = recommendation.technical_score ?? 0; // -1 to 1
+    const rawRisk = recommendation.risk_score ?? 0; // 0 to 1
+    const rawConfidence = recommendation.confidence ?? 0; // 0 to 100
+
+    const sentimentNorm = Math.round(((rawSentiment + 1) / 2) * 100);
+    const technicalNorm = Math.round(((rawTechnical + 1) / 2) * 100);
+    const riskNorm = Math.round(rawRisk * 100);
+    const confidence = Math.round(rawConfidence);
 
     const data = [
         { subject: 'Sentiment', A: sentimentNorm, fullMark: 100 },

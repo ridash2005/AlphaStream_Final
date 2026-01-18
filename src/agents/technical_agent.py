@@ -114,16 +114,22 @@ class TechnicalAgent:
         logger.info(f"Using mock data for {ticker}")
         dates = pd.date_range(end=pd.Timestamp.now(), periods=100)
         
-        # Generate random walk
+        # Generate random walk with a bias to create trends for demo
+        # Use simple hash of ticker to decide trend direction so it's consistent
+        seed = sum(ord(c) for c in ticker)
+        np.random.seed(seed)
+        
+        trend = np.random.choice([-0.5, 0.0, 0.5]) # Bias
+        
         prices = [150.0]
         for _ in range(99):
-            change = np.random.normal(0, 1.5)
-            prices.append(prices[-1] + change)
+            change = np.random.normal(trend, 2.0)
+            prices.append(max(10.0, prices[-1] + change))
             
         data = pd.DataFrame(index=dates)
         data["Close"] = prices
-        data["High"] = [p + 1 for p in prices]
-        data["Low"] = [p - 1 for p in prices]
+        data["High"] = [p + 2 for p in prices]
+        data["Low"] = [p - 2 for p in prices]
         data["Volume"] = 1000000
         
         return data
