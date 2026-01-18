@@ -63,6 +63,31 @@ class ConnectionManager:
                 except Exception as e:
                     logger.error(f"Error broadcasting to {ticker}: {e}")
 
+    async def broadcast_global(self, message: dict):
+        """Broadcast to ALL connected clients."""
+        for ticker_conns in self.active_connections.values():
+            for connection in ticker_conns:
+                try:
+                    await connection.send_json(message)
+                except Exception:
+                    pass
+
+class MarketState:
+    """Tracks global market sentiment for heatmap."""
+    def __init__(self):
+        self.sentiments: dict[str, float] = {}  # Ticker -> Score
+        self.last_updated: dict[str, str] = {}
+        
+    def update(self, ticker: str, score: float):
+        self.sentiments[ticker] = score
+        self.last_updated[ticker] = datetime.utcnow().isoformat()
+        
+    def get_heatmap(self):
+        return [
+            {"ticker": t, "score": s, "updated": self.last_updated.get(t)}
+            for t, s in self.sentiments.items()
+        ]
+
 # Global components
 rag_pipeline: RAGPipeline | None = None
 sentiment_agent: SentimentAgent | None = None
@@ -70,8 +95,7 @@ technical_agent: TechnicalAgent | None = None
 risk_agent: RiskAgent | None = None
 decision_agent: DecisionAgent | None = None
 ws_manager = ConnectionManager()
-
-
+market_state = MarketState()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -91,29 +115,44 @@ async def lifespan(app: FastAPI):
     demo_articles = get_demo_articles()
     rag_pipeline.ingest_articles(demo_articles)
     
+    # Initialize market state with demo data logic (mock)
+    market_state.update("AAPL", 0.6)
+    market_state.update("MSFT", 0.8) 
+    market_state.update("TSLA", -0.4)
+    market_state.update("GOOGL", 0.3)
+    market_state.update("AMZN", 0.5)
+    
     # Capture loop for thread-safe scheduling
     loop = asyncio.get_running_loop()
     
     def on_new_article(article):
         """Callback for new articles."""
+        ingest_start = time.time()
+        
         # 1. Ingest
         rag_pipeline.ingest_article(article)
         
+        # Calculate Indexing Latency
+        indexing_latency = (time.time() - ingest_start) * 1000
+        
+        # Broadcast Metrics
+        asyncio.run_coroutine_threadsafe(
+            ws_manager.broadcast_global({
+                "type": "metrics_update",
+                "data": {
+                    "indexing_latency_ms": round(indexing_latency, 2),
+                    "total_docs": rag_pipeline.document_count
+                }
+            }),
+            loop
+        )
+
         # 2. Check overlap with active streams
-        # Naive check: does article text contain ticker?
-        # Better: use chunks metadata
-        
-        # For this hackathon, we can just trigger updates for ALL monitored tickers
-        # regardless of whether the article specifically matched them (simplification)
-        # OR better: iterate active_connections keys and check if they appear in article
-        
         active_tickers = list(ws_manager.active_connections.keys())
         text = (article.get('title', '') + " " + article.get('content', '')).upper()
         
         for ticker in active_tickers:
-            # Simple keyword match
-            if ticker in text or "MARKET" in text: # 'MARKET' matches general news
-                logger.info(f"New article relevant to {ticker}, updating stream...")
+            if ticker in text or "MARKET" in text:
                 asyncio.run_coroutine_threadsafe(
                     trigger_update(ticker), 
                     loop
@@ -122,7 +161,19 @@ async def lifespan(app: FastAPI):
     async def trigger_update(ticker):
         try:
             rec = await generate_recommendation_logic(ticker)
+            
+            # Update Market State
+            market_state.update(ticker, rec.sentiment_score)
+            
+            # Broadcast Recommendation
             await ws_manager.broadcast(ticker, rec.model_dump())
+            
+            # Broadcast Heatmap Update
+            await ws_manager.broadcast_global({
+                "type": "market_update",
+                "data": market_state.get_heatmap()
+            })
+            
         except Exception as e:
             logger.error(f"Failed to update stream for {ticker}: {e}")
     
@@ -274,7 +325,14 @@ async def websocket_endpoint(websocket: WebSocket, ticker: str):
         # Send initial recommendation
         if rag_pipeline:
             rec = await generate_recommendation_logic(ticker)
+            # Send rec
             await websocket.send_json(rec.model_dump())
+            
+            # Send initial heatmap
+            await websocket.send_json({
+                "type": "market_update",
+                "data": market_state.get_heatmap()
+            })
             
         while True:
             # Keep connection alive, wait for disconnect

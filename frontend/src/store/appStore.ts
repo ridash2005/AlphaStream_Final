@@ -36,6 +36,8 @@ interface AppState {
     recommendation: Recommendation | null;
     articles: Article[];
     health: HealthStatus | null;
+    marketHeatmap: { ticker: string; score: number; updated: string }[];
+    indexingLatency: number | null;
 
     // UI State
     currentTicker: string;
@@ -70,6 +72,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     recommendation: null,
     articles: [],
     health: null,
+    marketHeatmap: [],
+    indexingLatency: null,
     currentTicker: 'AAPL',
     isLoading: false,
     error: null,
@@ -118,9 +122,22 @@ export const useAppStore = create<AppState>((set, get) => ({
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                console.log("Stream update:", data);
-                setRecommendation(data);
-                setLoading(false); // Clear loading on first message
+
+                // Handle different message types
+                if (data.type === 'market_update') {
+                    console.log("Market Heatmap update:", data.data);
+                    set({ marketHeatmap: data.data });
+                }
+                else if (data.type === 'metrics_update') {
+                    console.log("Metrics update:", data.data);
+                    set({ indexingLatency: data.data.indexing_latency_ms });
+                }
+                else {
+                    // Assume default is recommendation
+                    console.log("Stream update:", data);
+                    setRecommendation(data);
+                    setLoading(false);
+                }
             } catch (e) {
                 console.error("Failed to parse WS message", e);
             }

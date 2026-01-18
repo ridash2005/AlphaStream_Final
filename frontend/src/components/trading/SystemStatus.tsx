@@ -93,6 +93,15 @@ export function SystemStatus() {
                     </div>
                 </>
             )}
+
+            {/* Indexing Latency */}
+            <div className="h-3 w-px bg-border" />
+            <div className="flex items-center gap-1.5">
+                <Activity className="h-3.5 w-3.5 text-blue-400" />
+                <span className="text-blue-400">
+                    {useAppStore.getState().indexingLatency ? `${useAppStore.getState().indexingLatency}ms ingest` : 'Waiting...'}
+                </span>
+            </div>
         </div>
     );
 }
