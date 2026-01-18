@@ -85,9 +85,10 @@ class ChartAgent:
             dates = hist.index
             prices = hist['Close'].values
             
-            # Find 24-hour boundary
-            now = datetime.now()
-            one_day_ago = now - timedelta(days=1)
+            # Find 24-hour boundary - make timezone-aware to match yfinance data
+            import pandas as pd
+            now = pd.Timestamp.now(tz=dates.tz) if dates.tz else pd.Timestamp.now()
+            one_day_ago = now - pd.Timedelta(days=1)
             
             # Split data into prior week and last 24h
             mask_24h = dates >= one_day_ago
