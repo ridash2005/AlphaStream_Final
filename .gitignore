@@ -7,5 +7,24 @@ wheels/
 *.egg-info
 
 # Virtual environments
-.venv
+.venv/
+
+# Environment and secrets - NEVER COMMIT
 .env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Generated reports
+reports/
+*.pdf
+
+# Node
+node_modules/
+frontend/node_modules/

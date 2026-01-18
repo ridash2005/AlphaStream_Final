@@ -23,6 +23,9 @@ from src.agents.sentiment_agent import SentimentAgent
 from src.agents.technical_agent import TechnicalAgent
 from src.agents.risk_agent import RiskAgent
 from src.agents.decision_agent import DecisionAgent
+from src.agents.insider_agent import InsiderAgent
+from src.agents.chart_agent import ChartAgent
+from src.agents.report_agent import ReportAgent
 from src.pipeline.rag_core import RAGPipeline
 
 logger = logging.getLogger(__name__)
@@ -88,28 +91,40 @@ class MarketState:
             for t, s in self.sentiments.items()
         ]
 
-# Global components
+# Global components - Core agents
 rag_pipeline: RAGPipeline | None = None
 sentiment_agent: SentimentAgent | None = None
 technical_agent: TechnicalAgent | None = None
 risk_agent: RiskAgent | None = None
 decision_agent: DecisionAgent | None = None
+
+# Global components - SEC agents (Stage 5)
+insider_agent: InsiderAgent | None = None
+chart_agent: ChartAgent | None = None
+report_agent: ReportAgent | None = None
+
 ws_manager = ConnectionManager()
 market_state = MarketState()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown."""
-    global rag_pipeline, sentiment_agent, technical_agent, risk_agent, decision_agent, orchestrator
+    global rag_pipeline, sentiment_agent, technical_agent, risk_agent, decision_agent
+    global insider_agent, chart_agent, report_agent
     
     logger.info("Initializing AlphaStream Live AI...")
 
-    # Initialize components
+    # Initialize core agents
     rag_pipeline = RAGPipeline()
     sentiment_agent = SentimentAgent()
     technical_agent = TechnicalAgent()
     risk_agent = RiskAgent()
     decision_agent = DecisionAgent()
+    
+    # Initialize SEC agents (Stage 5)
+    insider_agent = InsiderAgent()
+    chart_agent = ChartAgent()
+    report_agent = ReportAgent()
 
     # Ingest demo data
     demo_articles = get_demo_articles()
@@ -430,6 +445,109 @@ async def ingest_article(article: dict[str, Any]) -> dict[str, Any]:
         "chunks_created": chunks_created,
         "document_count": rag_pipeline.document_count,
     }
+
+
+# ============================================================================
+# SEC EDGAR ENDPOINTS (Stage 5)
+# ============================================================================
+
+@app.get("/insider/{ticker}")
+async def get_insider_activity(ticker: str, days: int = 1) -> dict[str, Any]:
+    """
+    Get insider trading activity for a ticker.
+    
+    Fetches Form 4 filings from SEC EDGAR and analyzes patterns.
+    Uses LLM to summarize insider sentiment.
+    """
+    if not insider_agent:
+        raise HTTPException(status_code=503, detail="Insider agent not initialized")
+    
+    ticker = ticker.upper()
+    
+    try:
+        result = insider_agent.analyze(ticker, days=days)
+        return {
+            "ticker": ticker,
+            "period_days": days,
+            **result
+        }
+    except Exception as e:
+        logger.error(f"Insider analysis error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/chart/{ticker}")
+async def get_price_chart(ticker: str, days: int = 7) -> dict[str, Any]:
+    """
+    Generate a price comparison chart.
+    
+    Creates a 7-day chart with last 24 hours highlighted.
+    Returns chart path and price analysis.
+    """
+    if not chart_agent:
+        raise HTTPException(status_code=503, detail="Chart agent not initialized")
+    
+    ticker = ticker.upper()
+    
+    try:
+        # Get insider data for overlay
+        insider_data = insider_agent.analyze(ticker, days=1) if insider_agent else {}
+        insider_events = []  # Extract events if available
+        
+        result = chart_agent.generate_comparison_chart(
+            ticker, 
+            insider_events=insider_events,
+            days=days
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Chart generation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/report/{ticker}")
+async def generate_full_report(ticker: str) -> dict[str, Any]:
+    """
+    Generate a comprehensive PDF trading report.
+    
+    Combines all agent analyses into a professional document:
+    - Trading recommendation
+    - Price chart
+    - Insider trading activity
+    - Technical and risk analysis
+    """
+    if not report_agent:
+        raise HTTPException(status_code=503, detail="Report agent not initialized")
+    
+    ticker = ticker.upper()
+    
+    try:
+        # Gather all data
+        recommendation = await generate_recommendation_logic(ticker)
+        
+        insider_data = insider_agent.analyze(ticker, days=1) if insider_agent else {}
+        
+        chart_data = chart_agent.generate_comparison_chart(ticker) if chart_agent else {}
+        
+        technical_data = technical_agent.analyze(ticker) if technical_agent else {}
+        
+        risk_data = risk_agent.analyze(ticker, technical_data) if risk_agent else {}
+        
+        # Generate report
+        result = report_agent.generate_report(
+            ticker=ticker,
+            recommendation=recommendation.model_dump(),
+            insider_data=insider_data,
+            chart_data=chart_data,
+            technical_data=technical_data,
+            risk_data=risk_data
+        )
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Report generation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Helper functions
