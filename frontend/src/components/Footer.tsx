@@ -2,17 +2,16 @@ import { Linkedin, Github, Twitter } from 'lucide-react';
 
 export function Footer() {
     return (
-        <footer className="border-t border-border/40 mt-12 py-8 glass">
-            <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+        <footer className="border-t border-border/40 py-2 glass shrink-0 relative z-50">
+            <div className="max-w-7xl mx-auto px-4 flex flex-row items-center justify-between gap-2 h-10">
 
                 {/* Brand & Powered By */}
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                        <span className="font-bold tracking-tight text-foreground">AlphaStream</span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                            v1.0.0
-                        </span>
-                    </div>
+                <div className="flex items-center gap-3">
+                    <span className="font-bold tracking-tight text-foreground text-sm">AlphaStream</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                        v1.0.0
+                    </span>
+                    <span className="text-muted-foreground/30 h-4 border-l border-border mx-1"></span>
                     <div className="text-xs text-muted-foreground flex items-center gap-1">
                         Powered by
                         <a href="https://pathway.com" target="_blank" rel="noopener noreferrer" className="font-medium text-blue-400 hover:underline">
@@ -39,7 +38,7 @@ export function Footer() {
                     <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
                         <Linkedin className="h-4 w-4" />
                     </a>
-                    <span className="text-xs text-muted-foreground">© 2026 CrowdWisdomTrading</span>
+                    <span className="text-xs text-muted-foreground">© 2026 AlphaStream Inc.</span>
                 </div>
             </div>
         </footer>

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppStore } from '@/store/appStore';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { BrainCircuit } from 'lucide-react';
 
 export function AgentRadar() {
@@ -50,7 +50,7 @@ export function AgentRadar() {
                     Multi-Agent Consensus
                 </CardTitle>
             </CardHeader>
-            <CardContent className="h-[200px] w-full">
+            <CardContent className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
                         <PolarGrid stroke="rgba(255,255,255,0.1)" />
@@ -62,6 +62,10 @@ export function AgentRadar() {
                             strokeWidth={2}
                             fill="#8b5cf6"
                             fillOpacity={0.3}
+                        />
+                        <Tooltip
+                            contentStyle={{ backgroundColor: '#1e1e2d', borderColor: '#333' }}
+                            itemStyle={{ color: '#fff' }}
                         />
                     </RadarChart>
                 </ResponsiveContainer>
