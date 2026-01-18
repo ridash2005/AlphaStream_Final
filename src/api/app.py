@@ -45,7 +45,7 @@ decision_agent: DecisionAgent | None = None
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown."""
     global rag_pipeline, sentiment_agent, technical_agent, risk_agent, decision_agent, orchestrator
-
+    
     logger.info("Initializing AlphaStream Live AI...")
 
     # Initialize components
@@ -55,15 +55,21 @@ async def lifespan(app: FastAPI):
     risk_agent = RiskAgent()
     decision_agent = DecisionAgent()
 
-    # Ingest some demo data for testing
+    # Ingest demo data
     demo_articles = get_demo_articles()
     rag_pipeline.ingest_articles(demo_articles)
+    
+    # Start Live News Polling
+    from src.connectors.polling import NewsPoller
+    news_poller = NewsPoller(callback=rag_pipeline.ingest_article, interval=60)
+    news_poller.start()
 
     logger.info(f"System initialized with {rag_pipeline.document_count} document chunks")
 
     yield
 
     logger.info("Shutting down...")
+    news_poller.stop()
 
 
 app = FastAPI(
