@@ -56,6 +56,22 @@ Traditional AI systems suffer from knowledge cutoff—they can't react to breaki
 | **Frontend** | React 18, Vite, Tailwind CSS, Shadcn |
 | **State** | Zustand |
 
+### Pathway xpacks.llm Integration
+
+We use **Pathway's official LLM xpack** (from [llm-app templates](https://github.com/pathwaycom/llm-app/tree/main/templates/adaptive_rag)) for maximum performance:
+
+| Component | Pathway xpack Class |
+|-----------|-------------------|
+| **Adaptive RAG** | `pw.xpacks.llm.question_answering.AdaptiveRAGQuestionAnswerer` |
+| **Document Store** | `pw.xpacks.llm.document_store.DocumentStore` |
+| **LLM Chat** | `pw.xpacks.llm.llms.OpenAIChat` |
+| **Embeddings** | `pw.xpacks.llm.embedders.OpenAIEmbedder` |
+| **Splitter** | `pw.xpacks.llm.splitters.TokenCountSplitter` |
+| **Vector Search** | `pw.indexing.UsearchKnnFactory` |
+| **REST Server** | `pw.xpacks.llm.servers.QASummaryRestServer` |
+
+**Adaptive RAG** uses a geometric retrieval strategy - starting with 2 documents and expanding only when the LLM needs more context, saving tokens without sacrificing accuracy.
+
 ---
 
 ## ⚡ Quick Start
@@ -126,49 +142,43 @@ Access dashboard at **http://localhost:5173**
 
 ## 🏗️ Architecture
 
+![AlphaStream Architecture](docs/pipeline_architecture_1768777125312.png)
+
+### Pathway Streaming Engine - The Core
+
+AlphaStream is built around **Pathway**, the world's fastest streaming engine. Our implementation demonstrates deep Pathway integration:
+
+| Pathway Feature | Usage |
+|----------------|-------|
+| `pw.Schema` | Type-safe schemas for articles, sentiment, alerts |
+| `pw.Table` | Streaming tables for real-time market data |
+| `pw.io.python.ConnectorSubject` | Custom news connector polling multiple APIs |
+| `pw.io.subscribe` | Real-time callbacks on data changes |
+| `pw.apply` | UDF transformations for ticker extraction |
+| `pw.filter` | Alert generation on sentiment spikes |
+| `pw.reducers` | Sentiment aggregation by ticker |
+
+### "Herd of Knowledge" News Aggregation
+
+Our innovative multi-source news system fetches from **5 sources in parallel**:
+
+![Herd of Knowledge](docs/herd_of_knowledge_1768777166554.png)
+
+- **NewsAPI** - Breaking news headlines
+- **Finnhub** - Company-specific financial news
+- **Alpha Vantage** - Sentiment-tagged articles
+- **MediaStack** - Global business news
+- **RSS Feeds** - Free, unlimited fallback
+
+**No single point of failure** - if one source is rate-limited, others continue.
+
+### Data Flow
+
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            AlphaStream Architecture                          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────┐     ┌─────────────┐     ┌─────────────────────────────────┐
-│  │   NewsAPI   │────►│   Pathway   │────►│          RAG Pipeline          │
-│  │   Stream    │     │  Connector  │     │  (Chunk → Embed → Index)       │
-│  └─────────────┘     └─────────────┘     └─────────────────────────────────┘
-│                                                      │
-│  ┌─────────────┐                                     ▼
-│  │ SEC EDGAR   │────────────────────────►┌─────────────────────────────────┐
-│  │   (Form 4)  │                         │        AGENT SYSTEM             │
-│  └─────────────┘                         │                                 │
-│                                          │  ┌──────────┐  ┌──────────┐    │
-│  ┌─────────────┐                         │  │Sentiment │  │Technical │    │
-│  │  yfinance   │────────────────────────►│  │  Agent   │  │  Agent   │    │
-│  │ (Prices)    │                         │  └────┬─────┘  └────┬─────┘    │
-│  └─────────────┘                         │       │             │          │
-│                                          │  ┌────▼─────┐  ┌────▼─────┐    │
-│                                          │  │ Insider  │  │   Risk   │    │
-│                                          │  │  Agent   │  │  Agent   │    │
-│                                          │  └────┬─────┘  └────┬─────┘    │
-│                                          │       │             │          │
-│                                          │       └──────┬──────┘          │
-│                                          │              ▼                  │
-│                                          │       ┌──────────────┐         │
-│                                          │       │   Decision   │         │
-│                                          │       │    Agent     │         │
-│                                          │       └──────┬───────┘         │
-│                                          └──────────────┼─────────────────┘
-│                                                         │
-│  ┌─────────────────────────────────────────────────────▼───────────────────┐
-│  │                         FastAPI Backend                                  │
-│  │    /recommend    /insider    /chart    /report    /ws/stream             │
-│  └─────────────────────────────────────────────────────────────────────────┘
-│                                          │
-│  ┌─────────────────────────────────────────────────────▼───────────────────┐
-│  │                      React Dashboard (Vite)                              │
-│  │   TickerSearch │ RecommendationCard │ Heatmap │ Radar │ InsiderActivity │
-│  └─────────────────────────────────────────────────────────────────────────┘
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+News Sources → Pathway Connector → RAG Pipeline → Multi-Agent Reasoning → WebSocket → Dashboard
+     ↓                ↓                 ↓                    ↓
+  Real-time     pw.Table with      Hybrid retrieval    7 specialized
+  polling       auto-indexing      + reranking         AI agents
 ```
 
 ---
@@ -177,31 +187,40 @@ Access dashboard at **http://localhost:5173**
 
 ```
 Data Quest/
-├── src/
-│   ├── agents/
-│   │   ├── sentiment_agent.py   # LangChain sentiment analysis
-│   │   ├── technical_agent.py   # RSI, SMA from yfinance
-│   │   ├── risk_agent.py        # Volatility & position sizing
-│   │   ├── decision_agent.py    # Final recommendation (LLM)
-│   │   ├── insider_agent.py     # SEC Form 4 analysis
-│   │   ├── chart_agent.py       # Matplotlib charts
-│   │   └── report_agent.py      # ReportLab PDF
-│   ├── connectors/
-│   │   ├── news_connector.py    # NewsAPI + Pathway
-│   │   └── sec_connector.py     # SEC EDGAR (edgartools)
-│   ├── pipeline/
-│   │   ├── rag_core.py          # RAG pipeline
-│   │   ├── chunking.py          # Adaptive chunking
-│   │   └── retrieval.py         # Hybrid retrieval
-│   └── api/
-│       └── app.py               # FastAPI application
+├── backend/
+│   ├── src/
+│   │   ├── agents/
+│   │   │   ├── sentiment_agent.py   # LangChain sentiment analysis
+│   │   │   ├── technical_agent.py   # RSI, SMA from yfinance
+│   │   │   ├── risk_agent.py        # Volatility & position sizing
+│   │   │   ├── decision_agent.py    # Final recommendation (LLM)
+│   │   │   ├── insider_agent.py     # SEC Form 4 analysis
+│   │   │   ├── chart_agent.py       # Matplotlib charts
+│   │   │   └── report_agent.py      # ReportLab PDF
+│   │   ├── connectors/
+│   │   │   ├── news_connector.py    # Pathway streaming connector
+│   │   │   ├── news_aggregator.py   # "Herd of Knowledge" multi-source
+│   │   │   ├── rss_connector.py     # Free RSS fallback
+│   │   │   └── sec_connector.py     # SEC EDGAR (edgartools)
+│   │   ├── pipeline/
+│   │   │   ├── rag_core.py          # RAG pipeline
+│   │   │   ├── pathway_tables.py    # Pathway-native tables & transforms
+│   │   │   ├── chunking.py          # Adaptive chunking
+│   │   │   └── retrieval.py         # Hybrid retrieval
+│   │   └── api/
+│   │       └── app.py               # FastAPI + Pathway integration
+│   ├── reports/                     # Generated PDF reports
+│   ├── tests/                       # pytest tests
+│   └── pyproject.toml               # Dependencies (uv)
 ├── frontend/
 │   └── src/
-│       ├── App.tsx              # Main dashboard
-│       └── components/trading/  # UI components
-├── reports/                     # Generated PDF reports
-├── tests/                       # pytest tests
-└── pyproject.toml              # Dependencies
+│       ├── App.tsx                  # Main dashboard
+│       └── components/trading/      # 12 UI components
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── pipeline_architecture_*.png  # Generated diagrams
+│   └── herd_of_knowledge_*.png
+└── docker-compose.yml
 ```
 
 ---

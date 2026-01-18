@@ -70,14 +70,50 @@ graph LR
 
 ### 1. Pathway Streaming Engine
 
-The core of AlphaStream uses Pathway for:
-- **Streaming ingestion** via custom Python connector
-- **Incremental indexing** - Updates propagate automatically
-- **Unified batch/stream** - Same code for development and production
+![AlphaStream Architecture](pipeline_architecture_1768777125312.png)
+
+AlphaStream leverages **Pathway** as the core streaming engine. Our implementation demonstrates comprehensive feature usage:
+
+#### Pathway Features Used
+
+| Feature | Location | Purpose |
+|---------|----------|---------|
+| `pw.Schema` | `news_connector.py`, `pathway_tables.py` | Type-safe data schemas |
+| `pw.Table` | `pathway_tables.py` | Streaming market data tables |
+| `pw.io.python.ConnectorSubject` | `news_connector.py` | Custom multi-source news polling |
+| `pw.io.subscribe` | `app.py` | Real-time callbacks on data events |
+| `pw.run` | `app.py` | Background Pathway engine |
+| `pw.apply` | `pathway_tables.py` | UDF for ticker extraction, labels |
+| `pw.filter` | `pathway_tables.py` | Alert generation on sentiment spikes |
+| `pw.reducers` | `pathway_tables.py` | Aggregations (avg, count, max, min) |
+
+#### "Herd of Knowledge" Architecture
+
+![Herd of Knowledge](herd_of_knowledge_1768777166554.png)
+
+Our multi-source news aggregator fetches from 5 sources **in parallel**:
 
 ```python
-# Pathway table streams data continuously
-news_table = pw.python.read(NewsConnector(), schema=NewsSchema)
+# ThreadPoolExecutor for parallel API calls
+with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    futures = {executor.submit(fetch_source, src): src for src in self.sources}
+```
+
+- **NewsAPI** - Breaking headlines
+- **Finnhub** - Company-specific news (60 calls/min free)
+- **Alpha Vantage** - Sentiment-tagged articles (500 calls/day free)
+- **MediaStack** - Global business news (500 calls/month free)
+- **RSS Feeds** - Unlimited, free fallback
+
+**Result**: 40+ unique articles per refresh cycle, no single point of failure.
+
+```python
+# Pathway integration in app.py
+import pathway as pw
+
+news_table = create_news_table(refresh_interval=60)
+pw.io.subscribe(news_table, on_new_article_callback)
+pw.run()  # Background thread
 ```
 
 ### 2. RAG Pipeline

@@ -1,0 +1,61 @@
+# AlphaStream Pathway Adaptive RAG Configuration
+
+# News articles data source
+$sources:
+  - !pw.io.fs.read
+    path: data/articles
+    format: binary
+    with_metadata: true
+
+# LLM Configuration - Using OpenRouter (set OPENAI_API_BASE in .env)
+# OpenRouter is OpenAI-compatible, so we use OpenAIChat with custom base URL
+$llm: !pw.xpacks.llm.llms.LiteLLMChat
+  model: "openrouter/google/gemma-3n-e2b-it:free"
+  retry_strategy: !pw.udfs.ExponentialBackoffRetryStrategy
+    max_retries: 6
+  cache_strategy: !pw.udfs.DefaultCache {}
+  temperature: 0.3
+  api_base: "https://openrouter.ai/api/v1"
+
+# Splitter for chunking documents
+$splitter: !pw.xpacks.llm.splitters.TokenCountSplitter
+  max_tokens: 400
+
+# Parser for document processing
+$parser: !pw.xpacks.llm.parsers.UnstructuredParser
+  mode: "single"
+
+# Embedder - Using sentence-transformers (local, no API key needed)
+$embedder: !pw.xpacks.llm.embedders.SentenceTransformerEmbedder
+  model: "all-MiniLM-L6-v2"
+
+# Vector search factory - Uses USearch for fast KNN
+$retriever_factory: !pw.indexing.UsearchKnnFactory
+  reserved_space: 1000
+  embedder: $embedder
+  metric: !pw.indexing.USearchMetricKind.COS
+
+# Document Store - Pathway's unified document management
+$document_store: !pw.xpacks.llm.document_store.DocumentStore
+  docs: $sources
+  parser: $parser
+  splitter: $splitter
+  retriever_factory: $retriever_factory
+
+# Adaptive RAG Question Answerer
+# Uses geometric retrieval strategy - starts small, expands if needed
+question_answerer: !pw.xpacks.llm.question_answering.AdaptiveRAGQuestionAnswerer
+  llm: $llm
+  indexer: $document_store
+  n_starting_documents: 2
+  factor: 2
+  max_iterations: 4
+
+# Server configuration
+host: "0.0.0.0"
+port: 8001  # Different port from main FastAPI
+
+# Enable caching for LLM calls
+persistence_mode: !pw.PersistenceMode.UDF_CACHING
+persistence_backend: !pw.persistence.Backend.filesystem
+  path: ".PathwayCache"
