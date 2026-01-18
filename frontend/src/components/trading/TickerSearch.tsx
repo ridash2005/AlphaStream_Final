@@ -7,7 +7,7 @@ import { apiService } from '@/services/api';
 
 export function TickerSearch() {
     const [inputValue, setInputValue] = useState('');
-    const { setTicker, setRecommendation, setArticles, setLoading, setError, isLoading } = useAppStore();
+    const { setTicker, setArticles, setLoading, setError, isLoading, connectStream } = useAppStore();
 
     const executeSearch = async (tickerToSearch: string) => {
         const ticker = tickerToSearch.trim().toUpperCase();
@@ -18,20 +18,19 @@ export function TickerSearch() {
         setError(null);
 
         try {
-            // Fetch recommendation and articles in parallel
-            const [recommendation, articlesData] = await Promise.all([
-                apiService.getRecommendation(ticker),
-                apiService.getArticles(ticker, 5),
-            ]);
+            // Start WebSocket Stream (handles recommendation updates)
+            connectStream(ticker);
 
-            setRecommendation(recommendation);
+            // Fetch articles (still REST)
+            const articlesData = await apiService.getArticles(ticker, 5);
             setArticles(articlesData.articles);
+
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to fetch data';
             setError(message);
-        } finally {
-            setLoading(false);
+            setLoading(false); // Stop loading if REST fails (WS might still be working though)
         }
+        // Note: loading is cleared by WS on first message, or by catch here
     };
 
     const handleSearchClick = () => {

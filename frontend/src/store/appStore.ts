@@ -54,9 +54,18 @@ interface AppState {
     setError: (error: string | null) => void;
     addToHistory: (rec: Recommendation) => void;
     clearError: () => void;
+    connectStream: (ticker: string) => void;
+    disconnectStream: () => void;
+    socket: WebSocket | null;
 }
 
-export const useAppStore = create<AppState>((set) => ({
+// WebSocket
+socket: WebSocket | null,
+    connectStream: (ticker: string) => void,
+        disconnectStream: () => void,
+}));
+
+export const useAppStore = create<AppState>((set, get) => ({
     // Initial state
     recommendation: null,
     articles: [],
@@ -65,6 +74,7 @@ export const useAppStore = create<AppState>((set) => ({
     isLoading: false,
     error: null,
     recommendationHistory: [],
+    socket: null,
 
     // Actions
     setTicker: (ticker) => set({ currentTicker: ticker.toUpperCase() }),
@@ -87,4 +97,48 @@ export const useAppStore = create<AppState>((set) => ({
     })),
 
     clearError: () => set({ error: null }),
+
+    connectStream: (ticker) => {
+        const { socket, setRecommendation, setLoading } = get();
+
+        // Close existing
+        if (socket) {
+            socket.close();
+        }
+
+        const wsUrl = `ws://${window.location.hostname}:8000/ws/stream/${ticker}`;
+        console.log(`Connecting to stream: ${wsUrl}`);
+
+        const ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+            console.log("WebSocket connected");
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                console.log("Stream update:", data);
+                setRecommendation(data);
+                setLoading(false); // Clear loading on first message
+            } catch (e) {
+                console.error("Failed to parse WS message", e);
+            }
+        };
+
+        ws.onerror = (e) => {
+            console.error("WebSocket error", e);
+            // set({ error: "Stream connection failed" });
+        };
+
+        set({ socket: ws });
+    },
+
+    disconnectStream: () => {
+        const { socket } = get();
+        if (socket) {
+            socket.close();
+            set({ socket: null });
+        }
+    }
 }));

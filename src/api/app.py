@@ -14,9 +14,10 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+import asyncio
 
 from src.agents.sentiment_agent import SentimentAgent
 from src.agents.technical_agent import TechnicalAgent
@@ -32,6 +33,35 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
+class ConnectionManager:
+    """Manages WebSocket connections for real-time updates."""
+    
+    def __init__(self):
+        # Map ticker -> list of websockets
+        self.active_connections: dict[str, list[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, ticker: str):
+        await websocket.accept()
+        if ticker not in self.active_connections:
+            self.active_connections[ticker] = []
+        self.active_connections[ticker].append(websocket)
+        logger.info(f"Client connected to stream for {ticker}")
+
+    def disconnect(self, websocket: WebSocket, ticker: str):
+        if ticker in self.active_connections:
+            if websocket in self.active_connections[ticker]:
+                self.active_connections[ticker].remove(websocket)
+            if not self.active_connections[ticker]:
+                del self.active_connections[ticker]
+        logger.info(f"Client disconnected from {ticker}")
+
+    async def broadcast(self, ticker: str, message: dict):
+        if ticker in self.active_connections:
+            for connection in self.active_connections[ticker]:
+                try:
+                    await connection.send_json(message)
+                except Exception as e:
+                    logger.error(f"Error broadcasting to {ticker}: {e}")
 
 # Global components
 rag_pipeline: RAGPipeline | None = None
@@ -39,6 +69,8 @@ sentiment_agent: SentimentAgent | None = None
 technical_agent: TechnicalAgent | None = None
 risk_agent: RiskAgent | None = None
 decision_agent: DecisionAgent | None = None
+ws_manager = ConnectionManager()
+
 
 
 @asynccontextmanager
@@ -59,9 +91,44 @@ async def lifespan(app: FastAPI):
     demo_articles = get_demo_articles()
     rag_pipeline.ingest_articles(demo_articles)
     
+    # Capture loop for thread-safe scheduling
+    loop = asyncio.get_running_loop()
+    
+    def on_new_article(article):
+        """Callback for new articles."""
+        # 1. Ingest
+        rag_pipeline.ingest_article(article)
+        
+        # 2. Check overlap with active streams
+        # Naive check: does article text contain ticker?
+        # Better: use chunks metadata
+        
+        # For this hackathon, we can just trigger updates for ALL monitored tickers
+        # regardless of whether the article specifically matched them (simplification)
+        # OR better: iterate active_connections keys and check if they appear in article
+        
+        active_tickers = list(ws_manager.active_connections.keys())
+        text = (article.get('title', '') + " " + article.get('content', '')).upper()
+        
+        for ticker in active_tickers:
+            # Simple keyword match
+            if ticker in text or "MARKET" in text: # 'MARKET' matches general news
+                logger.info(f"New article relevant to {ticker}, updating stream...")
+                asyncio.run_coroutine_threadsafe(
+                    trigger_update(ticker), 
+                    loop
+                )
+
+    async def trigger_update(ticker):
+        try:
+            rec = await generate_recommendation_logic(ticker)
+            await ws_manager.broadcast(ticker, rec.model_dump())
+        except Exception as e:
+            logger.error(f"Failed to update stream for {ticker}: {e}")
+    
     # Start Live News Polling
     from src.connectors.polling import NewsPoller
-    news_poller = NewsPoller(callback=rag_pipeline.ingest_article, interval=60)
+    news_poller = NewsPoller(callback=on_new_article, interval=60)
     news_poller.start()
 
     logger.info(f"System initialized with {rag_pipeline.document_count} document chunks")
@@ -140,76 +207,86 @@ async def health_check() -> HealthResponse:
 
 @app.post("/recommend", response_model=RecommendationResponse)
 async def get_recommendation(request: RecommendationRequest) -> RecommendationResponse:
-    """
-    Get trading recommendation for a ticker.
-
-    This endpoint:
-    1. Retrieves relevant news articles about the ticker
-    2. Analyzes sentiment using LLM
-    3. Returns recommendation with confidence score
-    """
-    start_time = time.time()
-
+    """Get trading recommendation."""
     if not rag_pipeline or not sentiment_agent:
         raise HTTPException(status_code=503, detail="System not initialized")
 
-    ticker = request.ticker.upper()
-
     try:
-        # Build query
-        query = f"{ticker} stock news"
-        if request.query:
-            query = f"{ticker} {request.query}"
-
-        # Retrieve relevant documents
-        retrieved_docs = rag_pipeline.retrieve(query, k=5)
-
-        if not retrieved_docs:
-            raise HTTPException(status_code=404, detail=f"No articles found for {ticker}")
-
-        # 1. Sentiment Analysis
-        sentiment = sentiment_agent.analyze(retrieved_docs)
-
-        # 2. Technical Analysis
-        technical = technical_agent.analyze(ticker)
-        
-        # 3. Risk Assessment
-        risk = risk_agent.analyze(ticker, technical)
-        
-        # 4. Final Decision
-        final_decision = decision_agent.decide(
-            ticker, 
-            sentiment, 
-            technical, 
-            risk
-        )
-
-        # Calculate latency
-        latency_ms = (time.time() - start_time) * 1000
-        
-        # Format key factors (combine reasoning + specific factors)
-        combined_factors = [final_decision.get("reasoning", "")]
-        combined_factors.extend(sentiment.get("key_factors", [])[:2])
-        combined_factors.extend(technical.get("key_signals", [])[:2])
-        combined_factors = [f for f in combined_factors if f] # Filter empty
-
-        return RecommendationResponse(
-            ticker=ticker,
-            timestamp=datetime.utcnow().isoformat(),
-            recommendation=final_decision.get("recommendation", "HOLD").upper(),
-            confidence=final_decision.get("confidence", 0.0) * 100,
-            sentiment_score=sentiment["sentiment_score"],
-            sentiment_label=sentiment["sentiment_label"],
-            key_factors=combined_factors[:5], # Limit to 5
-            sources=[doc.get("source", "Unknown") for doc in retrieved_docs],
-            latency_ms=round(latency_ms, 2),
-        )
-
-    except HTTPException:
-        raise
+        return await generate_recommendation_logic(request.ticker.upper())
     except Exception as e:
-        logger.error(f"Error generating recommendation: {e}")
+        logger.error(f"Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+async def generate_recommendation_logic(ticker: str) -> RecommendationResponse:
+    """Core logic to generate a recommendation."""
+    start_time = time.time()
+    
+    # 1. Retrieve
+    query = f"{ticker} stock news"
+    retrieved_docs = rag_pipeline.retrieve(query, k=5)
+    
+    if not retrieved_docs:
+        # If no docs, we might still want to return Technical/Risk? 
+        # For now, let's proceed but sentiment will be neutral.
+        logger.warning(f"No docs found for {ticker} during update")
+        # Proceed with empty list? Or fail?
+        # SentimentAgent handles empty list by returning Neutral.
+    
+    # 2. Sentiment
+    sentiment = sentiment_agent.analyze(retrieved_docs)
+    
+    # 3. Technical
+    technical = technical_agent.analyze(ticker)
+    
+    # 4. Risk
+    risk = risk_agent.analyze(ticker, technical)
+    
+    # 5. Decision
+    final_decision = decision_agent.decide(ticker, sentiment, technical, risk)
+    
+    latency_ms = (time.time() - start_time) * 1000
+    
+    combined_factors = [final_decision.get("reasoning", "")]
+    combined_factors.extend(sentiment.get("key_factors", [])[:2])
+    combined_factors.extend(technical.get("key_signals", [])[:2])
+    combined_factors = [f for f in combined_factors if f]
+
+    return RecommendationResponse(
+        ticker=ticker,
+        timestamp=datetime.utcnow().isoformat(),
+        recommendation=final_decision.get("recommendation", "HOLD").upper(),
+        confidence=final_decision.get("confidence", 0.0) * 100,
+        sentiment_score=sentiment["sentiment_score"],
+        sentiment_label=sentiment["sentiment_label"],
+        key_factors=combined_factors[:5],
+        sources=[doc.get("source", "Unknown") for doc in retrieved_docs],
+        latency_ms=round(latency_ms, 2),
+    )
+
+
+@app.websocket("/ws/stream/{ticker}")
+async def websocket_endpoint(websocket: WebSocket, ticker: str):
+    """WebSocket endpoint for real-time updates."""
+    ticker = ticker.upper()
+    await ws_manager.connect(websocket, ticker)
+    try:
+        # Send initial recommendation
+        if rag_pipeline:
+            rec = await generate_recommendation_logic(ticker)
+            await websocket.send_json(rec.model_dump())
+            
+        while True:
+            # Keep connection alive, wait for disconnect
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket, ticker)
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+        try:
+            ws_manager.disconnect(websocket, ticker)
+        except:
+            pass
 
 
 @app.get("/articles/{ticker}")
