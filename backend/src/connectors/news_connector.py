@@ -88,7 +88,7 @@ class NewsAPISubject(pw.io.python.ConnectorSubject):
         logger.info("NewsAPI connector stopped")
 
     def _fetch_articles(self) -> list[dict[str, Any]]:
-        """Fetch articles from NewsAPI."""
+        """Fetch articles from NewsAPI, fallback to RSS on rate limit."""
         # Get articles from last 24 hours
         from_date = (datetime.utcnow() - timedelta(hours=24)).isoformat()
 
@@ -107,12 +107,49 @@ class NewsAPISubject(pw.io.python.ConnectorSubject):
             timeout=30,
         )
 
+        if response.status_code == 429:
+            # Rate limited - fallback to RSS
+            logger.warning("NewsAPI rate limited (429). Using RSS fallback.")
+            return self._fetch_from_rss()
+        
         if response.status_code != 200:
             logger.warning(f"NewsAPI returned status {response.status_code}")
-            return []
+            return self._fetch_from_rss()
 
         data = response.json()
         return data.get("articles", [])
+    
+    def _fetch_from_rss(self) -> list[dict[str, Any]]:
+        """Fallback to news aggregator when NewsAPI is unavailable."""
+        try:
+            # First try the full aggregator (Finnhub, Alpha Vantage, MediaStack, RSS)
+            from src.connectors.news_aggregator import get_news_aggregator
+            aggregator = get_news_aggregator()
+            articles = aggregator.fetch_all(self.query)
+            if articles:
+                logger.info(f"News aggregator provided {len(articles)} articles")
+                return articles
+        except Exception as e:
+            logger.warning(f"News aggregator error: {e}")
+        
+        # Pure RSS fallback
+        try:
+            from src.connectors.rss_connector import get_rss_connector
+            rss = get_rss_connector()
+            articles = rss.fetch_articles()
+            # Convert to NewsAPI format
+            return [{
+                "title": a.get("title", ""),
+                "description": a.get("description", ""),
+                "content": a.get("content", ""),
+                "source": {"name": a.get("source", "RSS")},
+                "url": a.get("url", ""),
+                "publishedAt": a.get("published_at", ""),
+                "urlToImage": a.get("image_url", "")
+            } for a in articles]
+        except Exception as e:
+            logger.error(f"RSS fallback error: {e}")
+            return []
 
     def _generate_id(self, article: dict[str, Any]) -> str:
         """Generate unique ID for article based on content hash."""

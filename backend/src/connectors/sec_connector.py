@@ -93,18 +93,32 @@ class SECConnector:
         transactions = []
         
         try:
-            # Access filing data
+            # Safely extract insider name - handle pyarrow arrays
             insider_name = getattr(filing, 'reporting_owner', 'Unknown Insider')
+            if hasattr(insider_name, 'to_pylist'):  # pyarrow array
+                insider_name = insider_name.to_pylist()[0] if len(insider_name) > 0 else 'Unknown'
+            elif hasattr(insider_name, 'as_py'):  # pyarrow scalar
+                insider_name = insider_name.as_py()
             
-            # Get transaction data if available
+            # Get filing date safely
+            filing_date = filing.filing_date
+            if hasattr(filing_date, 'as_py'):
+                filing_date = filing_date.as_py()
+            
+            # Get accession number safely
+            accession = getattr(filing, 'accession_number', 'N/A')
+            if hasattr(accession, 'as_py'):
+                accession = accession.as_py()
+            elif hasattr(accession, 'to_pylist'):
+                accession = str(accession.to_pylist()[0]) if len(accession) > 0 else 'N/A'
+            
             trans_data = {
                 "insider_name": str(insider_name),
-                "filing_date": str(filing.filing_date),
+                "filing_date": str(filing_date),
                 "form_type": "4",
-                "ticker": filing.ticker if hasattr(filing, 'ticker') else "N/A",
-                "accession_number": filing.accession_number,
-                # Transaction details would come from parsed XML
-                "transaction_type": "Unknown",  # Will use LLM to parse if needed
+                "ticker": str(getattr(filing, 'ticker', 'N/A')),
+                "accession_number": str(accession),
+                "transaction_type": "Unknown",
                 "shares": 0,
                 "price": 0.0,
             }

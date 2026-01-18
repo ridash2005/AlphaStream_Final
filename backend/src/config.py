@@ -14,8 +14,13 @@ class Settings(BaseSettings):
         default="https://openrouter.ai/api/v1", alias="OPENROUTER_BASE_URL"
     )
 
-    # News API
+    # News APIs
     newsapi_key: str = Field(..., alias="NEWS_API_KEY")
+    
+    # Additional News Sources (optional - for fallback)
+    finnhub_api_key: str = Field(default="", alias="FINNHUB_API_KEY")
+    alphavantage_api_key: str = Field(default="", alias="ALPHAVANTAGE_API_KEY")
+    mediastack_api_key: str = Field(default="", alias="MEDIASTACK_API_KEY")
 
     # System Configuration
     log_level: str = Field(default="info", alias="LOG_LEVEL")
