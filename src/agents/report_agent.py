@@ -137,7 +137,7 @@ class ReportAgent:
             ))
             story.append(Paragraph(
                 f"<b>{ticker}</b> - {datetime.now().strftime('%B %d, %Y %H:%M')}",
-                self.styles['BodyText']
+                self.styles['ReportBody']
             ))
             story.append(Spacer(1, 20))
             
@@ -163,7 +163,7 @@ class ReportAgent:
             story.append(Paragraph("Key Factors", self.styles['SectionHeader']))
             key_factors = recommendation.get('key_factors', [])
             for factor in key_factors[:5]:
-                story.append(Paragraph(f"• {factor}", self.styles['BodyText']))
+                story.append(Paragraph(f"• {factor}", self.styles['ReportBody']))
             story.append(Spacer(1, 15))
             
             # Chart (if available)
@@ -175,7 +175,7 @@ class ReportAgent:
                     story.append(Paragraph(
                         f"24h Change: {chart_data.get('price_change_24h_pct', 0):.2f}% | "
                         f"7d Change: {chart_data.get('price_change_7d_pct', 0):.2f}%",
-                        self.styles['BodyText']
+                        self.styles['ReportBody']
                     ))
                     story.append(Spacer(1, 15))
             
@@ -211,7 +211,7 @@ class ReportAgent:
                 # Key transactions
                 transactions = insider_data.get('key_transactions', [])
                 for trans in transactions[:3]:
-                    story.append(Paragraph(f"• {trans}", self.styles['BodyText']))
+                    story.append(Paragraph(f"• {trans}", self.styles['ReportBody']))
                 story.append(Spacer(1, 15))
             
             # Technical Analysis
@@ -244,7 +244,7 @@ class ReportAgent:
                 story.append(Paragraph(
                     f"Risk Level: <b>{risk_data.get('risk_level', 'MEDIUM')}</b> | "
                     f"Suggested Position Size: {risk_data.get('suggested_position_size', 0.03)*100:.1f}%",
-                    self.styles['BodyText']
+                    self.styles['ReportBody']
                 ))
                 story.append(Spacer(1, 15))
             
@@ -252,7 +252,7 @@ class ReportAgent:
             story.append(Paragraph("Data Sources", self.styles['SectionHeader']))
             sources = recommendation.get('sources', [])
             for source in set(sources):
-                story.append(Paragraph(f"• {source}", self.styles['BodyText']))
+                story.append(Paragraph(f"• {source}", self.styles['ReportBody']))
             
             # Footer
             story.append(Spacer(1, 30))
