@@ -9,7 +9,7 @@ export function ArticlesList() {
 
     if (isLoading) {
         return (
-            <Card className="glass-card h-full">
+            <Card className="glass-card">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
                         <FileText className="h-4 w-4" />
@@ -32,7 +32,7 @@ export function ArticlesList() {
 
     if (articles.length === 0) {
         return (
-            <Card className="glass-card h-full">
+            <Card className="glass-card">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
                         <FileText className="h-4 w-4" />
@@ -49,7 +49,7 @@ export function ArticlesList() {
     }
 
     return (
-        <Card className="glass-card h-full animate-slide-up">
+        <Card className="glass-card animate-slide-up">
             <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
                     <FileText className="h-4 w-4 text-primary" />
