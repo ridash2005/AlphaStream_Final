@@ -1,5 +1,5 @@
 [project]
-name = "crowdwisdom-dataquest"
+name = "alphastream-dataquest"
 version = "0.1.0"
 description = "Real-time trading recommendations powered by Pathway streaming RAG"
 readme = "README.md"
@@ -31,9 +31,6 @@ dependencies = [
     "yfinance>=0.2.32",
     "ta>=0.10.2",
     
-    # Embeddings (CPU-only for faster install)
-    "sentence-transformers>=2.2.0",
-    
     # Utilities
     "python-dotenv>=1.0.0",
 ]
@@ -43,6 +40,11 @@ dev = [
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
     "httpx>=0.25.0",
+]
+
+# GPU support (optional - installs CUDA libs)
+gpu = [
+    "sentence-transformers>=2.2.0",
 ]
 
 [build-system]
@@ -55,3 +57,15 @@ testpaths = ["tests"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]
+
+# Force CPU-only torch via index
+[tool.uv]
+index-url = "https://pypi.org/simple"
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }

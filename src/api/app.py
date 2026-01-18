@@ -1,5 +1,5 @@
 """
-FastAPI application for CrowdWisdomTrading Live AI.
+FastAPI application for AlphaStream Live AI.
 
 Provides REST API endpoints for trading recommendations.
 """
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown."""
     global rag_pipeline, sentiment_agent
 
-    logger.info("Initializing CrowdWisdomTrading Live AI...")
+    logger.info("Initializing AlphaStream Live AI...")
 
     # Initialize components
     rag_pipeline = RAGPipeline()
@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="CrowdWisdomTrading Live AI",
+    title="AlphaStream Live AI",
     description="Real-time trading recommendations powered by Pathway streaming RAG",
     version="1.0.0",
     lifespan=lifespan,

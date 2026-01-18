@@ -1,1 +1,1 @@
-"""CrowdWisdomTrading Live AI - Source Package."""
+"""AlphaStream Live AI - Source Package."""

@@ -1,4 +1,4 @@
-"""Configuration management for CrowdWisdomTrading Live AI."""
+"""Configuration management for AlphaStream Live AI."""
 
 from functools import lru_cache
 from pydantic_settings import BaseSettings

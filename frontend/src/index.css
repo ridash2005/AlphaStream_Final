@@ -3,147 +3,65 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Force dark mode by default */
 :root {
-  /* Bloomberg-inspired color palette */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: 0 0% 100%;
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --radius: 0.625rem;
-
-  /* Custom trading colors */
-  --profit: 142 71% 45%;
-  --loss: 0 84% 60%;
-  --neutral: 45 93% 47%;
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  color-scheme: dark;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  border-color: hsl(var(--border));
+/* Bloomberg Terminal Dark Theme */
+.dark,
+:root {
+  /* Core colors - using OKLCH for modern browsers */
+  --background: oklch(0.12 0.01 270);
+  --foreground: oklch(0.95 0 0);
+  --card: oklch(0.16 0.01 270);
+  --card-foreground: oklch(0.95 0 0);
+  --popover: oklch(0.14 0.01 270);
+  --popover-foreground: oklch(0.95 0 0);
+  --primary: oklch(0.65 0.2 250);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.22 0.01 270);
+  --secondary-foreground: oklch(0.95 0 0);
+  --muted: oklch(0.25 0.01 270);
+  --muted-foreground: oklch(0.65 0 0);
+  --accent: oklch(0.55 0.2 145);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.6 0.25 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.28 0.01 270);
+  --input: oklch(0.22 0.01 270);
+  --ring: oklch(0.65 0.2 250);
+  --radius: 0.5rem;
+
+  /* Chart colors */
+  --chart-1: oklch(0.65 0.2 250);
+  --chart-2: oklch(0.55 0.2 145);
+  --chart-3: oklch(0.6 0.25 25);
+  --chart-4: oklch(0.7 0.2 80);
+  --chart-5: oklch(0.6 0.2 320);
+
+  /* Trading specific colors */
+  --profit: oklch(0.6 0.2 145);
+  --loss: oklch(0.6 0.25 25);
+  --neutral: oklch(0.75 0.18 85);
+
+  /* Sidebar */
+  --sidebar: oklch(0.1 0.01 270);
+  --sidebar-foreground: oklch(0.95 0 0);
+  --sidebar-primary: oklch(0.65 0.2 250);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.22 0.01 270);
+  --sidebar-accent-foreground: oklch(0.95 0 0);
+  --sidebar-border: oklch(0.28 0.01 270);
+  --sidebar-ring: oklch(0.65 0.2 250);
 }
 
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  line-height: 1.5;
-  min-height: 100vh;
-}
-
-/* Glassmorphism utilities */
-.glass {
-  background: rgba(20, 20, 30, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.glass-card {
-  background: rgba(30, 30, 40, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius);
-}
-
-/* Bloomberg terminal grid pattern */
-.terminal-bg {
-  background-image: 
-    linear-gradient(rgba(50, 50, 70, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(50, 50, 70, 0.03) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: hsl(var(--background));
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted));
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
-}
-
-/* Animation utilities */
-@keyframes pulse-glow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-slide-up {
-  animation: slide-up 0.3s ease-out;
-}
-
-/* Trading indicator colors */
-.text-profit { color: hsl(var(--profit)); }
-.text-loss { color: hsl(var(--loss)); }
-.text-neutral { color: hsl(var(--neutral)); }
-.bg-profit { background-color: hsl(var(--profit)); }
-.bg-loss { background-color: hsl(var(--loss)); }
-.bg-neutral { background-color: hsl(var(--neutral)); }
-
+/* Theme variables for Tailwind */
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -159,6 +77,7 @@ body {
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -177,45 +96,131 @@ body {
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
-
+/* Base layer */
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+}
+
+/* Glassmorphism effects */
+.glass {
+  background: oklch(0.12 0.01 270 / 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid oklch(1 0 0 / 0.08);
+}
+
+.glass-card {
+  background: oklch(0.15 0.01 270 / 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid oklch(1 0 0 / 0.1);
+  border-radius: var(--radius);
+}
+
+/* Bloomberg terminal grid pattern */
+.terminal-bg {
+  background-color: oklch(0.1 0.01 270);
+  background-image:
+    linear-gradient(oklch(0.2 0.01 270 / 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.2 0.01 270 / 0.3) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: oklch(0.12 0.01 270);
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.3 0.01 270);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.4 0.01 270);
+}
+
+/* Animations */
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+/* Trading indicator utilities */
+.text-profit {
+  color: var(--profit);
+}
+
+.text-loss {
+  color: var(--loss);
+}
+
+.text-neutral {
+  color: var(--neutral);
+}
+
+.bg-profit {
+  background-color: var(--profit);
+}
+
+.bg-loss {
+  background-color: var(--loss);
+}
+
+.bg-neutral {
+  background-color: var(--neutral);
+}
+
+/* Glow effects */
+.glow-primary {
+  box-shadow: 0 0 20px oklch(0.65 0.2 250 / 0.3);
+}
+
+.glow-profit {
+  box-shadow: 0 0 15px oklch(0.6 0.2 145 / 0.4);
+}
+
+.glow-loss {
+  box-shadow: 0 0 15px oklch(0.6 0.25 25 / 0.4);
 }
