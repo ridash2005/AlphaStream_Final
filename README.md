@@ -1,93 +1,255 @@
 # AlphaStream Live AI
 
-**Real-Time Financial Intelligence for the Modern Age.**
+**Real-Time Financial Intelligence Powered by Pathway Streaming Engine**
 
-AlphaStream is a live, streaming AI agent that solves the "stale knowledge" problem in financial trading. By leveraging **Pathway's** streaming engine, it ingests real-time news and market data, processes it via an adaptive RAG pipeline, and uses LLM agents to generate instant trading recommendations with sub-second latency.
+AlphaStream is a production-grade AI trading system that solves the "stale knowledge" problem in financial analysis. It combines **real-time news ingestion**, **SEC EDGAR filings**, **multi-agent reasoning**, and **live visualization** to deliver instant, explainable trading recommendations.
 
-![AlphaStream Dashboard](https://via.placeholder.com/800x450?text=AlphaStream+Dashboard)
+Built for **DataQuest 2026** hackathon using the [Pathway](https://pathway.com/) streaming framework.
+
+---
+
+## 🎯 Problem Statement
+
+Traditional AI systems suffer from knowledge cutoff—they can't react to breaking news or regulatory filings. AlphaStream demonstrates **Live AI**:
+- Ingests news articles in real-time
+- Updates recommendations in **<2 seconds** when new data arrives
+- Incorporates SEC insider trading data
+- Generates professional PDF reports
+
+---
 
 ## 🚀 Key Features
 
-*   **Real-Time Ingestion**: Connects to live financial news streams (NewsAPI) and market data.
-*   **Streaming RAG**: Uses Pathway toChunk, embed, and index data on the fly — no batch jobs.
-*   **Live Sentiment Analysis**: Multi-agent system analyzes market sentiment instantly.
-*   **Bloomberg-Style Dashboard**: A premium, dark-themed React UI for professional traders.
-*   **Privacy-First**: Local embedding generation options to minimize API costs and latency.
+### Real-Time Data Pipeline
+- **Pathway Streaming Engine** - Incremental processing, no batch jobs
+- **NewsAPI Integration** - Live financial news polling
+- **SEC EDGAR Connector** - Form 4 insider trading filings
+
+### Multi-Agent Reasoning System
+| Agent | Function |
+|-------|----------|
+| **Sentiment Agent** | LLM-powered news sentiment analysis |
+| **Technical Agent** | RSI, SMA calculations from yfinance |
+| **Risk Agent** | Volatility-based position sizing |
+| **Insider Agent** | SEC Form 4 transaction analysis |
+| **Chart Agent** | 7-day price charts with 24h highlighting |
+| **Report Agent** | PDF generation with charts & tables |
+| **Decision Agent** | Final BUY/HOLD/SELL recommendation |
+
+### Bloomberg-Style Dashboard
+- Real-time sentiment heatmap
+- Agent consensus radar chart
+- Insider activity panel
+- One-click PDF report generation
+
+---
 
 ## 🛠️ Technology Stack
 
-*   **Engine**: [Pathway](https://pathway.com/) (Streaming data processing & RAG)
-*   **Backend**: FastAPI, Uvicorn, Python 3.11
-*   **AI/LLM**: OpenRouter (Claude 3.5 Sonnet / Qwen), HuggingFace Embeddings (local)
-*   **Frontend**: React, Vite, Tailwind CSS v4, Shadcn UI, Zustand
-*   **Infrastructure**: Docker-ready, local CPU/GPU support
+| Layer | Technology |
+|-------|------------|
+| **Streaming Engine** | Pathway |
+| **Backend** | FastAPI, Python 3.11 |
+| **LLM** | LangChain, OpenRouter (Claude/Gemma) |
+| **Market Data** | yfinance, edgartools |
+| **PDF Reports** | ReportLab, Matplotlib |
+| **Frontend** | React 18, Vite, Tailwind CSS, Shadcn |
+| **State** | Zustand |
+
+---
 
 ## ⚡ Quick Start
 
 ### Prerequisites
-*   Python 3.11
-*   Node.js & npm
-*   Valid API Keys: OpenRouter (optional for local LLMs), NewsAPI.org
+- Python 3.11+
+- Node.js 18+
+- API Keys: OpenRouter, NewsAPI
 
-### 1. Setup Backend
-The project uses a local virtual environment for stability.
-
+### 1. Clone & Setup
 ```bash
-# Activate the environment
-source .venv/bin/activate
+cd "Data Quest"
 
-# Install dependencies (CPU-optimized)
-uv pip install -e .
+# Install Python dependencies (using uv)
+uv sync
 
-# Install local embedding support (required for offline RAG)
-uv pip install sentence-transformers --python .venv/bin/python
+# Install frontend dependencies
+cd frontend && npm install && cd ..
 ```
 
 ### 2. Configure Environment
-Create a `.env` file from the example:
-
 ```bash
 cp .env.example .env
-# Edit .env and add your API keys
+# Edit .env with your API keys:
+# - OPENROUTER_API_KEY
+# - NEWS_API_KEY
 ```
 
 ### 3. Run the System
-You need two terminals:
 
-**Terminal 1: Backend API**
+**Terminal 1: Backend**
 ```bash
-source .venv/bin/activate
-python -m uvicorn src.api.app:app --host 0.0.0.0 --port 8000 --reload
+uv run uvicorn src.api.app:app --host 0.0.0.0 --port 8000
 ```
 
-**Terminal 2: Frontend Dashboard**
+**Terminal 2: Frontend**
 ```bash
-cd frontend
-npm run dev -- --host
+cd frontend && npm run dev
 ```
 
-Access the dashboard at **http://localhost:5173**.
+Access dashboard at **http://localhost:5173**
+
+---
+
+## 📡 API Endpoints
+
+### Core Endpoints
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/recommend` | Get trading recommendation |
+| `GET` | `/health` | System health check |
+| `GET` | `/articles/{ticker}` | Get related articles |
+| `POST` | `/ingest` | Inject test article |
+
+### SEC EDGAR Endpoints (Stage 5)
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/insider/{ticker}` | Insider trading activity |
+| `GET` | `/chart/{ticker}` | Price comparison chart |
+| `POST` | `/report/{ticker}` | Generate PDF report |
+
+### WebSocket
+| Path | Description |
+|------|-------------|
+| `/ws/stream/{ticker}` | Real-time recommendation updates |
+
+---
 
 ## 🏗️ Architecture
 
-```mermaid
-graph TD
-    A[NewsAPI / WebSockets] -->|Stream| B(Pathway Connector)
-    B --> C{Adaptive Chunking}
-    C --> D[Local Embedding Model]
-    D --> E[(Real-time Vector Index)]
-    E --> F[RAG Retrieval]
-    F --> G[LLM Analyst Agent]
-    G --> H[FastAPI Endpoint]
-    H --> I[React Dashboard]
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            AlphaStream Architecture                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────────────────────────┐
+│  │   NewsAPI   │────►│   Pathway   │────►│          RAG Pipeline          │
+│  │   Stream    │     │  Connector  │     │  (Chunk → Embed → Index)       │
+│  └─────────────┘     └─────────────┘     └─────────────────────────────────┘
+│                                                      │
+│  ┌─────────────┐                                     ▼
+│  │ SEC EDGAR   │────────────────────────►┌─────────────────────────────────┐
+│  │   (Form 4)  │                         │        AGENT SYSTEM             │
+│  └─────────────┘                         │                                 │
+│                                          │  ┌──────────┐  ┌──────────┐    │
+│  ┌─────────────┐                         │  │Sentiment │  │Technical │    │
+│  │  yfinance   │────────────────────────►│  │  Agent   │  │  Agent   │    │
+│  │ (Prices)    │                         │  └────┬─────┘  └────┬─────┘    │
+│  └─────────────┘                         │       │             │          │
+│                                          │  ┌────▼─────┐  ┌────▼─────┐    │
+│                                          │  │ Insider  │  │   Risk   │    │
+│                                          │  │  Agent   │  │  Agent   │    │
+│                                          │  └────┬─────┘  └────┬─────┘    │
+│                                          │       │             │          │
+│                                          │       └──────┬──────┘          │
+│                                          │              ▼                  │
+│                                          │       ┌──────────────┐         │
+│                                          │       │   Decision   │         │
+│                                          │       │    Agent     │         │
+│                                          │       └──────┬───────┘         │
+│                                          └──────────────┼─────────────────┘
+│                                                         │
+│  ┌─────────────────────────────────────────────────────▼───────────────────┐
+│  │                         FastAPI Backend                                  │
+│  │    /recommend    /insider    /chart    /report    /ws/stream             │
+│  └─────────────────────────────────────────────────────────────────────────┘
+│                                          │
+│  ┌─────────────────────────────────────────────────────▼───────────────────┐
+│  │                      React Dashboard (Vite)                              │
+│  │   TickerSearch │ RecommendationCard │ Heatmap │ Radar │ InsiderActivity │
+│  └─────────────────────────────────────────────────────────────────────────┘
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 📝 Development Plan
+---
 
-- [x] **Stage 1: Foundation (MVP)** - Core pipeline, API, and UI.
-- [ ] **Stage 2: Enhanced RAG** - Hybrid search, reranking, and improved chunking.
-- [ ] **Stage 3: Multi-Agent System** - Analyst, Risk, and Decision agents.
-- [ ] **Stage 4: Real-Time Polish** - WebSockets for live UI updates.
+## 📁 Project Structure
 
-## 📄 License
-MIT License. Built for DataQuest 2026.
+```
+Data Quest/
+├── src/
+│   ├── agents/
+│   │   ├── sentiment_agent.py   # LangChain sentiment analysis
+│   │   ├── technical_agent.py   # RSI, SMA from yfinance
+│   │   ├── risk_agent.py        # Volatility & position sizing
+│   │   ├── decision_agent.py    # Final recommendation (LLM)
+│   │   ├── insider_agent.py     # SEC Form 4 analysis
+│   │   ├── chart_agent.py       # Matplotlib charts
+│   │   └── report_agent.py      # ReportLab PDF
+│   ├── connectors/
+│   │   ├── news_connector.py    # NewsAPI + Pathway
+│   │   └── sec_connector.py     # SEC EDGAR (edgartools)
+│   ├── pipeline/
+│   │   ├── rag_core.py          # RAG pipeline
+│   │   ├── chunking.py          # Adaptive chunking
+│   │   └── retrieval.py         # Hybrid retrieval
+│   └── api/
+│       └── app.py               # FastAPI application
+├── frontend/
+│   └── src/
+│       ├── App.tsx              # Main dashboard
+│       └── components/trading/  # UI components
+├── reports/                     # Generated PDF reports
+├── tests/                       # pytest tests
+└── pyproject.toml              # Dependencies
+```
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+uv run pytest tests/ -v
+
+# Test real-time dynamism
+uv run scripts/inject_article.py "Breaking News" "Content here"
+# Watch recommendation change in <2s
+```
+
+---
+
+## 🐳 Docker Deployment
+
+```bash
+docker-compose up --build
+```
+
+Access at http://localhost:8000 (API) and http://localhost:5173 (Dashboard)
+
+---
+
+## 📊 Demo: Proving Real-Time Dynamism
+
+1. Start the system
+2. Search for "AAPL" → Note recommendation
+3. Inject bearish article:
+   ```bash
+   uv run scripts/inject_article.py "Apple Faces Lawsuit" "Major legal trouble..."
+   ```
+4. Watch recommendation change in **<2 seconds**
+5. Generate PDF report with updated analysis
+
+---
+
+## 📝 License
+
+MIT License. Built for DataQuest 2026 Hackathon.
+
+---
+
+## 🙏 Acknowledgments
+
+- **Pathway** - Streaming engine powering real-time RAG
+- **OpenRouter** - LLM API access
+- **edgartools** - SEC EDGAR data access
