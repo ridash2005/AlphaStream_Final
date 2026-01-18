@@ -18,8 +18,10 @@ logger = logging.getLogger(__name__)
 # Ensure NLTK data is available
 try:
     nltk.data.find('tokenizers/punkt')
+    nltk.data.find('tokenizers/punkt_tab')
 except LookupError:
     nltk.download('punkt', quiet=True)
+    nltk.download('punkt_tab', quiet=True)
 
 
 class AdaptiveChunker:
@@ -84,9 +86,8 @@ class AdaptiveChunker:
         """Split text into sentences using NLTK or regex fallback."""
         try:
             return nltk.sent_tokenize(text)
-        except Exception:
-            # Fallback to simple regex
-            logger.warning("NLTK sent_tokenize failed, using regex fallback")
+        except Exception as e:
+            logger.warning(f"NLTK sent_tokenize failed: {e}, using regex fallback")
             return re.split(r'(?<=[.!?])\s+', text)
 
     def _enrich_chunk(self, text: str) -> Dict[str, Any]:

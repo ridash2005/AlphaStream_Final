@@ -32,15 +32,17 @@ def fix_nltk():
     if not found:
         print("No existing 'punkt' data found to delete.")
     
-    print("Downloading 'punkt' tokenizer freshly...")
+    print("Downloading 'punkt' and 'punkt_tab' tokenizers freshly...")
     try:
         nltk.download('punkt', quiet=False)
+        nltk.download('punkt_tab', quiet=False)
         print("Download complete.")
         
         # Verify
         print("Verifying load...")
         nltk.data.find('tokenizers/punkt')
-        print("Verification SUCCESS! 'punkt' is ready.")
+        nltk.data.find('tokenizers/punkt_tab')
+        print("Verification SUCCESS! 'punkt' and 'punkt_tab' are ready.")
         
     except Exception as e:
         print(f"Download or Verification FAILED: {e}")

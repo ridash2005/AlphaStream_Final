@@ -44,7 +44,7 @@ decision_agent: DecisionAgent | None = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown."""
-    global rag_pipeline, sentiment_agent
+    global rag_pipeline, sentiment_agent, technical_agent, risk_agent, decision_agent, orchestrator
 
     logger.info("Initializing AlphaStream Live AI...")
 
