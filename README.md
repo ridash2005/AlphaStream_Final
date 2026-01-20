@@ -83,7 +83,7 @@ We use **Pathway's official LLM xpack** (from [llm-app templates](https://github
 
 ### 1. Clone & Setup
 ```bash
-cd "Data Quest"
+cd "AlphaStream"
 
 # Install Python dependencies (using uv)
 uv sync
@@ -186,7 +186,7 @@ News Sources → Pathway Connector → RAG Pipeline → Multi-Agent Reasoning �
 ## 📁 Project Structure
 
 ```
-Data Quest/
+AlphaStream/
 ├── backend/
 │   ├── src/
 │   │   ├── agents/

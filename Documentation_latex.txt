@@ -5,6 +5,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[margin=1in, top=1.2in, bottom=1.2in]{geometry}
 \usepackage{graphicx}
+\usepackage{float}
 \usepackage{hyperref}
 \usepackage{xcolor}
 \usepackage{tikz}
@@ -178,7 +179,18 @@
 \end{titlepage}
 
 \tableofcontents
- 
+
+\newpage
+
+% ========== QUICK REFERENCE FOR JUDGES ==========
+\begin{tcolorbox}[colback=primaryBlue!5, colframe=primaryBlue, boxrule=2pt, arc=3mm, title={\faMapMarkerAlt\ Quick Reference Guide for Judges}]
+\begin{itemize}[leftmargin=*]
+    \item[\faExclamationCircle] \textbf{Problem Statement} -- Section \ref{sec:problem} (Page \pageref{sec:problem})
+    \item[\faCogs] \textbf{System Workflow} -- Section \ref{sec:workflow} (Page \pageref{sec:workflow})
+    \item[\faRoad] \textbf{Pathway Usage} -- Section \ref{sec:pathway} (Page \pageref{sec:pathway})
+    \item[\faLightbulb] \textbf{Key Design Decisions} -- Section \ref{sec:decisions} (Page \pageref{sec:decisions})
+\end{itemize}
+\end{tcolorbox}
 
 % ========== EXECUTIVE SUMMARY ==========
 \section{Executive Summary}
@@ -207,6 +219,7 @@ Our \textbf{Pathway Adaptive RAG} architecture uses the official \texttt{pw.xpac
 
 % ========== PROBLEM STATEMENT ==========
 \section{Problem Statement}
+\label{sec:problem}
 
 \subsection{The Challenge of Stale Knowledge in Financial AI}
 
@@ -233,8 +246,9 @@ AlphaStream implements the \textbf{"Live AI" paradigm} - a system that:
 
  
 
-% ========== SOLUTION ARCHITECTURE ==========
-\section{Solution Architecture}
+% ========== SYSTEM WORKFLOW ==========
+\section{System Workflow}
+\label{sec:workflow}
 
 \subsection{High-Level Architecture}
 
@@ -321,8 +335,9 @@ Presentation & FastAPI, WebSocket, React & Real-time delivery to users \\
 
  
 
-% ========== PATHWAY INTEGRATION ==========
-\section{Pathway Integration Deep Dive}
+% ========== PATHWAY USAGE ==========
+\section{Pathway Usage (Deep Dive)}
+\label{sec:pathway}
 
 \subsection{Primary RAG: Pathway Adaptive RAG (xpacks.llm)}
 
@@ -545,6 +560,110 @@ Each agent is a specialized LangChain chain with a specific analytical focus:
 \end{table}
 
  
+
+% ========== KEY DESIGN DECISIONS ==========
+\section{Key Design Decisions}
+\label{sec:decisions}
+
+This section documents the critical architectural and technical decisions made during development.
+
+\subsection{Decision 1: Pathway as Primary Streaming Engine}
+
+\begin{tcolorbox}[colback=lightGray, colframe=darkGray, boxrule=1pt, arc=2mm]
+\textbf{Choice:} Use Pathway framework as the core streaming engine instead of Kafka/Flink.
+
+\textbf{Rationale:}
+\begin{itemize}[leftmargin=*]
+    \item Native Python integration -- no JVM overhead
+    \item Built-in RAG components (\texttt{pw.xpacks.llm})
+    \item Incremental indexing without external databases
+    \item Single-process simplicity for hackathon timeline
+\end{itemize}
+
+\textbf{Trade-off:} Less ecosystem maturity vs. operational simplicity and competition alignment.
+\end{tcolorbox}
+
+\subsection{Decision 2: Adaptive RAG over Fixed-K Retrieval}
+
+\begin{tcolorbox}[colback=lightGray, colframe=darkGray, boxrule=1pt, arc=2mm]
+\textbf{Choice:} Implement geometric document retrieval (2 → 4 → 8 → 16 docs).
+
+\textbf{Rationale:}
+\begin{itemize}[leftmargin=*]
+    \item 43\% token savings compared to fixed-k=10 retrieval
+    \item LLM decides when context is sufficient
+    \item Maintains 94\% accuracy with significant cost reduction
+    \item Uses official Pathway template (\texttt{AdaptiveRAGQuestionAnswerer})
+\end{itemize}
+
+\textbf{Trade-off:} Slightly more latency (multiple LLM calls) vs. major cost savings.
+\end{tcolorbox}
+
+\subsection{Decision 3: Multi-Source News Aggregation ("Herd of Knowledge")}
+
+\begin{tcolorbox}[colback=lightGray, colframe=darkGray, boxrule=1pt, arc=2mm]
+\textbf{Choice:} Aggregate from 5 parallel news sources with deduplication.
+
+\textbf{Rationale:}
+\begin{itemize}[leftmargin=*]
+    \item No single point of failure for data ingestion
+    \item Rate limit resilience -- if one source fails, others continue
+    \item Broader coverage across different news perspectives
+    \item Free tier optimization across multiple APIs
+\end{itemize}
+
+\textbf{Trade-off:} More complex aggregation logic vs. reliability and coverage.
+\end{tcolorbox}
+
+\subsection{Decision 4: Multi-Agent Reasoning Architecture}
+
+\begin{tcolorbox}[colback=lightGray, colframe=darkGray, boxrule=1pt, arc=2mm]
+\textbf{Choice:} Use 7 specialized agents instead of a single monolithic LLM.
+
+\textbf{Rationale:}
+\begin{itemize}[leftmargin=*]
+    \item Each agent is an expert in one domain (sentiment, technical, risk, etc.)
+    \item Explainable decisions -- trace which agent influenced the outcome
+    \item Parallel processing for faster overall latency
+    \item Easy to add/remove agents without breaking the system
+\end{itemize}
+
+\textbf{Trade-off:} More LLM calls vs. better explainability and modularity.
+\end{tcolorbox}
+
+\subsection{Decision 5: WebSocket for Real-Time Updates}
+
+\begin{tcolorbox}[colback=lightGray, colframe=darkGray, boxrule=1pt, arc=2mm]
+\textbf{Choice:} Push updates via WebSocket instead of polling.
+
+\textbf{Rationale:}
+\begin{itemize}[leftmargin=*]
+    \item Sub-50ms delivery latency to frontend
+    \item Server-initiated updates when new data arrives
+    \item Demonstrates true real-time dynamism capability
+    \item Reduced client-side complexity
+\end{itemize}
+
+\textbf{Trade-off:} Persistent connections vs. instant update capability.
+\end{tcolorbox}
+
+\subsection{Decision 6: Local Embeddings with OpenRouter LLM}
+
+\begin{tcolorbox}[colback=lightGray, colframe=darkGray, boxrule=1pt, arc=2mm]
+\textbf{Choice:} Use \texttt{sentence-transformers} locally, OpenRouter for LLM.
+
+\textbf{Rationale:}
+\begin{itemize}[leftmargin=*]
+    \item Embeddings are fast locally (no network latency)
+    \item OpenRouter provides free tier for LLM access
+    \item No OpenAI API key dependency
+    \item Cost-effective for hackathon budget
+\end{itemize}
+
+\textbf{Trade-off:} Slightly lower embedding quality vs. zero embedding cost.
+\end{tcolorbox}
+
+\newpage
 
 % ========== REAL-TIME PIPELINE ==========
 \section{Real-Time Data Pipeline}
