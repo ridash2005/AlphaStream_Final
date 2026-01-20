@@ -8,11 +8,15 @@ import os
 # Force CPU usage to avoid CUDA driver issues
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
+import asyncio
+import json
 import logging
+import subprocess
+import sys
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any
+from typing import Any, List, Optional
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -137,6 +141,25 @@ async def lifespan(app: FastAPI):
     rag_pipeline.ingest_articles(initial_articles)
     logger.info("Seeded RAG with initial articles. Live news will supersede these.")
     
+    # Start Pathway Adaptive RAG Server (USP) as a subprocess
+    logger.info("Starting Pathway Adaptive RAG Server (port 8001)...")
+    try:
+        # Launch server in background
+        rag_server_process = subprocess.Popen(
+            [sys.executable, "src/pipeline/adaptive_rag_server.py"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd="."  # Run from backend root
+        )
+        logger.info(f"Adaptive RAG Server started with PID: {rag_server_process.pid}")
+        
+        # Determine strict startup wait time
+        # We want to give it a chance to start, but not block the main backend too long
+        # The UnifiedRAGService handles unavailability gracefully via fallback
+    except Exception as e:
+        logger.error(f"Failed to start Adaptive RAG Server: {e}")
+        rag_server_process = None
+
     # Initialize Unified RAG Service (Adaptive RAG primary, manual fallback)
     unified_rag = UnifiedRAGService(
         adaptive_rag_url="http://localhost:8001",
@@ -235,8 +258,21 @@ async def lifespan(app: FastAPI):
     logger.info(f"System initialized with {rag_pipeline.document_count} document chunks")
 
     yield
-
-    logger.info("Shutting down...")
+    
+    # Graceful shutdown
+    logger.info("Shutting down AlphaStream...")
+    
+    # Terminate Adaptive RAG server if running
+    if 'rag_server_process' in locals() and rag_server_process:
+        logger.info(f"Terminating Adaptive RAG Server (PID: {rag_server_process.pid})...")
+        rag_server_process.terminate()
+        try:
+            rag_server_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            logger.warning("Adaptive RAG Server did not terminate gracefully, killing...")
+            rag_server_process.kill()
+            
+    logger.info("Shutdown complete.")
     # pw.run is infinite, daemon thread will be killed on exit
 
 
