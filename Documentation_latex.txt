@@ -209,7 +209,7 @@ Our \textbf{Pathway Adaptive RAG} architecture uses the official \texttt{pw.xpac
     \item[\faBrain] 7 specialized AI agents
     \item[\faChartLine] Multi-source data aggregation
     \item[\faServer] WebSocket live streaming
-    \item[\faFileAlt] Automated PDF reporting
+    \item[\faFilePdf] Automated PDF reporting
 \end{itemize}
 \end{multicols}
 
@@ -252,59 +252,71 @@ AlphaStream implements the \textbf{"Live AI" paradigm} - a system that:
 
 \subsection{High-Level Architecture}
 
-\begin{figure}[h!]
+\begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=1.5cm, scale=0.85, every node/.style={scale=0.85}]
+\begin{tikzpicture}[node distance=1.2cm, scale=0.9, every node/.style={scale=0.9}]
 
-% Data Sources
-\node (newsapi) [datanode] {NewsAPI};
-\node (finnhub) [datanode, right=0.3cm of newsapi] {Finnhub};
-\node (alpha) [datanode, right=0.3cm of finnhub] {AlphaVantage};
-\node (media) [datanode, right=0.3cm of alpha] {MediaStack};
-\node (rss) [datanode, right=0.3cm of media] {RSS};
+% Data Sources - evenly spaced
+\node (newsapi) [datanode, minimum width=2cm] {NewsAPI};
+\node (finnhub) [datanode, right=0.5cm of newsapi, minimum width=2cm] {Finnhub};
+\node (alpha) [datanode, right=0.5cm of finnhub, minimum width=2cm] {AlphaVantage};
+\node (media) [datanode, right=0.5cm of alpha, minimum width=2cm] {MediaStack};
+\node (rss) [datanode, right=0.5cm of media, minimum width=2cm] {RSS};
 
-% Aggregator
-\node (aggregator) [processnode, below=1.2cm of finnhub, minimum width=8cm] {Herd of Knowledge Aggregator};
+% Calculate center
+\path (newsapi) -- (rss) coordinate[midway] (sourcecenter);
 
-% Pathway Engine
-\node (pathway) [processnode, below=1.2cm of aggregator, minimum width=8cm, minimum height=1.5cm] {
+% Aggregator - centered below sources
+\node (aggregator) [processnode, below=1.2cm of sourcecenter, minimum width=16cm] {Herd of Knowledge Aggregator};
+
+% Pathway Engine - centered
+\node (pathway) [processnode, below=1.2cm of aggregator, minimum width=12cm, minimum height=1.3cm] {
     \begin{tabular}{c}
     \textbf{Pathway Streaming Engine} \\
-    \small ConnectorSubject → DocumentStore → AdaptiveRAG
+    \small ConnectorSubject $\rightarrow$ DocumentStore $\rightarrow$ AdaptiveRAG
     \end{tabular}
 };
 
-% Multi-Agent Layer
-\node (sentiment) [agentnode, below left=1.5cm and 1cm of pathway] {Sentiment};
-\node (technical) [agentnode, right=0.2cm of sentiment] {Technical};
-\node (risk) [agentnode, right=0.2cm of technical] {Risk};
-\node (insider) [agentnode, right=0.2cm of risk] {Insider};
+% Multi-Agent Layer - centered and evenly spaced
+\node (sentiment) [agentnode, below=1.4cm of pathway, xshift=-3.5cm, minimum width=2cm] {Sentiment};
+\node (technical) [agentnode, below=1.4cm of pathway, xshift=-1.2cm, minimum width=2cm] {Technical};
+\node (risk) [agentnode, below=1.4cm of pathway, xshift=1.2cm, minimum width=2cm] {Risk};
+\node (insider) [agentnode, below=1.4cm of pathway, xshift=3.5cm, minimum width=2cm] {Insider};
 
-\node (decision) [processnode, below=1cm of technical, minimum width=4cm] {Decision Agent};
+% Decision Agent - centered
+\node (decision) [processnode, below=1.2cm of pathway, yshift=-2.2cm, minimum width=5cm] {Decision Agent};
 
-% Presentation
-\node (api) [datanode, below=1cm of decision, minimum width=8cm] {
+% Presentation Layer - centered
+\node (api) [datanode, below=1cm of decision, minimum width=10cm] {
     \begin{tabular}{c}
     \textbf{Presentation Layer} \\
     \small FastAPI REST + WebSocket + React Dashboard
     \end{tabular}
 };
 
-% Arrows
-\draw [arrow] (newsapi) -- (aggregator);
-\draw [arrow] (finnhub) -- (aggregator);
-\draw [arrow] (alpha) -- (aggregator);
-\draw [arrow] (media) -- (aggregator);
-\draw [arrow] (rss) -- (aggregator);
+% Arrows from sources to aggregator
+\draw [arrow] (newsapi.south) -- (aggregator.north -| newsapi);
+\draw [arrow] (finnhub.south) -- (aggregator.north -| finnhub);
+\draw [arrow] (alpha.south) -- (aggregator.north -| alpha);
+\draw [arrow] (media.south) -- (aggregator.north -| media);
+\draw [arrow] (rss.south) -- (aggregator.north -| rss);
+
+% Aggregator to Pathway
 \draw [arrow] (aggregator) -- (pathway);
-\draw [arrow] (pathway) -- (sentiment);
-\draw [arrow] (pathway) -- (technical);
-\draw [arrow] (pathway) -- (risk);
-\draw [arrow] (pathway) -- (insider);
-\draw [arrow] (sentiment) -- (decision);
-\draw [arrow] (technical) -- (decision);
-\draw [arrow] (risk) -- (decision);
-\draw [arrow] (insider) -- (decision);
+
+% Pathway to Agents
+\draw [arrow] (pathway.south) -- ++(0,-0.4) -| (sentiment.north);
+\draw [arrow] (pathway.south) -- ++(0,-0.4) -| (technical.north);
+\draw [arrow] (pathway.south) -- ++(0,-0.4) -| (risk.north);
+\draw [arrow] (pathway.south) -- ++(0,-0.4) -| (insider.north);
+
+% Agents to Decision
+\draw [arrow] (sentiment.south) |- (decision.west);
+\draw [arrow] (technical.south) -- (decision.north -| technical);
+\draw [arrow] (risk.south) -- (decision.north -| risk);
+\draw [arrow] (insider.south) |- (decision.east);
+
+% Decision to API
 \draw [arrow] (decision) -- (api);
 
 \end{tikzpicture}
@@ -313,7 +325,7 @@ AlphaStream implements the \textbf{"Live AI" paradigm} - a system that:
 
 \subsection{Component Overview}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \begin{tabular}{|p{3cm}|p{5cm}|p{5.5cm}|}
 \hline
@@ -371,7 +383,7 @@ question_answerer = AdaptiveRAGQuestionAnswerer(
 
 \subsection{Pathway Features Utilized}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \small
 \begin{tabular}{|p{4.5cm}|p{4cm}|p{5cm}|}
@@ -412,7 +424,7 @@ question_answerer = AdaptiveRAGQuestionAnswerer(
 
 The Adaptive RAG uses an innovative approach to optimize token usage:
 
-\begin{figure}[h!]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}[node distance=1.5cm]
 \node (query) [datanode] {Query};
@@ -448,12 +460,12 @@ This typically reduces token usage by \textbf{40-60\%} compared to fixed-k retri
 
 Each agent is a specialized LangChain chain with a specific analytical focus:
 
-\begin{figure}[h!]
+\begin{figure}[H]
 \centering
-\begin{tikzpicture}[node distance=1.2cm]
+\begin{tikzpicture}[node distance=1.5cm, scale=0.9, every node/.style={scale=0.9}]
 
-% Top Agents
-\node (sentiment) [agentnode, minimum width=2.5cm, minimum height=1.5cm] {
+% TOP ROW: 3 Agents
+\node (sentiment) [agentnode, minimum width=2.8cm, minimum height=1.5cm] {
     \begin{tabular}{c}
     \textbf{Sentiment Agent} \\
     \footnotesize News NLP \\
@@ -462,7 +474,7 @@ Each agent is a specialized LangChain chain with a specific analytical focus:
     \end{tabular}
 };
 
-\node (technical) [agentnode, right=0.3cm of sentiment, minimum width=2.5cm, minimum height=1.5cm] {
+\node (technical) [agentnode, right=0.8cm of sentiment, minimum width=2.8cm, minimum height=1.5cm] {
     \begin{tabular}{c}
     \textbf{Technical Agent} \\
     \footnotesize RSI \\
@@ -471,7 +483,7 @@ Each agent is a specialized LangChain chain with a specific analytical focus:
     \end{tabular}
 };
 
-\node (risk) [agentnode, right=0.3cm of technical, minimum width=2.5cm, minimum height=1.5cm] {
+\node (risk) [agentnode, right=0.8cm of technical, minimum width=2.8cm, minimum height=1.5cm] {
     \begin{tabular}{c}
     \textbf{Risk Agent} \\
     \footnotesize Volatility \\
@@ -480,36 +492,8 @@ Each agent is a specialized LangChain chain with a specific analytical focus:
     \end{tabular}
 };
 
-% Bottom Agents
-\node (insider) [agentnode, below=1cm of sentiment, minimum width=2.5cm, minimum height=1.5cm] {
-    \begin{tabular}{c}
-    \textbf{Insider Agent} \\
-    \footnotesize SEC Form 4 \\
-    \footnotesize edgartools \\
-    \footnotesize Buy/Sell
-    \end{tabular}
-};
-
-\node (chart) [agentnode, right=0.3cm of insider, minimum width=2.5cm, minimum height=1.5cm] {
-    \begin{tabular}{c}
-    \textbf{Chart Agent} \\
-    \footnotesize Matplotlib \\
-    \footnotesize 7-day viz \\
-    \footnotesize 24h mark
-    \end{tabular}
-};
-
-\node (report) [agentnode, right=0.3cm of chart, minimum width=2.5cm, minimum height=1.5cm] {
-    \begin{tabular}{c}
-    \textbf{Report Agent} \\
-    \footnotesize ReportLab \\
-    \footnotesize PDF gen \\
-    \footnotesize Full docs
-    \end{tabular}
-};
-
-% Decision Agent
-\node (decision) [processnode, below=1.5cm of chart, minimum width=6cm, minimum height=1.5cm] {
+% CENTER ROW: Decision Agent (below technical which is center of top row)
+\node (decision) [processnode, below=1.5cm of technical, minimum width=8cm, minimum height=1.5cm] {
     \begin{tabular}{c}
     \textbf{DECISION AGENT} \\
     \footnotesize Fuses all inputs \\
@@ -518,13 +502,43 @@ Each agent is a specialized LangChain chain with a specific analytical focus:
     \end{tabular}
 };
 
-% Arrows
-\draw [arrow] (sentiment) -- (decision);
-\draw [arrow] (technical) -- (decision);
-\draw [arrow] (risk) -- (decision);
-\draw [arrow] (insider) -- (decision);
-\draw [arrow] (chart) -- (decision);
-\draw [arrow] (report) -- (decision);
+% BOTTOM ROW: 3 Agents (below decision agent)
+\node (insider) [agentnode, below=1.5cm of decision, xshift=-4cm, minimum width=2.8cm, minimum height=1.5cm] {
+    \begin{tabular}{c}
+    \textbf{Insider Agent} \\
+    \footnotesize SEC Form 4 \\
+    \footnotesize edgartools \\
+    \footnotesize Buy/Sell
+    \end{tabular}
+};
+
+\node (chart) [agentnode, below=1.5cm of decision, minimum width=2.8cm, minimum height=1.5cm] {
+    \begin{tabular}{c}
+    \textbf{Chart Agent} \\
+    \footnotesize Matplotlib \\
+    \footnotesize 7-day viz \\
+    \footnotesize 24h mark
+    \end{tabular}
+};
+
+\node (report) [agentnode, below=1.5cm of decision, xshift=4cm, minimum width=2.8cm, minimum height=1.5cm] {
+    \begin{tabular}{c}
+    \textbf{Report Agent} \\
+    \footnotesize ReportLab \\
+    \footnotesize PDF gen \\
+    \footnotesize Full docs
+    \end{tabular}
+};
+
+% Arrows: Top agents TO Decision
+\draw [arrow] (sentiment.south) -- (decision.north -| sentiment);
+\draw [arrow] (technical.south) -- (decision.north);
+\draw [arrow] (risk.south) -- (decision.north -| risk);
+
+% Arrows: Decision TO Bottom agents
+\draw [arrow] (decision.south -| insider) -- (insider.north);
+\draw [arrow] (decision.south) -- (chart.north);
+\draw [arrow] (decision.south -| report) -- (report.north);
 
 \end{tikzpicture}
 \caption{Multi-Agent Consensus System}
@@ -532,7 +546,7 @@ Each agent is a specialized LangChain chain with a specific analytical focus:
 
 \subsection{Agent Specifications}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \small
 \begin{tabular}{|p{2.5cm}|p{3cm}|p{3.5cm}|p{3.5cm}|}
@@ -689,7 +703,7 @@ class NewsAggregator:
 
 \subsection{Source Configuration}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \begin{tabular}{|p{3cm}|p{2.5cm}|p{2.5cm}|p{4cm}|}
 \hline
@@ -713,7 +727,7 @@ RSS & Unlimited & No & Variable \\
 
 \subsection{Streaming Architecture}
 
-\begin{figure}[h!]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}[node distance=1.5cm]
 
@@ -722,11 +736,11 @@ RSS & Unlimited & No & Variable \\
 \node (table) [datanode, below=0.8cm of pwread] {pw.Table (streaming)};
 \node (subscribe) [processnode, below=0.8cm of table] {pw.io.subscribe()};
 \node (callback) [agentnode, below=0.8cm of subscribe] {on\_new\_article()};
-\node (rag) [processnode, right=2cm of callback] {RAG ingestion};
+\node (rag) [processnode, below=0.8cm of callback] {RAG ingestion};
 \node (websocket) [datanode, below=0.8cm of rag] {WebSocket broadcast};
 \node (dashboard) [datanode, below=0.8cm of websocket, fill=successGreen!20, draw=successGreen] {Dashboard update (<2s)};
 
-\node (polling) [processnode, left=2cm of callback] {60s polling loop};
+\node (polling) [processnode, left=0.8cm of connector] {60s polling loop};
 
 \draw [arrow] (connector) -- (pwread);
 \draw [arrow] (pwread) -- (table);
@@ -735,7 +749,7 @@ RSS & Unlimited & No & Variable \\
 \draw [arrow] (callback) -- (rag);
 \draw [arrow] (rag) -- (websocket);
 \draw [arrow] (websocket) -- (dashboard);
-\draw [arrow] (connector) -- (polling);
+\draw [arrow] (polling) -- (connector);
 
 \end{tikzpicture}
 \caption{Pathway Streaming Data Flow}
@@ -748,7 +762,7 @@ RSS & Unlimited & No & Variable \\
 
 \subsection{Backend}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \begin{tabular}{|p{4cm}|p{4.5cm}|p{3cm}|}
 \hline
@@ -784,7 +798,7 @@ Package Manager & uv & Latest \\
 
 \subsection{Frontend}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \begin{tabular}{|p{4cm}|p{4.5cm}|p{3cm}|}
 \hline
@@ -961,7 +975,7 @@ curl -X POST http://localhost:8000/report/AAPL
 
 \subsection{Expected Latencies}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \begin{tabular}{|p{7cm}|p{4cm}|}
 \hline
@@ -990,7 +1004,7 @@ WebSocket delivery & <50ms \\
 
 \subsection{System Performance}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \begin{tabular}{|p{7cm}|p{5cm}|}
 \hline
@@ -1014,7 +1028,7 @@ PDF generation & \textasciitilde15s \\
 
 \subsection{Adaptive RAG Performance}
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \begin{tabular}{|p{5cm}|p{3cm}|p{3cm}|}
 \hline
@@ -1044,7 +1058,7 @@ The Adaptive RAG approach achieves \textbf{43\% token savings} with only \textbf
 \begin{enumerate}[leftmargin=*, itemsep=0.5cm]
     \item \textbf{\faTwitter\ Social Media Integration} - Twitter/X, Reddit sentiment
     \item \textbf{\faChartArea\ Options Flow Analysis} - Unusual options activity
-    \item \textbf{\faCalendarAlt\ Earnings Calendar} - Scheduled event tracking
+    \item \textbf{\faCalendar\ Earnings Calendar} - Scheduled event tracking
     \item \textbf{\faBriefcase\ Portfolio Mode} - Multi-ticker monitoring
     \item \textbf{\faBell\ Alert System} - Push notifications for significant changes
     \item \textbf{\faHistory\ Backtesting} - Historical recommendation accuracy
