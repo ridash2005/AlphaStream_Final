@@ -43,3 +43,5 @@ demo_output.json
 .DS_Store
 Thumbs.db
 *.log
+backend/logs/
+!backend/logs/.gitkeep
