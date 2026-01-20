@@ -60,16 +60,42 @@ class SECConnector:
             company = Company(ticker)
             
             # Get Form 4 filings (insider transactions)
-            form4_filings = company.get_filings(form="4")
+            # edgartools returns pyarrow-backed data which can be tricky
+            try:
+                form4_filings = company.get_filings(form="4")
+                # Try to convert to list to handle pyarrow issues
+                if hasattr(form4_filings, 'to_list'):
+                    form4_filings = form4_filings.to_list()
+                elif hasattr(form4_filings, '__iter__'):
+                    form4_filings = list(form4_filings)[:20]
+                else:
+                    form4_filings = []
+            except Exception as e:
+                logger.warning(f"Error getting filings for {ticker}: {e}")
+                return self._llm_fallback_insider_trades(ticker)
             
             # Filter to recent filings
             cutoff_date = datetime.now() - timedelta(days=days)
             recent_filings = []
             
+            def safe_extract_date(value):
+                """Safely extract date from various pyarrow types."""
+                if value is None:
+                    return None
+                if hasattr(value, 'to_pylist'):
+                    lst = value.to_pylist()
+                    return lst[0] if lst else None
+                if hasattr(value, 'to_numpy'):
+                    arr = value.to_numpy()
+                    return arr[0] if len(arr) > 0 else None
+                if hasattr(value, 'as_py'):
+                    return value.as_py()
+                return value
+            
             for filing in form4_filings[:20]:  # Check last 20 filings
                 try:
-                    filing_date = filing.filing_date
-                    if filing_date >= cutoff_date.date():
+                    filing_date = safe_extract_date(filing.filing_date)
+                    if filing_date and filing_date >= cutoff_date.date():
                         # Parse the Form 4 for transaction details
                         transactions = self._parse_form4(filing)
                         recent_filings.extend(transactions)

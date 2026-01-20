@@ -62,6 +62,7 @@ class NewsAPISubject(pw.io.python.ConnectorSubject):
             try:
                 # PRIMARY ENGINE: Use news aggregator (all sources in parallel)
                 articles = self._fetch_from_herd()
+                logger.info(f"📊 Herd returned {len(articles)} articles")
                 new_count = 0
 
                 for article in articles:
@@ -74,9 +75,8 @@ class NewsAPISubject(pw.io.python.ConnectorSubject):
 
                 if new_count > 0:
                     logger.info(f"📥 Ingested {new_count} new articles from Herd of Knowledge")
-
-                # Commit the batch
-                self._commit()
+                else:
+                    logger.info(f"📥 No new articles (all {len(articles)} already seen)")
 
             except Exception as e:
                 logger.error(f"Error in Herd of Knowledge: {e}")

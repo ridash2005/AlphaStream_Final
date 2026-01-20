@@ -91,18 +91,29 @@ class RSSNewsConnector:
         return unique_articles
     
     def _parse_rss_feed(self, feed: dict) -> list[dict[str, Any]]:
-        """Parse a single RSS feed."""
+        """Parse a single RSS feed with timeout."""
         try:
-            # Use feedparser if available, else simple XML parsing
             import feedparser
-            parsed = feedparser.parse(feed["url"])
+            
+            # Fetch with timeout first, then parse
+            try:
+                response = requests.get(feed["url"], timeout=3)  # Short timeout
+                if response.status_code != 200:
+                    return []
+                parsed = feedparser.parse(response.content)
+            except requests.exceptions.Timeout:
+                logger.debug(f"RSS feed timeout: {feed['name']}")
+                return []
+            except requests.exceptions.RequestException as e:
+                logger.debug(f"RSS feed error {feed['name']}: {e}")
+                return []
             
             articles = []
             for entry in parsed.entries[:10]:  # Last 10 articles
                 articles.append({
                     "title": entry.get("title", ""),
-                    "description": entry.get("summary", "")[:500],
-                    "content": entry.get("summary", ""),
+                    "description": entry.get("summary", "")[:500] if entry.get("summary") else "",
+                    "content": entry.get("summary", "") or "",
                     "source": feed["source"],
                     "url": entry.get("link", ""),
                     "published_at": entry.get("published", datetime.now().isoformat()),
@@ -117,7 +128,7 @@ class RSSNewsConnector:
     def _simple_rss_parse(self, feed: dict) -> list[dict[str, Any]]:
         """Simple RSS parsing without feedparser."""
         try:
-            response = requests.get(feed["url"], timeout=10)
+            response = requests.get(feed["url"], timeout=3)  # Short timeout
             response.raise_for_status()
             
             # Very basic XML parsing

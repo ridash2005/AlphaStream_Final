@@ -77,7 +77,9 @@ class NewsAPISource(NewsSource):
             return []
         
         try:
-            from_date = (datetime.utcnow() - timedelta(hours=24)).isoformat()
+            # NewsAPI free tier requires searching older articles (not real-time)
+            # Extend search to 7 days to get results on free tier
+            from_date = (datetime.utcnow() - timedelta(days=7)).isoformat()
             
             response = requests.get(
                 self.BASE_URL,
@@ -148,28 +150,47 @@ class FinnhubSource(NewsSource):
             time.sleep(self.min_interval - elapsed)
         
         try:
-            # Finnhub requires a symbol for company news
-            symbol = query.upper() if query else "AAPL"
+            # Finnhub requires a stock symbol - extract from query or use defaults
+            # Common tickers to fetch news for if no specific ticker in query
+            default_tickers = ["AAPL", "MSFT", "GOOGL", "TSLA", "NVDA"]
             
-            # Get company news
-            response = requests.get(
-                f"{self.BASE_URL}/company-news",
-                params={
-                    "symbol": symbol,
-                    "from": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
-                    "to": datetime.now().strftime("%Y-%m-%d"),
-                    "token": self.api_key
-                },
-                timeout=10
-            )
-            self.last_call = time.time()
+            # Try to extract ticker from query
+            if query:
+                # Check if query looks like a ticker (all caps, 1-5 letters)
+                query_upper = query.upper().strip()
+                if query_upper.isalpha() and len(query_upper) <= 5:
+                    symbols = [query_upper]
+                else:
+                    # Use defaults for general queries
+                    symbols = default_tickers[:3]  # Fetch top 3 to reduce API calls
+            else:
+                symbols = default_tickers[:3]
             
-            if response.status_code != 200:
-                logger.warning(f"Finnhub returned {response.status_code}")
-                return []
+            all_articles = []
+            for symbol in symbols:
+                # Get company news for this symbol
+                response = requests.get(
+                    f"{self.BASE_URL}/company-news",
+                    params={
+                        "symbol": symbol,
+                        "from": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
+                        "to": datetime.now().strftime("%Y-%m-%d"),
+                        "token": self.api_key
+                    },
+                    timeout=10
+                )
+                self.last_call = time.time()
+                
+                if response.status_code == 200:
+                    articles = response.json()
+                    all_articles.extend([self._convert(a) for a in articles[:10]])
+                else:
+                    logger.debug(f"Finnhub {symbol} returned {response.status_code}")
+                
+                # Small delay between requests to respect rate limits
+                time.sleep(0.5)
             
-            articles = response.json()
-            return [self._convert(a) for a in articles[:20]]
+            return all_articles[:30]  # Return max 30 articles
             
         except Exception as e:
             logger.error(f"Finnhub error: {e}")
@@ -206,8 +227,18 @@ class AlphaVantageSource(NewsSource):
             return []
         
         try:
-            # Use NEWS_SENTIMENT endpoint
-            tickers = query.upper() if query else "AAPL"
+            # Use NEWS_SENTIMENT endpoint - requires valid tickers
+            default_tickers = "AAPL,MSFT,GOOGL"
+            
+            # Try to extract ticker from query
+            if query:
+                query_upper = query.upper().strip()
+                if query_upper.isalpha() and len(query_upper) <= 5:
+                    tickers = query_upper
+                else:
+                    tickers = default_tickers
+            else:
+                tickers = default_tickers
             
             response = requests.get(
                 self.BASE_URL,
@@ -368,10 +399,14 @@ class NewsAggregator:
         all_articles = []
         source_stats = {}
         
+        # Log how many sources are configured
+        logger.info(f"📡 Fetching from {len(self.sources)} sources: {[s.name for s in self.sources]}")
+        
         # Parallel fetch from all API sources
         def fetch_source(source):
             try:
                 articles = source.fetch(query)
+                logger.debug(f"{source.name} returned {len(articles)} articles")
                 return source.name, articles
             except Exception as e:
                 logger.warning(f"{source.name} failed: {e}")
@@ -385,6 +420,7 @@ class NewsAggregator:
                 source_name, articles = future.result()
                 source_stats[source_name] = len(articles)
                 all_articles.extend(articles)
+                logger.info(f"  → {source_name}: {len(articles)} articles")
         
         # Add RSS (always free, no rate limits)
         try:

@@ -239,15 +239,13 @@ async def lifespan(app: FastAPI):
     news_table = create_news_table(refresh_interval=60)
     
     # 2. Subscribe to updates
-    # Note: subscribe receives (event, new_row, old_row). We only care about new additions.
-    def pathway_callback(key, new_row, old_row):
-        if new_row:
-             # new_row is a dict matching the schema
-             on_new_article(new_row)
+    # Note: subscribe receives (key, row, time, is_addition). We only care about new additions.
+    def pathway_callback(key, row, time, is_addition):
+        if row and is_addition:
+             # row is a dict matching the schema
+             on_new_article(row)
 
     # Use pw.io.subscribe to hook the table to our callback
-    # If subscribe is not available in some versions, we might need a workaround,
-    # but it's the standard way to bridge PW -> Python.
     pw.io.subscribe(news_table, pathway_callback)
 
     # 3. Run Pathway in a background thread
