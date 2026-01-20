@@ -1,11 +1,28 @@
+import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
 import { BarChart2 } from 'lucide-react';
+import { apiService } from '@/services/api';
 
 export function MarketHeatmap() {
     const { marketHeatmap } = useAppStore();
+
+    // Fetch initial heatmap data on mount
+    useEffect(() => {
+        const fetchInitialHeatmap = async () => {
+            try {
+                const response = await apiService.getMarketHeatmap();
+                if (response.data && response.data.length > 0) {
+                    useAppStore.setState({ marketHeatmap: response.data });
+                }
+            } catch (error) {
+                console.log('No initial heatmap data available');
+            }
+        };
+        fetchInitialHeatmap();
+    }, []);
 
     // Sort by score
     const sortedData = [...marketHeatmap].sort((a, b) => b.score - a.score);

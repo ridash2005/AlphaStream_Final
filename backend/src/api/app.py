@@ -344,6 +344,14 @@ async def health_check() -> HealthResponse:
     )
 
 
+@app.get("/market/heatmap")
+async def get_market_heatmap() -> dict[str, Any]:
+    """Get current market sentiment heatmap data."""
+    return {
+        "data": market_state.get_heatmap()
+    }
+
+
 @app.post("/recommend", response_model=RecommendationResponse)
 async def get_recommendation(request: RecommendationRequest) -> RecommendationResponse:
     """Get trading recommendation."""
@@ -428,11 +436,21 @@ async def websocket_endpoint(websocket: WebSocket, ticker: str):
         # Send initial recommendation
         if rag_pipeline:
             rec = await generate_recommendation_logic(ticker)
-            # Send rec
+            
+            # Update market state with this ticker's sentiment
+            market_state.update(ticker, rec.sentiment_score)
+            
+            # Send recommendation to this client
             await websocket.send_json(rec.model_dump())
             
-            # Send initial heatmap
+            # Send heatmap to this client
             await websocket.send_json({
+                "type": "market_update",
+                "data": market_state.get_heatmap()
+            })
+            
+            # Also broadcast heatmap update to ALL connected clients
+            await ws_manager.broadcast_global({
                 "type": "market_update",
                 "data": market_state.get_heatmap()
             })
@@ -511,7 +529,7 @@ async def ingest_article(article: dict[str, Any]) -> dict[str, Any]:
 # ============================================================================
 
 @app.get("/insider/{ticker}")
-async def get_insider_activity(ticker: str, days: int = 1) -> dict[str, Any]:
+async def get_insider_activity(ticker: str, days: int = 30) -> dict[str, Any]:
     """
     Get insider trading activity for a ticker.
     

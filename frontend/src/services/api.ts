@@ -49,6 +49,14 @@ export const apiService = {
         const response = await api.post('/ingest', article);
         return response.data;
     },
+
+    /**
+     * Get market heatmap data
+     */
+    async getMarketHeatmap(): Promise<{ data: { ticker: string; score: number; updated: string }[] }> {
+        const response = await api.get<{ data: { ticker: string; score: number; updated: string }[] }>('/market/heatmap');
+        return response.data;
+    },
 };
 
 export default api;

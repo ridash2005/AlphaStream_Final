@@ -98,8 +98,11 @@ cd frontend && npm install && cd ..
 cd backend
 cp .env.example .env
 # Edit .env with your API keys:
-# - OPENROUTER_API_KEY
-# - NEWS_API_KEY
+# - OPENROUTER_API_KEY (required - LLM access)
+# - NEWS_API_KEY (required - NewsAPI)
+# - FINNHUB_API_KEY (optional - additional news)
+# - ALPHAVANTAGE_API_KEY (optional - sentiment data)
+# - MEDIASTACK_API_KEY (optional - global news)
 cd ..
 ```
 
@@ -143,12 +146,13 @@ The demo script:
 | `POST` | `/recommend` | Get trading recommendation |
 | `GET` | `/health` | System health check |
 | `GET` | `/articles/{ticker}` | Get related articles |
+| `GET` | `/market/heatmap` | Live market sentiment data |
 | `POST` | `/ingest` | Inject test article |
 
 ### SEC EDGAR Endpoints (Stage 5)
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/insider/{ticker}` | Insider trading activity |
+| `GET` | `/insider/{ticker}?days=90` | Insider trading activity (default: 90 days) |
 | `GET` | `/chart/{ticker}` | Price comparison chart |
 | `POST` | `/report/{ticker}` | Generate PDF report |
 
