@@ -108,13 +108,28 @@ cd ..
 
 ### 3. Run the System
 
-**Terminal 1: Backend**
+**Option A: Single Command (Recommended)**
+```bash
+cd backend
+./start.sh
+```
+This starts both Adaptive RAG and the main backend in the correct order.
+
+**Option B: Separate Terminals (for debugging)**
+
+*Terminal 1: Adaptive RAG Server*
+```bash
+cd backend
+uv run python -m src.pipeline.adaptive_rag_server
+```
+
+*Terminal 2: Backend*
 ```bash
 cd backend
 uv run uvicorn src.api.app:app --host 0.0.0.0 --port 8000
 ```
 
-**Terminal 2: Frontend**
+*Terminal 3: Frontend*
 ```bash
 cd frontend && npm run dev
 ```

@@ -1,0 +1,5 @@
+Title: 5 real world examples where Excel's MAP function shines
+Source: MakeUseOf
+Date: 2026-01-19T21:00:17Z
+---
+If you're using Microsoft Excel 365, 2021, or 2024, then you have access to dynamic array functions. These functions take productivity to another level thanks to their "spill" functionality. This mea… [+6227 chars]

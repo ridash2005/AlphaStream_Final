@@ -141,24 +141,10 @@ async def lifespan(app: FastAPI):
     rag_pipeline.ingest_articles(initial_articles)
     logger.info("Seeded RAG with initial articles. Live news will supersede these.")
     
-    # Start Pathway Adaptive RAG Server (USP) as a subprocess
-    logger.info("Starting Pathway Adaptive RAG Server (port 8001)...")
-    try:
-        # Launch server in background
-        rag_server_process = subprocess.Popen(
-            [sys.executable, "src/pipeline/adaptive_rag_server.py"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            cwd="."  # Run from backend root
-        )
-        logger.info(f"Adaptive RAG Server started with PID: {rag_server_process.pid}")
-        
-        # Determine strict startup wait time
-        # We want to give it a chance to start, but not block the main backend too long
-        # The UnifiedRAGService handles unavailability gracefully via fallback
-    except Exception as e:
-        logger.error(f"Failed to start Adaptive RAG Server: {e}")
-        rag_server_process = None
+    # NOTE: Adaptive RAG Server should be started externally via start.sh
+    # This allows proper service ordering and logging
+    # The server runs on port 8001 and should be started before the backend
+    logger.info("Expecting Adaptive RAG Server on port 8001 (start via ./start.sh)")
 
     # Initialize Unified RAG Service (Adaptive RAG primary, manual fallback)
     unified_rag = UnifiedRAGService(
@@ -202,8 +188,36 @@ async def lifespan(app: FastAPI):
             
         ingest_start = time.time()
         
-        # 1. Ingest
+        # 1. Ingest into manual RAG
         rag_pipeline.ingest_article(article)
+        
+        # 2. Also write to data/articles/ for Adaptive RAG to pick up
+        try:
+            import os
+            import hashlib
+            articles_dir = "data/articles"
+            os.makedirs(articles_dir, exist_ok=True)
+            
+            # Create unique filename from title hash
+            title = article.get('title', 'untitled')
+            content = article.get('content', article.get('text', ''))
+            source = article.get('source', 'Unknown')
+            
+            # Generate filename from title hash
+            title_hash = hashlib.md5(title.encode()).hexdigest()[:8]
+            filename = f"{articles_dir}/article_{title_hash}.txt"
+            
+            # Write article as simple text format
+            with open(filename, 'w') as f:
+                f.write(f"Title: {title}\n")
+                f.write(f"Source: {source}\n")
+                f.write(f"Date: {article.get('published_at', 'Unknown')}\n")
+                f.write(f"---\n")
+                f.write(content)
+            
+            logger.debug(f"📝 Wrote article to {filename}")
+        except Exception as e:
+            logger.warning(f"Failed to write article to disk: {e}")
         
         # Calculate Indexing Latency
         indexing_latency = (time.time() - ingest_start) * 1000
@@ -259,17 +273,7 @@ async def lifespan(app: FastAPI):
     
     # Graceful shutdown
     logger.info("Shutting down AlphaStream...")
-    
-    # Terminate Adaptive RAG server if running
-    if 'rag_server_process' in locals() and rag_server_process:
-        logger.info(f"Terminating Adaptive RAG Server (PID: {rag_server_process.pid})...")
-        rag_server_process.terminate()
-        try:
-            rag_server_process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            logger.warning("Adaptive RAG Server did not terminate gracefully, killing...")
-            rag_server_process.kill()
-            
+    # NOTE: Adaptive RAG server is managed externally by start.sh
     logger.info("Shutdown complete.")
     # pw.run is infinite, daemon thread will be killed on exit
 
@@ -376,6 +380,9 @@ async def generate_recommendation_logic(ticker: str) -> RecommendationResponse:
     rag_response = unified_rag.query(query, ticker=ticker)
     rag_engine = rag_response.engine  # "adaptive" or "manual"
     
+    logger.info(f"🔍 RAG Engine: {rag_engine}")
+    logger.info(f"🔍 RAG Answer (first 200 chars): {rag_response.answer[:200]}...")
+    
     # For sentiment analysis, we still need document list format
     # If using adaptive RAG, we get processed answer; for manual, we get raw context
     if rag_engine == "manual":
@@ -391,6 +398,8 @@ async def generate_recommendation_logic(ticker: str) -> RecommendationResponse:
     
     if not retrieved_docs:
         logger.warning(f"No docs found for {ticker} during update")
+    
+    logger.info(f"📄 Retrieved {len(retrieved_docs)} docs for sentiment analysis")
     
     # 2. Sentiment
     sentiment = sentiment_agent.analyze(retrieved_docs)

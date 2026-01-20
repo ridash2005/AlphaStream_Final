@@ -463,7 +463,6 @@ class NewsAggregator:
         return hashlib.md5(content.encode()).hexdigest()
 
 
-# Singleton
 _aggregator: NewsAggregator | None = None
 
 
@@ -473,3 +472,12 @@ def get_news_aggregator() -> NewsAggregator:
     if _aggregator is None:
         _aggregator = NewsAggregator()
     return _aggregator
+
+
+def reset_news_aggregator():
+    """Reset the aggregator singleton to fetch fresh articles."""
+    global _aggregator
+    if _aggregator is not None:
+        _aggregator.seen_ids.clear()
+        logger.info("🔄 Cleared news aggregator seen_ids - will re-fetch all articles")
+    _aggregator = None

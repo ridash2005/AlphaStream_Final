@@ -137,26 +137,64 @@ class SECConnector:
             return value
         
         try:
-            # Safely extract insider name
-            insider_name = safe_extract(getattr(filing, 'reporting_owner', None), 'Unknown Insider')
+            # Get the Form 4 document object - contains actual transaction data
+            form4_doc = filing.obj()
             
-            # Get filing date safely
-            filing_date = safe_extract(filing.filing_date, 'N/A')
+            # Get insider name directly from Form4 document
+            insider_name = getattr(form4_doc, 'insider_name', None)
+            if not insider_name:
+                insider_name = 'Unknown Insider'
+            else:
+                insider_name = str(insider_name)
             
-            # Get accession number safely
-            accession = safe_extract(getattr(filing, 'accession_number', None), 'N/A')
+            # Get filing date
+            filing_date = str(filing.filing_date) if hasattr(filing, 'filing_date') else 'N/A'
             
-            trans_data = {
-                "insider_name": str(insider_name),
-                "filing_date": str(filing_date),
-                "form_type": "4",
-                "ticker": str(safe_extract(getattr(filing, 'ticker', None), 'N/A')),
-                "accession_number": str(accession),
-                "transaction_type": "Unknown",
-                "shares": 0,
-                "price": 0.0,
-            }
-            transactions.append(trans_data)
+            # Get issuer ticker
+            issuer = getattr(form4_doc, 'issuer', None)
+            ticker = getattr(issuer, 'ticker', 'N/A') if issuer else 'N/A'
+            
+            # Get market trades (includes both buys and sells)
+            market_trades = getattr(form4_doc, 'market_trades', None)
+            
+            if market_trades is not None and not market_trades.empty:
+                # Convert DataFrame rows to transaction dicts
+                for _, row in market_trades.head(5).iterrows():  # First 5 transactions
+                    trans_type = row.get('TransactionType', 'Unknown')
+                    shares = row.get('Shares', 0)
+                    price = row.get('Price', 0.0)
+                    
+                    # Handle price - might be a string or float
+                    if isinstance(price, str):
+                        try:
+                            price = float(price.replace('$', '').replace(',', ''))
+                        except:
+                            price = 0.0
+                    
+                    transactions.append({
+                        "insider_name": insider_name,
+                        "filing_date": filing_date,
+                        "form_type": "4",
+                        "ticker": str(ticker),
+                        "accession_number": str(getattr(filing, 'accession_number', 'N/A')),
+                        "transaction_type": str(trans_type),
+                        "shares": int(shares) if shares else 0,
+                        "price": float(price) if price else 0.0,
+                    })
+                    
+                logger.debug(f"Parsed {len(transactions)} transactions from Form 4 for {insider_name}")
+            else:
+                # No transactions but still record the filing
+                transactions.append({
+                    "insider_name": insider_name,
+                    "filing_date": filing_date,
+                    "form_type": "4",
+                    "ticker": str(ticker),
+                    "accession_number": str(getattr(filing, 'accession_number', 'N/A')),
+                    "transaction_type": "Unknown",
+                    "shares": 0,
+                    "price": 0.0,
+                })
             
         except Exception as e:
             logger.debug(f"Error parsing Form 4 details: {e}")

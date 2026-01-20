@@ -40,6 +40,7 @@ interface AppState {
     health: HealthStatus | null;
     marketHeatmap: { ticker: string; score: number; updated: string }[];
     indexingLatency: number | null;
+    documentCount: number | null;  // Real-time doc count from WebSocket
 
     // UI State
     currentTicker: string;
@@ -58,6 +59,7 @@ interface AppState {
     setError: (error: string | null) => void;
     addToHistory: (rec: Recommendation) => void;
     clearError: () => void;
+    setDocumentCount: (count: number) => void;
     connectStream: (ticker: string) => void;
     disconnectStream: () => void;
     socket: WebSocket | null;
@@ -72,6 +74,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     health: null,
     marketHeatmap: [],
     indexingLatency: null,
+    documentCount: null,
     currentTicker: 'AAPL',
     isLoading: false,
     error: null,
@@ -99,6 +102,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     })),
 
     clearError: () => set({ error: null }),
+
+    setDocumentCount: (count) => set({ documentCount: count }),
 
     connectStream: (ticker) => {
         const { socket, setRecommendation, setLoading } = get();
@@ -128,7 +133,10 @@ export const useAppStore = create<AppState>((set, get) => ({
                 }
                 else if (data.type === 'metrics_update') {
                     console.log("Metrics update:", data.data);
-                    set({ indexingLatency: data.data.indexing_latency_ms });
+                    set({
+                        indexingLatency: data.data.indexing_latency_ms,
+                        documentCount: data.data.total_docs || null
+                    });
                 }
                 else {
                     // Assume default is recommendation

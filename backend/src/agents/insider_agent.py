@@ -88,9 +88,13 @@ A score of 0.0 means neutral or no significant activity.
         """
         try:
             # Fetch insider trades from SEC
+            logger.info(f"🔍 Insider Agent: Fetching trades for {ticker} (last {days} days)")
             transactions = self.sec_connector.get_insider_trades(ticker, days=days)
             
+            logger.info(f"🔍 Insider Agent: Found {len(transactions)} transactions")
+            
             if not transactions:
+                logger.info(f"🔍 Insider Agent: No recent transactions found, returning neutral")
                 return self._neutral_response("No recent insider transactions found")
             
             # Check if we need LLM fallback

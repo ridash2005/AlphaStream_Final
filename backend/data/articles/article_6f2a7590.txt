@@ -1,0 +1,13 @@
+Title: 2026-01-19 Emacs news
+Source: Sachachua.com
+Date: 2026-01-19T19:46:50Z
+---
+<ul><li>Upcoming events (iCal file, Org):
+</li><li>Beginner:
+</li><li>Emacs configuration:
+</li><li>Emacs Lisp:
+</li><li>Appearance:
+</li><li>Navigation:
+</li><li>Dired:
+</li><li>Writing:
+</l… [+696 chars]

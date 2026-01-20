@@ -74,17 +74,25 @@ Return ONLY the JSON object.
         """
         Analyze sentiment from retrieved articles.
         """
+        logger.info(f"📊 Sentiment Agent: Analyzing {len(articles)} articles")
+        
         if not articles:
+            logger.warning("📊 Sentiment Agent: No articles provided, returning neutral")
             return self._neutral_response("No articles provided")
 
         articles_text = self._format_articles(articles)
+        logger.debug(f"📊 Formatted articles text (first 500 chars): {articles_text[:500]}")
 
         try:
             # Invoke chain
             result = self.chain.invoke({"articles": articles_text})
             
             # Convert Pydantic model to dict
-            return result.model_dump()
+            result_dict = result.model_dump()
+            logger.info(f"📊 Sentiment Result: {result_dict.get('sentiment_label')} "
+                       f"(score: {result_dict.get('sentiment_score')}, "
+                       f"confidence: {result_dict.get('confidence')})")
+            return result_dict
 
         except Exception as e:
             logger.error(f"Sentiment analysis error: {e}")
