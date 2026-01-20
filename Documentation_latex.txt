@@ -535,10 +535,10 @@ Each agent is a specialized LangChain chain with a specific analytical focus:
 \draw [arrow] (technical.south) -- (decision.north);
 \draw [arrow] (risk.south) -- (decision.north -| risk);
 
-% Arrows: Decision TO Bottom agents
-\draw [arrow] (decision.south -| insider) -- (insider.north);
-\draw [arrow] (decision.south) -- (chart.north);
-\draw [arrow] (decision.south -| report) -- (report.north);
+% Arrows: Bottom agents TO Decision (upward)
+\draw [arrow] (insider.north) -- (decision.south -| insider);
+\draw [arrow] (chart.north) -- (decision.south);
+\draw [arrow] (report.north) -- (decision.south -| report);
 
 \end{tikzpicture}
 \caption{Multi-Agent Consensus System}
