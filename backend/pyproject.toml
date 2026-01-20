@@ -7,6 +7,7 @@ requires-python = ">=3.11,<3.13"
 dependencies = [
     # Core framework
     "pathway>=0.8.0",
+    "pathway[xpack-llm]>=0.8.0",
     # API & async
     "fastapi>=0.104.0",
     "uvicorn>=0.24.0",
