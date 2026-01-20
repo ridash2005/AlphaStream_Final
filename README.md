@@ -165,7 +165,7 @@ The demo script:
 
 ## 🏗️ Architecture
 
-![AlphaStream Architecture](docs/pipeline_architecture_1768777125312.png)
+![AlphaStream System Architecture](docs/system_architecture.png)
 
 ### Pathway Streaming Engine - The Core
 
@@ -185,7 +185,7 @@ AlphaStream is built around **Pathway**, the world's fastest streaming engine. O
 
 Our innovative multi-source news system fetches from **5 sources in parallel**:
 
-![Herd of Knowledge](docs/herd_of_knowledge_1768777166554.png)
+![Herd of Knowledge](docs/herd_of_knowledge.png)
 
 - **NewsAPI** - Breaking news headlines
 - **Finnhub** - Company-specific financial news

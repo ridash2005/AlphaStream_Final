@@ -70,7 +70,7 @@ graph LR
 
 ### 1. Pathway Streaming Engine
 
-![AlphaStream Architecture](pipeline_architecture_1768777125312.png)
+![AlphaStream System Architecture](system_architecture.png)
 
 AlphaStream leverages **Pathway** as the core streaming engine. Our implementation demonstrates comprehensive feature usage:
 
@@ -89,7 +89,7 @@ AlphaStream leverages **Pathway** as the core streaming engine. Our implementati
 
 #### "Herd of Knowledge" Architecture
 
-![Herd of Knowledge](herd_of_knowledge_1768777166554.png)
+![Herd of Knowledge](herd_of_knowledge.png)
 
 Our multi-source news aggregator fetches from 5 sources **in parallel**:
 
