@@ -14,7 +14,6 @@ it needs more context - saving tokens without sacrificing accuracy.
 Key Pathway Features Demonstrated:
 - pw.xpacks.llm.* - Official LLM xpack components
 - pw.persistence - Caching and fault tolerance
-- pw.load_yaml - YAML-based configuration
 - pw.run - Unified streaming execution
 """
 
@@ -98,7 +97,7 @@ class AdaptiveRAGApp(BaseModel):
 
 def create_adaptive_rag_from_news(
     articles_path: str = "data/articles",
-    model: str = "gpt-4.1-mini",
+    model: str = None,
     n_starting_documents: int = 2,
     max_iterations: int = 4
 ) -> object:
@@ -125,6 +124,22 @@ def create_adaptive_rag_from_news(
     from pathway.xpacks.llm.document_store import DocumentStore
     from pathway.xpacks.llm.question_answering import AdaptiveRAGQuestionAnswerer
     
+    # Configure OpenRouter as OpenAI-compatible endpoint
+    # Pathway xpacks use OPENAI_API_KEY and OPENAI_BASE_URL env vars
+    openrouter_key = os.getenv("OPENROUTER_API_KEY")
+    openrouter_base = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+    
+    if openrouter_key:
+        os.environ["OPENAI_API_KEY"] = openrouter_key
+        os.environ["OPENAI_BASE_URL"] = openrouter_base
+        logger.info(f"Configured OpenRouter as OpenAI-compatible endpoint")
+    else:
+        raise ValueError("OPENROUTER_API_KEY is required in .env file")
+    
+    # Use model from env or default
+    if model is None:
+        model = os.getenv("LLM_MODEL", "anthropic/claude-3.5-sonnet")
+    
     # Ensure articles directory exists
     Path(articles_path).mkdir(parents=True, exist_ok=True)
     
@@ -138,7 +153,7 @@ def create_adaptive_rag_from_news(
         )
     ]
     
-    # 2. LLM - Using OpenAI-compatible endpoint
+    # 2. LLM - Using OpenRouter via OpenAI-compatible endpoint
     logger.info(f"Configuring LLM: {model}")
     llm = llms.OpenAIChat(
         model=model,
@@ -148,9 +163,13 @@ def create_adaptive_rag_from_news(
         capacity=8,
     )
     
-    # 3. Embedder - For vector search
+    # 3. Embedder - Using OpenAI embedding model via OpenRouter
+    # Note: OpenAIEmbedder requires OpenAI model names, not sentence-transformers
+    # OpenRouter proxies OpenAI embeddings
+    embedding_model = "text-embedding-3-small"
+    logger.info(f"Configuring Embedder: {embedding_model}")
     embedder = embedders.OpenAIEmbedder(
-        model="text-embedding-3-small",
+        model=embedding_model,
         cache_strategy=pw.udfs.DefaultCache(),
         retry_strategy=pw.udfs.ExponentialBackoffRetryStrategy(),
     )
@@ -159,7 +178,7 @@ def create_adaptive_rag_from_news(
     splitter = splitters.TokenCountSplitter(max_tokens=400)
     
     # 5. Parser - Process documents
-    parser = parsers.UnstructuredParser(mode="single")
+    parser = parsers.UnstructuredParser()
     
     # 6. Retriever Factory - Vector search with USearch
     retriever_factory = pw.indexing.UsearchKnnFactory(
@@ -193,25 +212,39 @@ def create_adaptive_rag_from_news(
 
 def run_adaptive_rag_server(config_path: str = "pathway_rag.yaml"):
     """
-    Run the Adaptive RAG server from YAML configuration.
+    Run the Adaptive RAG server.
     
-    This demonstrates pw.load_yaml for declarative configuration.
+    Uses programmatic setup for reliability.
     """
+    import yaml
+    
     config_file = Path(config_path)
+    
+    # Try to load config for host/port settings only
+    host = "0.0.0.0"
+    port = 8001
     
     if config_file.exists():
         logger.info(f"Loading configuration from {config_path}")
-        with open(config_file) as f:
-            config = pw.load_yaml(f)
-        app = AdaptiveRAGApp(**config)
+        try:
+            with open(config_file) as f:
+                yaml_config = yaml.safe_load(f)
+            host = yaml_config.get("host", host)
+            port = yaml_config.get("port", port)
+        except Exception as e:
+            logger.warning(f"Could not parse YAML config: {e}, using defaults")
     else:
-        logger.info("No YAML config found, using programmatic setup")
-        question_answerer = create_adaptive_rag_from_news()
-        app = AdaptiveRAGApp(
-            question_answerer=question_answerer,
-            host="0.0.0.0",
-            port=8001,
-        )
+        logger.info("No YAML config found, using defaults")
+    
+    # Always use programmatic setup for the question answerer
+    logger.info("Setting up Pathway Adaptive RAG programmatically")
+    question_answerer = create_adaptive_rag_from_news()
+    
+    app = AdaptiveRAGApp(
+        question_answerer=question_answerer,
+        host=host,
+        port=port,
+    )
     
     app.run()
 

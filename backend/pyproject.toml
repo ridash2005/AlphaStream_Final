@@ -6,8 +6,8 @@ readme = "README.md"
 requires-python = ">=3.11,<3.13"
 dependencies = [
     # Core framework
-    "pathway>=0.8.0",
-    "pathway[xpack-llm]>=0.8.0",
+    "pathway>=0.28.0",
+    "pathway[xpack-llm-docs]",
     # API & async
     "fastapi>=0.104.0",
     "uvicorn>=0.24.0",
@@ -37,6 +37,7 @@ dependencies = [
     "feedparser>=6.0.12",
     "pdf2image>=1.17.0",
     "poppler-utils>=0.1.0",
+    "unstructured>=0.18.27",
 ]
 
 [project.optional-dependencies]

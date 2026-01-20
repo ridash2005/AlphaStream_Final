@@ -92,31 +92,39 @@ class SECConnector:
         """
         transactions = []
         
+        def safe_extract(value, default='Unknown'):
+            """Safely extract value from various pyarrow types."""
+            if value is None:
+                return default
+            # Handle pyarrow ChunkedArray
+            if hasattr(value, 'to_pylist'):
+                lst = value.to_pylist()
+                return lst[0] if lst else default
+            # Handle pyarrow Array
+            if hasattr(value, 'to_numpy'):
+                arr = value.to_numpy()
+                return arr[0] if len(arr) > 0 else default
+            # Handle pyarrow scalar
+            if hasattr(value, 'as_py'):
+                return value.as_py()
+            # Regular Python value
+            return value
+        
         try:
-            # Safely extract insider name - handle pyarrow arrays
-            insider_name = getattr(filing, 'reporting_owner', 'Unknown Insider')
-            if hasattr(insider_name, 'to_pylist'):  # pyarrow array
-                insider_name = insider_name.to_pylist()[0] if len(insider_name) > 0 else 'Unknown'
-            elif hasattr(insider_name, 'as_py'):  # pyarrow scalar
-                insider_name = insider_name.as_py()
+            # Safely extract insider name
+            insider_name = safe_extract(getattr(filing, 'reporting_owner', None), 'Unknown Insider')
             
             # Get filing date safely
-            filing_date = filing.filing_date
-            if hasattr(filing_date, 'as_py'):
-                filing_date = filing_date.as_py()
+            filing_date = safe_extract(filing.filing_date, 'N/A')
             
             # Get accession number safely
-            accession = getattr(filing, 'accession_number', 'N/A')
-            if hasattr(accession, 'as_py'):
-                accession = accession.as_py()
-            elif hasattr(accession, 'to_pylist'):
-                accession = str(accession.to_pylist()[0]) if len(accession) > 0 else 'N/A'
+            accession = safe_extract(getattr(filing, 'accession_number', None), 'N/A')
             
             trans_data = {
                 "insider_name": str(insider_name),
                 "filing_date": str(filing_date),
                 "form_type": "4",
-                "ticker": str(getattr(filing, 'ticker', 'N/A')),
+                "ticker": str(safe_extract(getattr(filing, 'ticker', None), 'N/A')),
                 "accession_number": str(accession),
                 "transaction_type": "Unknown",
                 "shares": 0,
