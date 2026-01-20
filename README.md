@@ -86,7 +86,7 @@ We use **Pathway's official LLM xpack** (from [llm-app templates](https://github
 cd "AlphaStream"
 
 # Install Python dependencies (using uv)
-uv sync
+cd backend && uv sync && cd ..
 
 # Install frontend dependencies
 cd frontend && npm install && cd ..
@@ -94,16 +94,20 @@ cd frontend && npm install && cd ..
 
 ### 2. Configure Environment
 ```bash
+# Backend environment (required)
+cd backend
 cp .env.example .env
 # Edit .env with your API keys:
 # - OPENROUTER_API_KEY
 # - NEWS_API_KEY
+cd ..
 ```
 
 ### 3. Run the System
 
 **Terminal 1: Backend**
 ```bash
+cd backend
 uv run uvicorn src.api.app:app --host 0.0.0.0 --port 8000
 ```
 
@@ -201,25 +205,35 @@ AlphaStream/
 │   │   │   ├── news_connector.py    # Pathway streaming connector
 │   │   │   ├── news_aggregator.py   # "Herd of Knowledge" multi-source
 │   │   │   ├── rss_connector.py     # Free RSS fallback
-│   │   │   └── sec_connector.py     # SEC EDGAR (edgartools)
+│   │   │   ├── sec_connector.py     # SEC EDGAR (edgartools)
+│   │   │   └── polling.py           # Generic polling utilities
 │   │   ├── pipeline/
-│   │   │   ├── rag_core.py          # RAG pipeline
+│   │   │   ├── rag_core.py          # RAG pipeline orchestration
+│   │   │   ├── rag_service.py       # Unified RAG (adaptive + manual fallback)
+│   │   │   ├── adaptive_rag_server.py # Pathway xpacks.llm implementation
 │   │   │   ├── pathway_tables.py    # Pathway-native tables & transforms
-│   │   │   ├── chunking.py          # Adaptive chunking
-│   │   │   └── retrieval.py         # Hybrid retrieval
-│   │   └── api/
-│   │       └── app.py               # FastAPI + Pathway integration
+│   │   │   ├── chunking.py          # Adaptive document chunking
+│   │   │   ├── retrieval.py         # Hybrid retrieval (dense + BM25 + RRF)
+│   │   │   └── reranking.py         # Cross-encoder reranking
+│   │   ├── api/
+│   │   │   └── app.py               # FastAPI + Pathway integration
+│   │   └── config.py                # Pydantic settings management
 │   ├── reports/                     # Generated PDF reports
 │   ├── tests/                       # pytest tests
+│   ├── .env.example                 # Environment template
 │   └── pyproject.toml               # Dependencies (uv)
 ├── frontend/
 │   └── src/
 │       ├── App.tsx                  # Main dashboard
+│       ├── store/appStore.ts        # Zustand state management
 │       └── components/trading/      # 12 UI components
 ├── docs/
 │   ├── ARCHITECTURE.md
+│   ├── PROJECT_DOCUMENTATION.md
 │   ├── pipeline_architecture_*.png  # Generated diagrams
 │   └── herd_of_knowledge_*.png
+├── demo_pipeline.py                 # Automated demo script
+├── demo_live.py                     # Live demonstration
 └── docker-compose.yml
 ```
 
@@ -229,10 +243,11 @@ AlphaStream/
 
 ```bash
 # Run all tests
+cd backend
 uv run pytest tests/ -v
 
 # Test real-time dynamism
-uv run scripts/inject_article.py "Breaking News" "Content here"
+uv run python scripts/inject_article.py "Breaking News" "Content here"
 # Watch recommendation change in <2s
 ```
 
