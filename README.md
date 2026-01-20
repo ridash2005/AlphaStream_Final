@@ -250,13 +250,31 @@ Access at http://localhost:8000 (API) and http://localhost:5173 (Dashboard)
 
 ## 📊 Demo: Proving Real-Time Dynamism
 
+### Automated Demo Pipeline
+
+Run the complete demonstration with:
+```bash
+python demo_pipeline.py
+```
+
+This script automatically:
+1. Starts the backend server
+2. Gets initial AAPL recommendation
+3. Injects a bearish article
+4. Shows recommendation change in **<2 seconds**
+5. Generates PDF report
+
+### Manual Demo
+
 1. Start the system
 2. Search for "AAPL" → Note recommendation
 3. Inject bearish article:
    ```bash
-   uv run scripts/inject_article.py "Apple Faces Lawsuit" "Major legal trouble..."
+   curl -X POST http://localhost:8000/ingest \
+     -H "Content-Type: application/json" \
+     -d '{"title":"Apple Faces Lawsuit","content":"Major legal trouble..."}'
    ```
-4. Watch recommendation change in **<2 seconds**
+4. Watch recommendation change via WebSocket
 5. Generate PDF report with updated analysis
 
 ---
