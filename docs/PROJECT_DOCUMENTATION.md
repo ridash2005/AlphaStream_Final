@@ -217,43 +217,7 @@ class RAGPipeline:
 
 Each agent is a specialized LangChain chain with a specific analytical focus:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    AGENT CONSENSUS SYSTEM                    │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐       │
-│  │  SENTIMENT  │   │  TECHNICAL  │   │    RISK     │       │
-│  │    AGENT    │   │    AGENT    │   │   AGENT     │       │
-│  │             │   │             │   │             │       │
-│  │ • News NLP  │   │ • RSI       │   │ • Volatility│       │
-│  │ • LLM-based │   │ • SMA       │   │ • VaR       │       │
-│  │ • -1 to +1  │   │ • Trend     │   │ • Position  │       │
-│  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘       │
-│         │                 │                 │               │
-│         ▼                 ▼                 ▼               │
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐       │
-│  │   INSIDER   │   │    CHART    │   │   REPORT    │       │
-│  │    AGENT    │   │    AGENT    │   │   AGENT     │       │
-│  │             │   │             │   │             │       │
-│  │ • SEC Form 4│   │ • Matplotlib│   │ • ReportLab │       │
-│  │ • edgartools │   │ • 7-day viz │   │ • PDF gen   │       │
-│  │ • Buy/Sell  │   │ • 24h mark  │   │ • Full docs │       │
-│  └──────┬──────┘   └─────────────┘   └─────────────┘       │
-│         │                                                   │
-│         └──────────────────┐                               │
-│                            ▼                               │
-│                   ┌─────────────────┐                      │
-│                   │  DECISION AGENT │                      │
-│                   │                 │                      │
-│                   │ • Fuses all     │                      │
-│                   │ • BUY/HOLD/SELL │                      │
-│                   │ • Confidence %  │                      │
-│                   │ • Reasoning     │                      │
-│                   └─────────────────┘                      │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+![Multi-Agent Consensus System](multi_agent_system.png)
 
 ### Agent Specifications
 
