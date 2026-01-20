@@ -28,3 +28,18 @@ reports/
 # Node
 node_modules/
 frontend/node_modules/
+
+# Pathway cache
+.PathwayCache/
+.pathway_persist/
+
+# Demo outputs
+demo_output.json
+
+# Pytest cache
+.pytest_cache/
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log

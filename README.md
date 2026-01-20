@@ -104,7 +104,7 @@ cp .env.example .env
 
 **Terminal 1: Backend**
 ```bash
-uv run uvicorn src.api.app:app --host 0.0.0.0 --port 8000
+cd backend && uv run uvicorn src.api.app:app --host 0.0.0.0 --port 8000
 ```
 
 **Terminal 2: Frontend**
@@ -113,6 +113,21 @@ cd frontend && npm run dev
 ```
 
 Access dashboard at **http://localhost:5173**
+
+### 4. Run Demonstration (Optional)
+
+**Terminal 3: Demo Script**
+```bash
+python demo_pipeline.py --ticker AAPL --output demo_output.json
+```
+
+The demo script:
+- Fetches initial recommendation
+- Injects bearish breaking news
+- Shows real-time sentiment change
+- Saves detailed JSON proof to `demo_output.json`
+
+**UI Visibility**: The demo updates ARE visible in the dashboard! When the demo injects an article, the backend broadcasts via WebSocket, and the frontend updates automatically. Keep the dashboard open to see live changes.
 
 ---
 
