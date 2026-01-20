@@ -27,6 +27,7 @@ from src.agents.insider_agent import InsiderAgent
 from src.agents.chart_agent import ChartAgent
 from src.agents.report_agent import ReportAgent
 from src.pipeline.rag_core import RAGPipeline
+from src.pipeline.rag_service import UnifiedRAGService, get_unified_rag_service
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +104,9 @@ insider_agent: InsiderAgent | None = None
 chart_agent: ChartAgent | None = None
 report_agent: ReportAgent | None = None
 
+# Unified RAG Service (Adaptive RAG primary, manual fallback)
+unified_rag: UnifiedRAGService | None = None
+
 ws_manager = ConnectionManager()
 market_state = MarketState()
 
@@ -110,7 +114,7 @@ market_state = MarketState()
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown."""
     global rag_pipeline, sentiment_agent, technical_agent, risk_agent, decision_agent
-    global insider_agent, chart_agent, report_agent
+    global insider_agent, chart_agent, report_agent, unified_rag
     
     logger.info("Initializing AlphaStream Live AI...")
 
@@ -132,6 +136,13 @@ async def lifespan(app: FastAPI):
     initial_articles = get_demo_articles()
     rag_pipeline.ingest_articles(initial_articles)
     logger.info("Seeded RAG with initial articles. Live news will supersede these.")
+    
+    # Initialize Unified RAG Service (Adaptive RAG primary, manual fallback)
+    unified_rag = UnifiedRAGService(
+        adaptive_rag_url="http://localhost:8001",
+        manual_rag=rag_pipeline
+    )
+    logger.info("Unified RAG Service initialized (Adaptive RAG primary, manual fallback)")
     
     # Market state will be populated dynamically as recommendations are generated
     # No hardcoded values - sentiment scores come from real agent analysis
@@ -269,6 +280,7 @@ class RecommendationResponse(BaseModel):
     key_factors: list[str]
     sources: list[str]
     latency_ms: float
+    rag_engine: str = "manual"  # "adaptive" or "manual"
 
 
 class HealthResponse(BaseModel):
@@ -315,16 +327,28 @@ async def generate_recommendation_logic(ticker: str) -> RecommendationResponse:
     """Core logic to generate a recommendation."""
     start_time = time.time()
     
-    # 1. Retrieve
-    query = f"{ticker} stock news"
-    retrieved_docs = rag_pipeline.retrieve(query, k=5)
+    # 1. Retrieve using Unified RAG (Adaptive primary, manual fallback)
+    query = f"{ticker} stock news financial analysis market sentiment"
+    
+    # Use unified RAG service (tries Adaptive RAG first, falls back to manual)
+    rag_response = unified_rag.query(query, ticker=ticker)
+    rag_engine = rag_response.engine  # "adaptive" or "manual"
+    
+    # For sentiment analysis, we still need document list format
+    # If using adaptive RAG, we get processed answer; for manual, we get raw context
+    if rag_engine == "manual":
+        # Manual RAG returns raw documents
+        retrieved_docs = rag_pipeline.retrieve(query, k=5)
+    else:
+        # Adaptive RAG already processed - create synthetic doc list
+        retrieved_docs = [{
+            "text": rag_response.answer,
+            "source": "Pathway Adaptive RAG",
+            "title": f"{ticker} Analysis"
+        }]
     
     if not retrieved_docs:
-        # If no docs, we might still want to return Technical/Risk? 
-        # For now, let's proceed but sentiment will be neutral.
         logger.warning(f"No docs found for {ticker} during update")
-        # Proceed with empty list? Or fail?
-        # SentimentAgent handles empty list by returning Neutral.
     
     # 2. Sentiment
     sentiment = sentiment_agent.analyze(retrieved_docs)
@@ -355,8 +379,9 @@ async def generate_recommendation_logic(ticker: str) -> RecommendationResponse:
         technical_score=technical.get("technical_score", 0.0),
         risk_score=risk.get("risk_score", 0.0),
         key_factors=combined_factors[:5],
-        sources=[doc.get("source", "Unknown") for doc in retrieved_docs],
+        sources=rag_response.sources if rag_response.sources else [doc.get("source", "Unknown") for doc in retrieved_docs],
         latency_ms=round(latency_ms, 2),
+        rag_engine=rag_engine,
     )
 
 
