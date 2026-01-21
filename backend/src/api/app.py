@@ -110,6 +110,9 @@ report_agent: ReportAgent | None = None
 # Unified RAG Service (Adaptive RAG primary, manual fallback)
 unified_rag: UnifiedRAGService | None = None
 
+# Track last article ingestion time - for forcing manual RAG on fresh content
+last_ingestion_time: float = 0.0
+
 ws_manager = ConnectionManager()
 market_state = MarketState()
 
@@ -142,6 +145,7 @@ async def lifespan(app: FastAPI):
     
     # Start Pathway Adaptive RAG Server (USP) as a subprocess
     logger.info("Starting Pathway Adaptive RAG Server (port 8001)...")
+    rag_server_process = None
     try:
         # Launch server in background
         rag_server_process = subprocess.Popen(
@@ -152,12 +156,25 @@ async def lifespan(app: FastAPI):
         )
         logger.info(f"Adaptive RAG Server started with PID: {rag_server_process.pid}")
         
-        # Determine strict startup wait time
-        # We want to give it a chance to start, but not block the main backend too long
-        # The UnifiedRAGService handles unavailability gracefully via fallback
+        # Wait for Adaptive RAG server to be ready (up to 45 seconds)
+        import httpx
+        max_wait = 45
+        wait_interval = 2
+        for i in range(max_wait // wait_interval):
+            try:
+                with httpx.Client(timeout=3.0) as client:
+                    resp = client.get("http://localhost:8001/")
+                    if resp.status_code in [200, 404, 405]:  # Server is responding
+                        logger.info(f"✅ Adaptive RAG Server ready after {(i+1) * wait_interval}s")
+                        break
+            except Exception:
+                pass
+            time.sleep(wait_interval)
+            logger.info(f"⏳ Waiting for Adaptive RAG Server... ({(i+1) * wait_interval}s)")
+        else:
+            logger.warning("⚠️ Adaptive RAG Server may not be fully ready, continuing anyway")
     except Exception as e:
         logger.error(f"Failed to start Adaptive RAG Server: {e}")
-        rag_server_process = None
 
     # Initialize Unified RAG Service (Adaptive RAG primary, manual fallback)
     unified_rag = UnifiedRAGService(
@@ -405,25 +422,40 @@ async def generate_recommendation_logic(ticker: str, update_callback: Callable[[
     await send_update("RAG System", "Retrieving and analyzing market data...")
     query = f"{ticker} stock news financial analysis market sentiment"
     
-    # Use unified RAG service (tries Adaptive RAG first, falls back to manual)
-    rag_response = unified_rag.query(query, ticker=ticker)
-    rag_engine = rag_response.engine  # "adaptive" or "manual"
+    # Check if there was a recent ingestion (within 30 seconds)
+    # If so, force manual RAG to ensure fresh content is included
+    force_manual = (time.time() - last_ingestion_time) < 30.0
+    
+    if force_manual:
+        logger.info("📰 Recent article ingested - using manual RAG for fresh content")
+        # Directly use manual RAG for immediate updates
+        retrieved_docs = rag_pipeline.retrieve(query, k=5)
+        rag_engine = "manual"
+        rag_response_answer = rag_pipeline.format_context(retrieved_docs)
+        rag_sources = list(set(doc.get("source", "Unknown") for doc in retrieved_docs))
+    else:
+        # Use unified RAG service (tries Adaptive RAG first, falls back to manual)
+        rag_response = unified_rag.query(query, ticker=ticker)
+        rag_engine = rag_response.engine  # "adaptive" or "manual"
+        rag_response_answer = rag_response.answer
+        rag_sources = rag_response.sources if rag_response.sources else []
     
     logger.info(f"🔍 RAG Engine: {rag_engine}")
-    logger.info(f"🔍 RAG Answer (first 200 chars): {rag_response.answer[:200]}...")
     
     # For sentiment analysis, we still need document list format
-    # If using adaptive RAG, we get processed answer; for manual, we get raw context
-    if rag_engine == "manual":
-        # Manual RAG returns raw documents
+    # If using adaptive RAG, we get processed answer; for manual, we already have docs
+    if rag_engine == "manual" and not force_manual:
+        # Fallback manual RAG returns raw documents - retrieve them
         retrieved_docs = rag_pipeline.retrieve(query, k=5)
-    else:
+        rag_sources = list(set(doc.get("source", "Unknown") for doc in retrieved_docs))
+    elif rag_engine == "adaptive":
         # Adaptive RAG already processed - create synthetic doc list
         retrieved_docs = [{
-            "text": rag_response.answer,
+            "text": rag_response_answer,
             "source": "Pathway Adaptive RAG",
             "title": f"{ticker} Analysis"
         }]
+    # else: force_manual already set retrieved_docs above
     
     if not retrieved_docs:
         logger.warning(f"No docs found for {ticker} during update")
@@ -463,7 +495,7 @@ async def generate_recommendation_logic(ticker: str, update_callback: Callable[[
         technical_score=technical.get("technical_score", 0.0),
         risk_score=risk.get("risk_score", 0.0),
         key_factors=combined_factors[:5],
-        sources=rag_response.sources if rag_response.sources else [doc.get("source", "Unknown") for doc in retrieved_docs],
+        sources=rag_sources if rag_sources else [doc.get("source", "Unknown") for doc in retrieved_docs],
         latency_ms=round(latency_ms, 2),
         rag_engine=rag_engine,
     )
@@ -553,7 +585,11 @@ async def ingest_article(article: dict[str, Any]) -> dict[str, Any]:
     Ingest a new article into the system.
     
     Useful for testing real-time updates.
+    Ingested articles are immediately available in manual RAG
+    and will be picked up by Adaptive RAG on next file scan.
     """
+    global last_ingestion_time
+    
     if not rag_pipeline:
         raise HTTPException(status_code=503, detail="System not initialized")
 
@@ -564,7 +600,7 @@ async def ingest_article(article: dict[str, Any]) -> dict[str, Any]:
 
     # Add defaults
     article.setdefault("id", f"manual_{time.time()}")
-    article.setdefault("source", "Manual")
+    article.setdefault("source", "Breaking News")  # Mark as breaking news
     article.setdefault("url", "")
     article.setdefault("published_at", datetime.utcnow().isoformat())
 
@@ -574,11 +610,39 @@ async def ingest_article(article: dict[str, Any]) -> dict[str, Any]:
         None, 
         lambda: rag_pipeline.ingest_article(article)
     )
-
+    
+    # Also write to data/articles for Adaptive RAG to pick up
+    try:
+        import hashlib
+        articles_dir = "data/articles"
+        os.makedirs(articles_dir, exist_ok=True)
+        
+        title = article.get('title', 'untitled')
+        content = article.get('content', '')
+        source = article.get('source', 'Unknown')
+        
+        title_hash = hashlib.md5(title.encode()).hexdigest()[:8]
+        filename = f"{articles_dir}/article_{title_hash}.txt"
+        
+        with open(filename, 'w') as f:
+            f.write(f"Title: {title}\n")
+            f.write(f"Source: {source}\n")
+            f.write(f"Date: {article.get('published_at', 'Unknown')}\n")
+            f.write(f"---\n")
+            f.write(content)
+        
+        logger.info(f"📝 Wrote article to {filename} for Adaptive RAG")
+    except Exception as e:
+        logger.warning(f"Failed to write article to disk: {e}")
+    
+    # Track last ingestion time - forces manual RAG for 30 seconds
+    last_ingestion_time = time.time()
+    
     return {
         "status": "success",
         "chunks_created": chunks_created,
         "document_count": rag_pipeline.document_count,
+        "note": "Article immediately available in manual RAG"
     }
 
 
