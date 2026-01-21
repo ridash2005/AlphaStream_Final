@@ -1,0 +1,5 @@
+Title: AI Partnerships Across Healthcare and Retail Could Be A Game Changer For Microsoft (MSFT)
+Source: Yahoo
+Date: 2026-01-21T07:41:35
+---
+In January 2026, Bristol Myers Squibb, Algolia, Hanshow, PayPal, Fiserv and others announced new collaborations with Microsoft to deploy AI across healthcare imaging, retail commerce, store operations, payments and financial services, deepening adoption of Azure, Copilot and the Precision Imaging Network. These agreements highlight how Microsoft’s AI and cloud platforms are becoming embedded in mission‑critical workflows, from early lung cancer detection to “agentic” shopping and store...
