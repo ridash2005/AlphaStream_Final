@@ -1,12 +1,12 @@
 {
-  "AAPL": [
+  "NVDA": [
     {
       "insider_name": "Cook Tim",
       "transaction_type": "Purchase",
       "shares": 50000,
       "price": 185.5,
       "filing_date": "2026-01-21",
-      "ticker": "AAPL"
+      "ticker": "NVDA"
     },
     {
       "insider_name": "Maestri Luca",
@@ -14,7 +14,7 @@
       "shares": 15000,
       "price": 184.75,
       "filing_date": "2026-01-20",
-      "ticker": "AAPL"
+      "ticker": "NVDA"
     }
   ]
 }
