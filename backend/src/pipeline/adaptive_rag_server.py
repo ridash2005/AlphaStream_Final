@@ -143,13 +143,16 @@ def create_adaptive_rag_from_news(
     # Ensure articles directory exists
     Path(articles_path).mkdir(parents=True, exist_ok=True)
     
-    # 1. Data Source - Read articles from filesystem
-    logger.info(f"Setting up Pathway data source from: {articles_path}")
+    # 1. Data Source - Read articles from filesystem with STREAMING mode
+    # Enable directory monitoring so new files are picked up automatically
+    logger.info(f"Setting up Pathway data source from: {articles_path} (streaming mode)")
     sources = [
         pw.io.fs.read(
             path=articles_path,
             format="binary",
             with_metadata=True,
+            mode="streaming",  # Enable real-time file watching
+            # Refresh to scan for new files every second
         )
     ]
     

@@ -108,7 +108,8 @@ class UnifiedRAGService:
         
         # Make HTTP request to Adaptive RAG server
         # Note: Pathway's QASummaryRestServer expects "prompt" key, not "query"
-        with httpx.Client(timeout=30.0) as client:
+        # Timeout increased to 60s to handle slower LLM responses
+        with httpx.Client(timeout=60.0) as client:
             response = client.post(
                 f"{self.adaptive_rag_url}/v2/answer",
                 json={"prompt": question}
