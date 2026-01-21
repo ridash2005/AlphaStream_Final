@@ -1,0 +1,78 @@
+{
+    "bullish": {
+        "news": [
+            {
+                "title": "{ticker} Announces Breakthrough AI Technology",
+                "content": "{ticker} today unveiled a revolutionary new AI chip that promises to double processing speeds while halving energy consumption. Analysts predict this could add billions to the company's bottom line over the next year. 'This is a game-changer,' said leading tech analyst Jane Doe.",
+                "source": "TechCrunch",
+                "published_at": "NOW"
+            },
+            {
+                "title": "Major Partnership Deal for {ticker}",
+                "content": "In a surprise move, {ticker} announced a strategic partnership with a major cloud provider. The deal is expected to significantly expand {ticker}'s market reach in enterprise sectors. Shares rose 5% in pre-market trading.",
+                "source": "Bloomberg",
+                "published_at": "NOW"
+            },
+            {
+                "title": "{ticker} Q4 Earnings Preview: Record Growth Expected",
+                "content": "Wall Street is buzzing with anticipation for {ticker}'s upcoming earnings report. innovative product launches and strong demand in key markets are driving expectations of record-breaking revenue growth.",
+                "source": "CNBC",
+                "published_at": "NOW"
+            }
+        ],
+        "insider": [
+            {
+                "insider_name": "Cook Tim",
+                "transaction_type": "Purchase",
+                "shares": 50000,
+                "price": 185.50,
+                "filing_date": "TODAY"
+            },
+            {
+                "insider_name": "Maestri Luca",
+                "transaction_type": "Purchase",
+                "shares": 15000,
+                "price": 184.75,
+                "filing_date": "YESTERDAY"
+            }
+        ]
+    },
+    "bearish": {
+        "news": [
+            {
+                "title": "{ticker} Faces Regulatory Scrutiny Over Data Privacy",
+                "content": "Federal regulators have opened an investigation into {ticker}'s data handling practices. The news sent shares tumbling 8% as investors fear potential fines and operational restrictions.",
+                "source": "Wall Street Journal",
+                "published_at": "NOW"
+            },
+            {
+                "title": "Supply Chain Issues Hit {ticker} Production",
+                "content": "{ticker} warned that ongoing supply chain disruptions will impact shipment volumes for the next two quarters. The company lowered its guidance, citing component shortages.",
+                "source": "Reuters",
+                "published_at": "NOW"
+            },
+            {
+                "title": "Analyst Downgrades {ticker} to Sell",
+                "content": "Leading investment firm Goldman Sachs has downgraded {ticker} from Neutral to Sell, citing slowing growth and increased competition. The price target was cut by 20%.",
+                "source": "MarketWatch",
+                "published_at": "NOW"
+            }
+        ],
+        "insider": [
+            {
+                "insider_name": "Cook Tim",
+                "transaction_type": "Sale",
+                "shares": 100000,
+                "price": 170.25,
+                "filing_date": "TODAY"
+            },
+            {
+                "insider_name": "Williams Jeff",
+                "transaction_type": "Sale",
+                "shares": 45000,
+                "price": 169.80,
+                "filing_date": "YESTERDAY"
+            }
+        ]
+    }
+}

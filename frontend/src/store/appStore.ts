@@ -32,6 +32,12 @@ export interface HealthStatus {
     };
 }
 
+export interface AgentStatus {
+    agent: string;
+    status: string;
+    timestamp: string;
+}
+
 // Store state
 interface AppState {
     // Data
@@ -40,7 +46,8 @@ interface AppState {
     health: HealthStatus | null;
     marketHeatmap: { ticker: string; score: number; updated: string }[];
     indexingLatency: number | null;
-    documentCount: number | null;  // Real-time doc count from WebSocket
+    documentCount: number | null;
+    agentStatus: AgentStatus | null;  // Current agent status
 
     // UI State
     currentTicker: string;
@@ -60,6 +67,7 @@ interface AppState {
     addToHistory: (rec: Recommendation) => void;
     clearError: () => void;
     setDocumentCount: (count: number) => void;
+    setAgentStatus: (status: AgentStatus | null) => void;
     connectStream: (ticker: string) => void;
     disconnectStream: () => void;
     socket: WebSocket | null;
@@ -75,6 +83,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     marketHeatmap: [],
     indexingLatency: null,
     documentCount: null,
+    agentStatus: null,
     currentTicker: 'AAPL',
     isLoading: false,
     error: null,
@@ -87,6 +96,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     setRecommendation: (rec) => set((state) => ({
         recommendation: rec,
         recommendationHistory: [rec, ...state.recommendationHistory].slice(0, 10),
+        agentStatus: null, // Clear status on final result
     })),
 
     setArticles: (articles) => set({ articles }),
@@ -104,6 +114,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     clearError: () => set({ error: null }),
 
     setDocumentCount: (count) => set({ documentCount: count }),
+
+    setAgentStatus: (status) => set({ agentStatus: status }),
 
     connectStream: (ticker) => {
         const { socket, setRecommendation, setLoading } = get();
@@ -137,6 +149,10 @@ export const useAppStore = create<AppState>((set, get) => ({
                         indexingLatency: data.data.indexing_latency_ms,
                         documentCount: data.data.total_docs || null
                     });
+                }
+                else if (data.type === 'agent_update') {
+                    console.log("Agent update:", data.data);
+                    set({ agentStatus: data.data });
                 }
                 else {
                     // Assume default is recommendation

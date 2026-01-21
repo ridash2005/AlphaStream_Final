@@ -39,6 +39,8 @@ class DecisionAgent:
             base_url=settings.openrouter_base_url,
             model=self.model,
             temperature=0.1,
+            max_retries=5,
+            request_timeout=60,
         )
         
         self.parser = PydanticOutputParser(pydantic_object=DecisionOutput)

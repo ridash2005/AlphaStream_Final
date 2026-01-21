@@ -1,0 +1,5 @@
+Title: F&O Query: Iron Fly Condor on Reliance
+Source: BusinessLine
+Date: 2026-01-20T01:30:00Z
+---
+Ive executed an Iron Fly Condor strategy in Reliance. Ive sold 1470-put for 25.9 and 1470-call for 34.7. And Im long on 1450-put at 18.2 and 1490-call at 24.5. Breakeven prices are 1,452 and 1,488. H… [+1552 chars]

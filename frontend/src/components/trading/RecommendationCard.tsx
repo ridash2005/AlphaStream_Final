@@ -8,10 +8,10 @@ import {
     ConfidenceBar,
     LatencyIndicator,
 } from './Indicators';
-import { Clock, TrendingUp, Shield, Newspaper } from 'lucide-react';
+import { Clock, TrendingUp, Shield, Newspaper, Bot } from 'lucide-react';
 
 export function RecommendationCard() {
-    const { recommendation, isLoading, currentTicker } = useAppStore();
+    const { recommendation, isLoading, currentTicker, agentStatus } = useAppStore();
 
     if (isLoading) {
         return (
@@ -21,11 +21,28 @@ export function RecommendationCard() {
                         <Skeleton className="h-6 w-20" />
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <Skeleton className="h-12 w-32" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-8 w-full" />
+                <CardContent className="space-y-4 py-8">
+                    {agentStatus ? (
+                        <div className="flex flex-col items-center justify-center space-y-4 text-center animate-pulse">
+                            <div className="p-3 rounded-full bg-primary/10 border border-primary/20">
+                                <Bot className="h-8 w-8 text-primary" />
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="text-lg font-medium text-primary">{agentStatus.agent}</h3>
+                                <p className="text-sm text-muted-foreground">{agentStatus.status}</p>
+                            </div>
+                            <div className="w-full max-w-xs h-1.5 bg-secondary rounded-full overflow-hidden mt-4">
+                                <div className="h-full bg-primary animate-progress-indeterminate" />
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <Skeleton className="h-12 w-32" />
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-3/4" />
+                            <Skeleton className="h-8 w-full" />
+                        </>
+                    )}
                 </CardContent>
             </Card>
         );

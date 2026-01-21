@@ -1,0 +1,5 @@
+Title: How Expedia’s CTO is using AI to transform work for 17,000 employees—and travel for millions
+Source: Fortune
+Date: 20260114T124300
+---
+Expedia's CTO, Ramana Thumu, is leading a company-wide initiative to democratize AI, impacting 17,000 employees and travelers. This includes providing access to numerous large language models for employees to build AI agents, integrating AI coding assistants for software developers, and embedding AI squads within business divisions. The goal is to enhance productivity internally and deliver innovative, multi-step agentic AI experiences for millions of travelers.

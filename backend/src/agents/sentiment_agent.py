@@ -39,6 +39,8 @@ class SentimentAgent:
             base_url=settings.openrouter_base_url,
             model=self.model,
             temperature=0,
+            max_retries=5,
+            request_timeout=60,
         )
         
         # Initialize Output Parser

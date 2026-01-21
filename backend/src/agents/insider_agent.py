@@ -47,6 +47,8 @@ class InsiderAgent:
             base_url=settings.openrouter_base_url,
             model=self.model,
             temperature=0,
+            max_retries=5,
+            request_timeout=60,
         )
         
         self.parser = PydanticOutputParser(pydantic_object=InsiderAnalysis)
@@ -87,34 +89,56 @@ A score of 0.0 means neutral or no significant activity.
             Dict with insider_score, sentiment, transactions summary
         """
         try:
+            # DEMO MODE OVERRIDE
+            # Check for demo override file
+            import os
+            import json
+            demo_file = "data/demo_insider.json"
+            if os.path.exists(demo_file):
+                try:
+                    with open(demo_file, "r") as f:
+                        demo_data = json.load(f)
+                        if ticker in demo_data:
+                            logger.info(f"🧪 DEMO MODE: Using mocked insider data for {ticker}")
+                            transactions = demo_data[ticker]
+                            # Skip normal fetch
+                            return self._process_transactions(ticker, transactions)
+                except Exception as e:
+                    logger.warning(f"Failed to load demo data: {e}")
+
             # Fetch insider trades from SEC
             logger.info(f"🔍 Insider Agent: Fetching trades for {ticker} (last {days} days)")
             transactions = self.sec_connector.get_insider_trades(ticker, days=days)
             
+            
             logger.info(f"🔍 Insider Agent: Found {len(transactions)} transactions")
             
-            if not transactions:
-                logger.info(f"🔍 Insider Agent: No recent transactions found, returning neutral")
-                return self._neutral_response("No recent insider transactions found")
-            
-            # Check if we need LLM fallback
-            if transactions[0].get("insider_name") == "LLM_FALLBACK_REQUIRED":
-                return self._llm_web_analysis(ticker)
-            
-            # Format transactions for LLM analysis
-            trans_text = self._format_transactions(transactions)
-            
-            # Use LLM to analyze patterns
-            result = self.chain.invoke({
-                "ticker": ticker,
-                "transactions": trans_text
-            })
-            
-            return result.model_dump()
+            return self._process_transactions(ticker, transactions)
             
         except Exception as e:
             logger.error(f"Insider analysis error for {ticker}: {e}")
             return self._neutral_response(f"Analysis error: {str(e)}")
+
+    def _process_transactions(self, ticker: str, transactions: list[dict]) -> dict[str, Any]:
+        """Process transactions and run LLM analysis."""
+        if not transactions:
+            logger.info(f"🔍 Insider Agent: No recent transactions found, returning neutral")
+            return self._neutral_response("No recent insider transactions found")
+        
+        # Check if we need LLM fallback
+        if transactions[0].get("insider_name") == "LLM_FALLBACK_REQUIRED":
+            return self._llm_web_analysis(ticker)
+        
+        # Format transactions for LLM analysis
+        trans_text = self._format_transactions(transactions)
+        
+        # Use LLM to analyze patterns
+        result = self.chain.invoke({
+            "ticker": ticker,
+            "transactions": trans_text
+        })
+        
+        return result.model_dump()
     
     def _format_transactions(self, transactions: list[dict]) -> str:
         """Format transaction data for LLM prompt."""

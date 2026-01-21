@@ -1,0 +1,7 @@
+Title: m2ai-mcp-videogen-advisor added to PyPI
+Source: Pypi.org
+Date: 2026-01-19T23:00:26Z
+---
+A unified MCP server for video generation that intelligently routes requests to either HeyGen (for avatar/presenter videos) or Google Veo (for creative/cinematic content).
+Features
+<ul><li>Intellig… [+5145 chars]

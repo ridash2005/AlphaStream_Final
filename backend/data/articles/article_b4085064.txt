@@ -1,0 +1,5 @@
+Title: Adam Williamson: CI and LLM review on Fedora Forge with Forgejo Actions
+Source: Happyassassin.net
+Date: 2026-01-19T23:19:26Z
+---
+Hi folks! Over the last couple of weeks, we have migrated nearly all the quality team's repositories from Pagure (the old Fedora forge) to the new, Forgejo-based Fedora Forge. As part of this, I've f… [+9146 chars]

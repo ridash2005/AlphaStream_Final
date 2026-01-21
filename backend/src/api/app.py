@@ -16,12 +16,11 @@ import sys
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Callable, Awaitable
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-import asyncio
 
 from src.agents.sentiment_agent import SentimentAgent
 from src.agents.technical_agent import TechnicalAgent
@@ -141,10 +140,24 @@ async def lifespan(app: FastAPI):
     rag_pipeline.ingest_articles(initial_articles)
     logger.info("Seeded RAG with initial articles. Live news will supersede these.")
     
-    # NOTE: Adaptive RAG Server should be started externally via start.sh
-    # This allows proper service ordering and logging
-    # The server runs on port 8001 and should be started before the backend
-    logger.info("Expecting Adaptive RAG Server on port 8001 (start via ./start.sh)")
+    # Start Pathway Adaptive RAG Server (USP) as a subprocess
+    logger.info("Starting Pathway Adaptive RAG Server (port 8001)...")
+    try:
+        # Launch server in background
+        rag_server_process = subprocess.Popen(
+            [sys.executable, "src/pipeline/adaptive_rag_server.py"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd="."  # Run from backend root
+        )
+        logger.info(f"Adaptive RAG Server started with PID: {rag_server_process.pid}")
+        
+        # Determine strict startup wait time
+        # We want to give it a chance to start, but not block the main backend too long
+        # The UnifiedRAGService handles unavailability gracefully via fallback
+    except Exception as e:
+        logger.error(f"Failed to start Adaptive RAG Server: {e}")
+        rag_server_process = None
 
     # Initialize Unified RAG Service (Adaptive RAG primary, manual fallback)
     unified_rag = UnifiedRAGService(
@@ -273,7 +286,17 @@ async def lifespan(app: FastAPI):
     
     # Graceful shutdown
     logger.info("Shutting down AlphaStream...")
-    # NOTE: Adaptive RAG server is managed externally by start.sh
+    
+    # Terminate Adaptive RAG server if running
+    if 'rag_server_process' in locals() and rag_server_process:
+        logger.info(f"Terminating Adaptive RAG Server (PID: {rag_server_process.pid})...")
+        rag_server_process.terminate()
+        try:
+            rag_server_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            logger.warning("Adaptive RAG Server did not terminate gracefully, killing...")
+            rag_server_process.kill()
+            
     logger.info("Shutdown complete.")
     # pw.run is infinite, daemon thread will be killed on exit
 
@@ -369,11 +392,17 @@ async def get_recommendation(request: RecommendationRequest) -> RecommendationRe
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def generate_recommendation_logic(ticker: str) -> RecommendationResponse:
+async def generate_recommendation_logic(ticker: str, update_callback: Callable[[str, str], Awaitable[None]] = None) -> RecommendationResponse:
     """Core logic to generate a recommendation."""
     start_time = time.time()
     
+    # helper for updates
+    async def send_update(agent: str, status: str):
+        if update_callback:
+            await update_callback(agent, status)
+
     # 1. Retrieve using Unified RAG (Adaptive primary, manual fallback)
+    await send_update("RAG System", "Retrieving and analyzing market data...")
     query = f"{ticker} stock news financial analysis market sentiment"
     
     # Use unified RAG service (tries Adaptive RAG first, falls back to manual)
@@ -401,16 +430,20 @@ async def generate_recommendation_logic(ticker: str) -> RecommendationResponse:
     
     logger.info(f"📄 Retrieved {len(retrieved_docs)} docs for sentiment analysis")
     
+    await send_update("Sentiment Agent", f"Analyzing {len(retrieved_docs)} documents...")
     # 2. Sentiment
     sentiment = sentiment_agent.analyze(retrieved_docs)
     
     # 3. Technical
+    await send_update("Technical Agent", "Calculating RSI, MACD, and trends...")
     technical = technical_agent.analyze(ticker)
     
     # 4. Risk
+    await send_update("Risk Agent", "Assessing volatility and position checks...")
     risk = risk_agent.analyze(ticker, technical)
     
     # 5. Decision
+    await send_update("Decision Agent", "Synthesizing final recommendation...")
     final_decision = decision_agent.decide(ticker, sentiment, technical, risk)
     
     latency_ms = (time.time() - start_time) * 1000
@@ -442,9 +475,20 @@ async def websocket_endpoint(websocket: WebSocket, ticker: str):
     ticker = ticker.upper()
     await ws_manager.connect(websocket, ticker)
     try:
-        # Send initial recommendation
+        # Define callback for partial updates
+        async def stream_progress(agent: str, status: str):
+            await websocket.send_json({
+                "type": "agent_update",
+                "data": {
+                    "agent": agent,
+                    "status": status,
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+            })
+
+        # Send initial recommendation with streaming updates
         if rag_pipeline:
-            rec = await generate_recommendation_logic(ticker)
+            rec = await generate_recommendation_logic(ticker, update_callback=stream_progress)
             
             # Update market state with this ticker's sentiment
             market_state.update(ticker, rec.sentiment_score)
@@ -524,7 +568,12 @@ async def ingest_article(article: dict[str, Any]) -> dict[str, Any]:
     article.setdefault("url", "")
     article.setdefault("published_at", datetime.utcnow().isoformat())
 
-    chunks_created = rag_pipeline.ingest_article(article)
+    # Run blocking ingestion in thread pool to avoid blocking the event loop
+    loop = asyncio.get_running_loop()
+    chunks_created = await loop.run_in_executor(
+        None, 
+        lambda: rag_pipeline.ingest_article(article)
+    )
 
     return {
         "status": "success",

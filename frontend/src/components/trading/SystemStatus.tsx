@@ -38,6 +38,9 @@ export function SystemStatus() {
     const displayDocCount = documentCount || health?.document_count || 0;
     const displayLatency = indexingLatency !== null ? `${indexingLatency.toFixed(2)}ms ingest` : 'Waiting...';
 
+    // Subscribe to agent status
+    const agentStatus = useAppStore((state) => state.agentStatus);
+
     return (
         <div className="flex items-center gap-4 text-xs">
             {/* Connection status */}
@@ -54,6 +57,19 @@ export function SystemStatus() {
                     </>
                 )}
             </div>
+
+            {/* Agent Progress Indicator - Shows when active */}
+            {agentStatus && (
+                <>
+                    <div className="h-3 w-px bg-border" />
+                    <div className="flex items-center gap-2 animate-pulse">
+                        <Bot className="h-3.5 w-3.5 text-yellow-400" />
+                        <span className="text-yellow-400 font-medium">
+                            {agentStatus.agent}: <span className="text-muted-foreground">{agentStatus.status}</span>
+                        </span>
+                    </div>
+                </>
+            )}
 
             <div className="h-3 w-px bg-border" />
 

@@ -1,0 +1,5 @@
+Title: SK Telecom Expands National AI Model Into Multimodal Platform
+Source: Businesskorea
+Date: 20260116T025851
+---
+SK Telecom has advanced to the second phase of a government-led "Independent AI Foundation Model" project, aiming to establish a national-level AI system. The company plans to expand its proprietary A.X K1 model into a multimodal platform capable of understanding text, images, voice, and video, and will extend its training to five languages. This initiative positions SK Telecom to collaborate with over 20 partners and compete with global big tech AI models.
