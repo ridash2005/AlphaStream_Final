@@ -19,9 +19,16 @@ export { MacroSignalPanel } from './MacroSignalPanel';
 export { CommodityStrip } from './CommodityStrip';
 export { ErrorBoundary } from './ErrorBoundary';
 export { GeoRiskPanel } from './GeoRiskPanel';
+export { AnomalyPanel } from './AnomalyPanel';
+export { StockFundamentals } from './StockFundamentals';
+export { CorporateFilings } from './CorporateFilings';
+export { PortfolioManager } from './PortfolioManager';
+export { GlobalMarketsPanel } from './GlobalMarketsPanel';
 export {
     RecommendationBadge,
     SentimentBadge,
     ConfidenceBar,
     LatencyIndicator,
 } from './Indicators';
+export { StockScreener } from './StockScreener';
+export { WatchlistPanel } from './WatchlistPanel';

@@ -1,11 +1,15 @@
 """
 Market API router — radar, patterns, backtest, flows, portfolio, filings, OHLCV.
 """
+import asyncio
 import json
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -126,8 +130,13 @@ async def get_popular_tickers():
 
 
 @router.get("/ohlcv/{ticker}")
-async def get_ohlcv(ticker: str, period: str = Query("6mo")):
-    """OHLCV data for charting (consumed by TradingView Lightweight Charts)."""
+async def get_ohlcv(ticker: str, period: str = Query("6mo"), indicators: bool = Query(False)):
+    """OHLCV data for charting (consumed by TradingView Lightweight Charts).
+
+    When indicators=True, returns extended format:
+      { candles: [...], sma20: [...], sma50: [...], rsi: [...] }
+    When indicators=False (default), returns flat candle list for backward compatibility.
+    """
     from src.connectors.nse_connector import get_nse_connector
 
     nse = get_nse_connector()
@@ -145,4 +154,192 @@ async def get_ohlcv(ticker: str, period: str = Query("6mo")):
             "close": round(float(row.get("Close", 0)), 2),
             "volume": int(row.get("Volume", 0)),
         })
-    return records
+
+    if not indicators:
+        return records
+
+    # Compute technical indicators
+    try:
+        import pandas as pd
+        from src.agents.technical_agent import TechnicalAgent
+
+        ta_agent = TechnicalAgent()
+        close = df["Close"]
+        timestamps = [
+            int(date.timestamp()) if hasattr(date, "timestamp") else int(pd.Timestamp(date).timestamp())
+            for date in df.index
+        ]
+
+        rsi_series = ta_agent._calculate_rsi(close, window=14)
+        sma20_series = ta_agent._calculate_sma(close, window=20)
+        sma50_series = ta_agent._calculate_sma(close, window=50)
+
+        def _to_time_value(series, ts_list):
+            result = []
+            for ts, (_, val) in zip(ts_list, series.items()):
+                if pd.notna(val):
+                    result.append({"time": ts, "value": round(float(val), 4)})
+            return result
+
+        return {
+            "candles": records,
+            "sma20": _to_time_value(sma20_series, timestamps),
+            "sma50": _to_time_value(sma50_series, timestamps),
+            "rsi": _to_time_value(rsi_series, timestamps),
+        }
+    except Exception:
+        # Fallback: return candles only in extended format so frontend can detect it
+        return {"candles": records, "sma20": [], "sma50": [], "rsi": []}
+
+
+@router.get("/anomalies/{ticker}")
+async def get_anomalies(ticker: str, period: str = Query("3mo", description="OHLCV history period")):
+    """Detect price/volume anomalies using online ML (AnomalyAgent with River)."""
+    try:
+        from src.agents.anomaly_agent import get_anomaly_agent
+        from src.connectors.nse_connector import get_nse_connector
+
+        nse = get_nse_connector()
+
+        # Get historical OHLCV data
+        try:
+            df = await asyncio.to_thread(nse.get_historical_data, ticker, period=period)
+        except Exception as e:
+            logger.debug(f"NSE OHLCV failed for {ticker}: {e}")
+            # Try yfinance fallback
+            import yfinance as yf
+            hist = yf.Ticker(f"{ticker}.NS").history(period=period)
+            df = hist
+
+        if df is None or (hasattr(df, 'empty') and df.empty):
+            return {"ticker": ticker, "anomalies": [], "fed_ticks": 0, "error": "No OHLCV data available"}
+
+        agent = get_anomaly_agent()
+
+        # Reset anomalies for fresh computation
+        agent.clear_anomalies()
+
+        # Feed historical ticks
+        closes = df['Close'].tolist() if 'Close' in df.columns else []
+        volumes = df['Volume'].tolist() if 'Volume' in df.columns else [0] * len(closes)
+
+        fed = 0
+        for i in range(1, len(closes)):
+            try:
+                close_val = float(closes[i])
+                prev_close = float(closes[i - 1])
+                vol_val = float(volumes[i]) if i < len(volumes) else 0
+                change_pct = ((close_val - prev_close) / prev_close) * 100 if prev_close != 0 else 0
+
+                agent.feed_price(ticker, close_val, int(vol_val), change_pct)
+                fed += 1
+            except Exception:
+                continue
+
+        anomalies = agent.get_recent_anomalies(limit=10)
+
+        return {
+            "ticker": ticker,
+            "anomalies": anomalies,
+            "fed_ticks": fed,
+        }
+    except Exception as e:
+        logger.error(f"Anomaly detection failed for {ticker}: {e}")
+        return {"ticker": ticker, "anomalies": [], "fed_ticks": 0, "error": str(e)}
+
+
+@router.get("/screener")
+async def get_screener(
+    sector: str = Query("", description="Filter by sector"),
+    direction: str = Query("", description="Filter by direction: bullish/bearish"),
+    min_alpha: float = Query(0.0, description="Minimum alpha score (0-100)"),
+    limit: int = Query(20, le=50, description="Max results"),
+):
+    """Top stock signals from v_stock_screener DuckDB view."""
+    import duckdb
+    from src.data.market_schema import get_db_path
+
+    try:
+        con = duckdb.connect(get_db_path(), read_only=True)
+        try:
+            sql = """
+                SELECT * FROM v_stock_screener
+                WHERE latest_alpha_score IS NOT NULL
+            """
+            params = []
+
+            if sector:
+                sql += " AND sector = ?"
+                params.append(sector)
+            if direction:
+                sql += " AND latest_signal_dir = ?"
+                params.append(direction.lower())
+            if min_alpha > 0:
+                sql += " AND latest_alpha_score >= ?"
+                params.append(min_alpha)
+
+            sql += " ORDER BY latest_alpha_score DESC NULLS LAST LIMIT ?"
+            params.append(limit)
+
+            df = con.execute(sql, params).fetchdf()
+
+            sectors_df = con.execute(
+                "SELECT DISTINCT sector FROM v_stock_screener WHERE sector IS NOT NULL ORDER BY sector"
+            ).fetchdf()
+
+            return {
+                "stocks": df.to_dict(orient="records"),
+                "sectors": sectors_df["sector"].tolist() if not sectors_df.empty else [],
+                "total": len(df),
+            }
+        except Exception as e:
+            logger.warning(f"Screener query failed: {e}")
+            return {"stocks": [], "sectors": [], "total": 0, "error": str(e)}
+        finally:
+            con.close()
+    except Exception as e:
+        logger.error(f"Screener DB connection failed: {e}")
+        return {"stocks": [], "sectors": [], "total": 0, "error": "Database unavailable"}
+
+
+@router.get("/fundamentals/{ticker}")
+async def get_fundamentals(ticker: str):
+    """Get stock fundamentals from Groww API."""
+    try:
+        from src.connectors.groww_connector import get_groww_connector
+        groww = get_groww_connector()
+
+        fundamentals = {}
+        quote = {}
+
+        try:
+            fundamentals = await asyncio.to_thread(groww.get_fundamentals, ticker) if hasattr(groww, 'get_fundamentals') else {}
+        except Exception as e:
+            logger.debug(f"Groww fundamentals failed: {e}")
+
+        try:
+            quote = await asyncio.to_thread(groww.get_stock_quote, ticker) if hasattr(groww, 'get_stock_quote') else {}
+        except Exception as e:
+            logger.debug(f"Groww quote failed: {e}")
+
+        return {
+            "ticker": ticker,
+            "pe_ratio": fundamentals.get("pe_ratio"),
+            "pb_ratio": fundamentals.get("pb_ratio"),
+            "dividend_yield": fundamentals.get("dividend_yield"),
+            "roe": fundamentals.get("roe"),
+            "market_cap_cr": fundamentals.get("market_cap_cr"),
+            "year_high": quote.get("year_high"),
+            "year_low": quote.get("year_low"),
+            "current_price": quote.get("price"),
+            "source": "Groww",
+        }
+    except Exception as e:
+        logger.warning(f"Fundamentals fetch failed for {ticker}: {e}")
+        return {
+            "ticker": ticker,
+            "error": "Fundamentals data unavailable — configure GROWW_API_TOKEN in .env",
+            "pe_ratio": None, "pb_ratio": None, "dividend_yield": None,
+            "roe": None, "market_cap_cr": None, "year_high": None, "year_low": None,
+            "current_price": None,
+        }

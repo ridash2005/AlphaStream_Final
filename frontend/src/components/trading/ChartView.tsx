@@ -3,10 +3,11 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { BarChart2, TrendingUp, TrendingDown, Loader2, Clock } from 'lucide-react';
+import { BarChart2, TrendingUp, TrendingDown, Loader2, Clock, Activity } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { apiService } from '@/services/api';
 import { useAppStore } from '@/store/appStore';
-import { createChart, ColorType, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
+import { createChart, ColorType, CandlestickSeries, HistogramSeries, LineSeries } from 'lightweight-charts';
 
 const PERIODS = ['1mo', '3mo', '6mo', '1y', '5y'] as const;
 
@@ -32,20 +33,33 @@ export function ChartView() {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [backtest, setBacktest] = useState<BacktestResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showIndicators, setShowIndicators] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>(null);
+  const rsiContainerRef = useRef<HTMLDivElement>(null);
+  const rsiChartRef = useRef<any>(null);
 
   const loadChart = async () => {
     setLoading(true);
     try {
-      const [ohlcv, pats] = await Promise.all([
-        apiService.getOHLCV(ticker, period),
+      const [data, pats] = await Promise.all([
+        apiService.getOHLCV(ticker, period, showIndicators),
         apiService.getPatterns(ticker),
       ]);
       setPatterns(Array.isArray(pats) ? pats : []);
 
+      // Detect extended vs flat response format
+      const isExtended = data && data.candles && Array.isArray(data.candles);
+      const ohlcv: any[] = isExtended ? data.candles : (Array.isArray(data) ? data : []);
+
+      // Dispose previous RSI chart
+      if (rsiChartRef.current) {
+        rsiChartRef.current.remove();
+        rsiChartRef.current = null;
+      }
+
       // Render TradingView chart
-      if (chartContainerRef.current && Array.isArray(ohlcv) && ohlcv.length > 0) {
+      if (chartContainerRef.current && ohlcv.length > 0) {
         if (chartRef.current) {
           chartRef.current.remove();
         }
@@ -78,6 +92,44 @@ export function ChartView() {
           color: d.close >= d.open ? '#00ff8833' : '#ff444433',
         })));
 
+        // Indicator overlays
+        if (isExtended && showIndicators) {
+          const sma20Series = chart.addSeries(LineSeries, {
+            color: '#06b6d4', lineWidth: 1, lastValueVisible: false, priceLineVisible: false, title: 'SMA20',
+          });
+          sma20Series.setData(data.sma20 || []);
+
+          const sma50Series = chart.addSeries(LineSeries, {
+            color: '#f59e0b', lineWidth: 1, lastValueVisible: false, priceLineVisible: false, title: 'SMA50',
+          });
+          sma50Series.setData(data.sma50 || []);
+
+          // RSI sub-chart
+          if (rsiContainerRef.current) {
+            const rsiChart = createChart(rsiContainerRef.current, {
+              height: 100,
+              layout: { background: { type: ColorType.Solid, color: '#0a0a1a' }, textColor: '#888' },
+              grid: { vertLines: { color: '#1a1a2e' }, horzLines: { color: '#1a1a2e' } },
+              rightPriceScale: { scaleMargins: { top: 0.1, bottom: 0.1 } },
+              timeScale: { visible: false },
+              width: rsiContainerRef.current.clientWidth,
+            });
+            const rsiSeries = rsiChart.addSeries(LineSeries, {
+              color: '#a855f7', lineWidth: 1, lastValueVisible: true, title: 'RSI',
+            });
+            rsiSeries.setData(data.rsi || []);
+            rsiSeries.createPriceLine({ price: 30, color: '#ef4444', lineWidth: 1, lineStyle: 2, title: '30' });
+            rsiSeries.createPriceLine({ price: 70, color: '#22c55e', lineWidth: 1, lineStyle: 2, title: '70' });
+
+            // Sync time scales
+            chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+              if (range) rsiChart.timeScale().setVisibleLogicalRange(range);
+            });
+
+            rsiChartRef.current = rsiChart;
+          }
+        }
+
         chart.timeScale().fitContent();
         chartRef.current = chart;
       }
@@ -96,7 +148,7 @@ export function ChartView() {
     }
   };
 
-  useEffect(() => { loadChart(); }, [ticker, period]);
+  useEffect(() => { loadChart(); }, [ticker, period, showIndicators]);
   useEffect(() => { setTicker(currentTicker || 'RELIANCE'); }, [currentTicker]);
 
   useEffect(() => {
@@ -106,7 +158,11 @@ export function ChartView() {
       }
     };
     window.addEventListener('resize', handleResize);
-    return () => { window.removeEventListener('resize', handleResize); if (chartRef.current) chartRef.current.remove(); };
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (chartRef.current) chartRef.current.remove();
+      if (rsiChartRef.current) rsiChartRef.current.remove();
+    };
   }, []);
 
   return (
@@ -130,6 +186,15 @@ export function ChartView() {
               </Button>
             ))}
           </div>
+          <button
+            onClick={() => setShowIndicators((v) => !v)}
+            className={cn(
+              'px-2 py-1 rounded text-xs',
+              showIndicators ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <Activity className="h-3 w-3 inline mr-1" />Indicators
+          </button>
           {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
         </div>
       </Card>
@@ -143,6 +208,9 @@ export function ChartView() {
             </div>
           )}
           <div ref={chartContainerRef} className="w-full" style={{ minHeight: chartRef.current ? 400 : 0 }} />
+          {showIndicators && (
+            <div ref={rsiContainerRef} className="w-full border-t border-border/20" />
+          )}
         </Card>
 
         {/* Patterns + Backtest */}

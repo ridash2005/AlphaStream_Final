@@ -1,7 +1,7 @@
-import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Zap, ArrowUp, ArrowDown, LogOut, User } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { AlertCircle, Zap, LogOut, User, LayoutDashboard, Globe, Building2, Briefcase } from 'lucide-react';
 import { useAppStore } from '@/store/appStore';
 import {
   TickerSearch,
@@ -33,7 +33,6 @@ import NLQButton from '@/components/trading/NLQButton';
 
 export default function Dashboard() {
   const { error, clearError, user, logout } = useAppStore();
-  const mainRef = useRef<HTMLElement>(null);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -79,91 +78,133 @@ export default function Dashboard() {
         <GlobalMarketBar />
       </ErrorBoundary>
 
-      {/* Main content — dense Bloomberg layout */}
-      <main ref={mainRef} className="flex-1 overflow-y-auto scrollbar-hide w-full relative">
-        <div className="max-w-[1600px] mx-auto px-4 pt-4 pb-40">
-          {error && (
-            <Alert variant="destructive" className="mb-3 glass-card">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="flex items-center justify-between">
-                <span>{error}</span>
-                <button onClick={clearError} className="text-xs underline hover:no-underline">Dismiss</button>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="mb-4">
-            <TickerSearch />
-          </div>
-
-          {/* Row 1: Chart + Recommendation + Agent Radar (primary data) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
-            <div className="lg:col-span-7">
-              <ChartView />
-            </div>
-            <div className="lg:col-span-3">
-              <RecommendationCard />
-            </div>
-            <div className="lg:col-span-2">
-              <AgentRadar />
-            </div>
-          </div>
-
-          {/* Row 2: Opportunity signals + Flow chart + Signal history */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-            <OpportunityRadar />
-            <FlowChart />
-            <HistoryChart />
-          </div>
-
-          {/* Row 2.5: Global Intelligence (WorldMonitor) */}
-          <ErrorBoundary section="Global Intelligence">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
-              <div className="lg:col-span-3">
-                <FearGreedGauge />
-              </div>
-              <div className="lg:col-span-4">
-                <MacroSignalPanel />
-              </div>
-              <div className="lg:col-span-5">
-                <CommodityStrip />
-              </div>
-            </div>
-          </ErrorBoundary>
-
-          {/* Row 3: Sector heatmap + Market sentiment + Insider + Network + Geo-Risk */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-            <SectorHeatmap />
-            <MarketHeatmap />
-            <InsiderActivity />
-            <NetworkGraph />
-            <GeoRiskPanel />
-          </div>
-
-          {/* Row 4: News + Report + History */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2">
-              <ArticlesList />
-            </div>
-            <div className="space-y-4">
-              <ReportDownload />
-              <HistoryPanel />
-            </div>
-          </div>
+      {/* Error alert — between GlobalMarketBar and Tabs */}
+      {error && (
+        <div className="max-w-[1600px] mx-auto px-4 pt-3 w-full shrink-0">
+          <Alert variant="destructive" className="glass-card">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>{error}</span>
+              <button onClick={clearError} className="text-xs underline hover:no-underline">Dismiss</button>
+            </AlertDescription>
+          </Alert>
         </div>
-      </main>
+      )}
 
-      {/* Floating buttons */}
-      <div className="fixed bottom-20 right-6 flex flex-col gap-2 z-50">
-        <button onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="p-2 rounded-full glass hover:bg-primary/20 transition-all border border-border/50 shadow-lg group" title="Top">
-          <ArrowUp className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-        </button>
-        <button onClick={() => mainRef.current?.scrollTo({ top: mainRef.current.scrollHeight, behavior: 'smooth' })}
-          className="p-2 rounded-full glass hover:bg-primary/20 transition-all border border-border/50 shadow-lg group" title="Bottom">
-          <ArrowDown className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-        </button>
-      </div>
+      {/* 5-tab layout */}
+      <Tabs defaultValue="overview" className="flex flex-col flex-1 overflow-hidden">
+        <TabsList className="w-full justify-start rounded-none border-b border-border/30 bg-transparent h-9 px-4 gap-0 shrink-0">
+          <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium px-4 h-full gap-1.5">
+            <LayoutDashboard className="h-3.5 w-3.5" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="signals" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium px-4 h-full gap-1.5">
+            <Zap className="h-3.5 w-3.5" />
+            Signals
+          </TabsTrigger>
+          <TabsTrigger value="global" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium px-4 h-full gap-1.5">
+            <Globe className="h-3.5 w-3.5" />
+            Global Intel
+          </TabsTrigger>
+          <TabsTrigger value="company" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium px-4 h-full gap-1.5">
+            <Building2 className="h-3.5 w-3.5" />
+            Company
+          </TabsTrigger>
+          <TabsTrigger value="portfolio" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium px-4 h-full gap-1.5">
+            <Briefcase className="h-3.5 w-3.5" />
+            Portfolio
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Overview tab */}
+        <TabsContent value="overview" className="flex-1 overflow-y-auto scrollbar-hide mt-0 border-0 p-0">
+          <div className="max-w-[1600px] mx-auto px-4 pt-4 pb-40">
+            <div className="mb-4">
+              <TickerSearch />
+            </div>
+
+            {/* Row 1: Chart + Recommendation + Agent Radar */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+              <div className="lg:col-span-7">
+                <ChartView />
+              </div>
+              <div className="lg:col-span-3">
+                <RecommendationCard />
+              </div>
+              <div className="lg:col-span-2">
+                <AgentRadar />
+              </div>
+            </div>
+
+            {/* Row 2: Opportunity signals + Flow chart + Signal history */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <OpportunityRadar />
+              <FlowChart />
+              <HistoryChart />
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Signals tab */}
+        <TabsContent value="signals" className="flex-1 overflow-y-auto scrollbar-hide mt-0 border-0 p-0">
+          <div className="max-w-[1600px] mx-auto px-4 pt-4 pb-40">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <SectorHeatmap />
+              <MarketHeatmap />
+              <InsiderActivity />
+              <NetworkGraph />
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Global Intel tab */}
+        <TabsContent value="global" className="flex-1 overflow-y-auto scrollbar-hide mt-0 border-0 p-0">
+          <div className="max-w-[1600px] mx-auto px-4 pt-4 pb-40">
+            <ErrorBoundary section="Global Intelligence">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div className="lg:col-span-3">
+                  <FearGreedGauge />
+                </div>
+                <div className="lg:col-span-4">
+                  <MacroSignalPanel />
+                </div>
+                <div className="lg:col-span-5">
+                  <CommodityStrip />
+                </div>
+              </div>
+              <div className="mt-4">
+                <GeoRiskPanel />
+              </div>
+            </ErrorBoundary>
+          </div>
+        </TabsContent>
+
+        {/* Company tab */}
+        <TabsContent value="company" className="flex-1 overflow-y-auto scrollbar-hide mt-0 border-0 p-0">
+          <div className="max-w-[1600px] mx-auto px-4 pt-4 pb-40">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2">
+                <ArticlesList />
+              </div>
+              <div className="space-y-4">
+                <ReportDownload />
+                <HistoryPanel />
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Portfolio tab */}
+        <TabsContent value="portfolio" className="flex-1 overflow-y-auto scrollbar-hide mt-0 border-0 p-0">
+          <div className="max-w-[1600px] mx-auto px-4 pt-4">
+            <div className="glass-card rounded-lg p-8 text-center">
+              <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-30" />
+              <p className="text-sm text-muted-foreground">Portfolio management UI coming soon</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Use the NLQ panel to query your holdings</p>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <NLQPanel />
       <NLQButton />

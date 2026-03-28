@@ -107,8 +107,15 @@ export const apiService = {
         return response.data;
     },
 
-    async getOHLCV(ticker: string, period = '6mo') {
-        const response = await api.get(`/api/ohlcv/${ticker}`, { params: { period } });
+    async getPortfolioSummary() {
+        const response = await api.get('/api/portfolio/summary');
+        return response.data;
+    },
+
+    async getOHLCV(ticker: string, period = '6mo', indicators = false) {
+        const response = await api.get(`/api/ohlcv/${ticker}`, {
+            params: { period, ...(indicators ? { indicators: true } : {}) },
+        });
         return response.data;
     },
 
@@ -183,6 +190,41 @@ export const apiService = {
 
     async getGlobalContext() {
         const response = await api.get('/api/global/context');
+        return response.data;
+    },
+
+    // ── Fundamentals endpoints ────────────────────
+
+    async getFundamentals(ticker: string) {
+        const response = await api.get(`/api/fundamentals/${ticker}`);
+        return response.data;
+    },
+
+    // ── Filings endpoints ─────────────────────────
+
+    async getFilings(ticker: string, days = 30): Promise<any[]> {
+        const response = await api.get(`/api/filings/${ticker}`, { params: { days } });
+        return response.data;
+    },
+
+    // ── Anomaly endpoints ─────────────────────────
+
+    async getAnomalies(ticker: string, period = '3mo') {
+        const response = await api.get(`/api/anomalies/${ticker}`, { params: { period } });
+        return response.data;
+    },
+
+    // ── Screener endpoints ────────────────────────
+
+    async getScreener(params?: { sector?: string; direction?: string; minAlpha?: number; limit?: number }) {
+        const response = await api.get('/api/screener', {
+            params: {
+                sector: params?.sector || '',
+                direction: params?.direction || '',
+                min_alpha: params?.minAlpha || 0,
+                limit: params?.limit || 20,
+            },
+        });
         return response.data;
     },
 };

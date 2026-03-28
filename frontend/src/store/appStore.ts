@@ -41,6 +41,9 @@ export interface Article {
     source: string;
     similarity: number;
     snippet: string;
+    threat_level?: 'info' | 'warning' | 'critical';
+    threat_category?: string;
+    published_at?: string;
 }
 
 export interface HealthStatus {
@@ -75,6 +78,9 @@ interface AppState {
 
     // Portfolio
     portfolio: Holding[];
+
+    // Watchlist
+    watchlist: string[];
 
     // UI State
     currentTicker: string;
@@ -118,6 +124,10 @@ interface AppState {
     setFearGreed: (data: AppState['fearGreed']) => void;
     setMacroSignals: (data: AppState['macroSignals']) => void;
 
+    // Watchlist actions
+    addToWatchlist: (ticker: string) => void;
+    removeFromWatchlist: (ticker: string) => void;
+
     // NLQ actions
     setNlqOpen: (open: boolean) => void;
     setNlqSessionId: (id: string) => void;
@@ -155,6 +165,17 @@ export const useAppStore = create<AppState>()(
 
     // Portfolio
     portfolio: [],
+
+    // Watchlist
+    watchlist: ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK'],
+    addToWatchlist: (ticker: string) => set((s) => ({
+      watchlist: s.watchlist.includes(ticker.toUpperCase())
+        ? s.watchlist
+        : [...s.watchlist, ticker.toUpperCase()].slice(0, 20),
+    })),
+    removeFromWatchlist: (ticker: string) => set((s) => ({
+      watchlist: s.watchlist.filter(t => t !== ticker.toUpperCase()),
+    })),
 
     // Auth actions
     setUser: (user) => set({ user }),
@@ -290,6 +311,7 @@ export const useAppStore = create<AppState>()(
       currentTicker: state.currentTicker,
       nlqSessionId: state.nlqSessionId,
       recommendationHistory: state.recommendationHistory,
+      watchlist: state.watchlist,
     }),
   }
 ));
