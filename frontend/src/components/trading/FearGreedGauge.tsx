@@ -27,8 +27,8 @@ export function FearGreedGauge() {
         apiService.getFearGreed(),
         apiService.getVix(),
       ]);
-      if (fgRes.status === 'fulfilled') setData(fgRes.value);
-      if (vixRes.status === 'fulfilled') setVix(vixRes.value);
+      if (fgRes.status === 'fulfilled') setData(fgRes.value?.data || fgRes.value);
+      if (vixRes.status === 'fulfilled') setVix(vixRes.value?.data || vixRes.value);
     };
     load();
     const interval = setInterval(load, 10 * 60 * 1000); // 10min

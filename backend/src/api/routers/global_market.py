@@ -39,14 +39,14 @@ async def get_crypto_quotes():
 async def get_vix():
     """VIX volatility index + status."""
     gmc = get_global_market_connector()
-    return gmc.get_vix()
+    return {"data": gmc.get_vix()}
 
 
 @router.get("/fear-greed")
 async def get_fear_greed():
     """CNN Fear & Greed Index (0-100)."""
     gmc = get_global_market_connector()
-    return gmc.get_fear_greed()
+    return {"data": gmc.get_fear_greed()}
 
 
 @router.get("/sectors")
@@ -60,7 +60,7 @@ async def get_sector_performance():
 async def get_macro_signals():
     """Macro economic signals composite."""
     mc = get_macro_connector()
-    return mc.get_macro_signals()
+    return {"data": mc.get_macro_signals()}
 
 
 @router.get("/currencies")
@@ -80,14 +80,14 @@ async def get_global_context():
     ctx["macro_verdict"] = macro.get("verdict", "MIXED")
     ctx["macro_signals"] = macro.get("signals", [])
     ctx["yield_curve"] = macro.get("yield_curve", "UNKNOWN")
-    return ctx
+    return {"data": ctx}
 
 
 @router.get("/geo-risk")
 async def get_geopolitical_risk():
     """India geopolitical risk score (0-100) with hotspot alerts."""
     geo = get_geopolitical_connector()
-    return geo.get_india_risk()
+    return {"data": geo.get_india_risk()}
 
 
 @router.post("/refresh")

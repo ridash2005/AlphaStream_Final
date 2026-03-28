@@ -27,7 +27,7 @@ export function MacroSignalPanel() {
     const load = async () => {
       try {
         const res = await apiService.getMacroSignals();
-        setData(res);
+        setData(res?.data || res);
       } catch {}
     };
     load();

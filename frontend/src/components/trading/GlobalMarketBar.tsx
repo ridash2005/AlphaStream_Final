@@ -32,8 +32,8 @@ export function GlobalMarketBar() {
       ]);
       if (idxRes.status === 'fulfilled') setIndices(idxRes.value.data || []);
       if (comRes.status === 'fulfilled') setCommodities(comRes.value.data || []);
-      if (fgRes.status === 'fulfilled') setFearGreed(fgRes.value);
-      if (vixRes.status === 'fulfilled') setVix(vixRes.value);
+      if (fgRes.status === 'fulfilled') setFearGreed(fgRes.value?.data || fgRes.value);
+      if (vixRes.status === 'fulfilled') setVix(vixRes.value?.data || vixRes.value);
       if (cryptoRes.status === 'fulfilled') setCrypto(cryptoRes.value.data || []);
       if (currRes.status === 'fulfilled') setCurrencies(currRes.value.data || []);
     };

@@ -229,9 +229,15 @@ export const useAppStore = create<AppState>()(
                         if (gd.indices) set({ globalIndices: gd.indices });
                         if (gd.commodities) set({ commodityQuotes: gd.commodities });
                         if (gd.fear_greed) set({ fearGreed: gd.fear_greed });
-                    } else {
+                    } else if (data.type === 'recommendation' && data.data) {
+                        setRecommendation(data.data);
+                        setLoading(false);
+                    } else if (data.ticker && data.recommendation) {
+                        // Legacy: direct recommendation object (backwards compat)
                         setRecommendation(data);
                         setLoading(false);
+                    } else {
+                        console.warn('Unknown WebSocket message type:', data.type || 'none');
                     }
                 } catch (e) {
                     console.error("Failed to parse WS message", e);

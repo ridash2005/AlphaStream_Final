@@ -271,7 +271,7 @@ async def lifespan(app: FastAPI):
             market_state.update(ticker, rec.sentiment_score)
             
             # Broadcast Recommendation
-            await ws_manager.broadcast(ticker, rec.model_dump())
+            await ws_manager.broadcast(ticker, {"type": "recommendation", "data": rec.model_dump()})
             
             # Broadcast Heatmap Update
             await ws_manager.broadcast_global({
@@ -692,7 +692,7 @@ async def websocket_endpoint(websocket: WebSocket, ticker: str):
             market_state.update(ticker, rec.sentiment_score)
             
             # Send recommendation to this client
-            await websocket.send_json(rec.model_dump())
+            await websocket.send_json({"type": "recommendation", "data": rec.model_dump()})
             
             # Send heatmap to this client
             await websocket.send_json({
