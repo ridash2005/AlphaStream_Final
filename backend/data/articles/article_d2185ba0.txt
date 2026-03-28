@@ -1,0 +1,5 @@
+Title: Show HN: I parsed 10 years of Japanese corporate filings into an API
+Source: Axiora.dev
+Date: 2026-03-02T15:44:22Z
+---
+Hi HN,Japan is the world's 4th largest stock market, but its financial data is stuck in the 90s. Corporate filings go through EDINET — a government system that stores everything as XBRL in Japanese, with 3 different accounting standards (JP-GAAP,IFRS, US-GAAP…

@@ -46,3 +46,5 @@ Thumbs.db
 backend/logs/
 !backend/logs/.gitkeep*.duckdb
 *.duckdb.wal
+*.json
+agrowise-*.json

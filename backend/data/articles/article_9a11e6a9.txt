@@ -1,0 +1,5 @@
+Title: AI infrastructure’s $5T buildout may still be underestimated, Cisco CPO warns
+Source: SiliconANGLE News
+Date: 2026-03-02T15:55:02Z
+---
+Ultra-low latency is rewriting the rules of infrastructure design. As enterprises migrate to always-on agentic systems, networks are now required to deliver both nanosecond responsiveness and large-s… [+5373 chars]
