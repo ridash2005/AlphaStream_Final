@@ -11,6 +11,8 @@ import {
   InsiderActivity,
   ReportDownload,
   OpportunityRadar,
+  ChartView,
+  NotificationBell,
 } from '@/components/trading';
 import { MarketHeatmap } from '@/components/trading/MarketHeatmap';
 import { AgentRadar } from '@/components/trading/AgentRadar';
@@ -36,7 +38,10 @@ function App() {
               <p className="text-xs text-muted-foreground">AI Investment Intelligence</p>
             </div>
           </div>
-          <SystemStatus />
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <SystemStatus />
+          </div>
         </div>
       </header>
 
@@ -66,6 +71,7 @@ function App() {
             {/* Main column - Recommendation */}
             <div className="lg:col-span-2 space-y-6">
               <OpportunityRadar />
+              <ChartView />
               <RecommendationCard />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <MarketHeatmap />

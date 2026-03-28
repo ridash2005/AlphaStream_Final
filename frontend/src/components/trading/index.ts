@@ -6,6 +6,8 @@ export { SystemStatus } from './SystemStatus';
 export { InsiderActivity } from './InsiderActivity';
 export { ReportDownload } from './ReportDownload';
 export { OpportunityRadar } from './OpportunityRadar';
+export { ChartView } from './ChartView';
+export { NotificationBell } from './NotificationBell';
 export {
     RecommendationBadge,
     SentimentBadge,
