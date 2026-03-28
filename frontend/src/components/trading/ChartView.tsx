@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { BarChart2, TrendingUp, TrendingDown, Loader2, Clock } from 'lucide-react';
 import { apiService } from '@/services/api';
 import { useAppStore } from '@/store/appStore';
-import { createChart, ColorType } from 'lightweight-charts';
+import { createChart, ColorType, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
 
 const PERIODS = ['1mo', '3mo', '6mo', '1y', '5y'] as const;
 
@@ -56,7 +56,8 @@ export function ChartView() {
           height: 400,
           crosshair: { mode: 0 },
         });
-        const candlestickSeries = chart.addCandlestickSeries({
+        // lightweight-charts v5 API
+        const candlestickSeries = chart.addSeries(CandlestickSeries, {
           upColor: '#00ff88', downColor: '#ff4444',
           borderUpColor: '#00ff88', borderDownColor: '#ff4444',
           wickUpColor: '#00ff88', wickDownColor: '#ff4444',
@@ -66,9 +67,9 @@ export function ChartView() {
           open: d.open, high: d.high, low: d.low, close: d.close,
         })));
 
-        const volumeSeries = chart.addHistogramSeries({
+        const volumeSeries = chart.addSeries(HistogramSeries, {
           color: '#4a4a6a', priceFormat: { type: 'volume' },
-          priceScaleId: '',
+          priceScaleId: 'volume',
         });
         volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
         volumeSeries.setData(ohlcv.map((d: any) => ({
