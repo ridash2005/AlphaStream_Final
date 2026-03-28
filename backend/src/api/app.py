@@ -183,9 +183,23 @@ async def lifespan(app: FastAPI):
     )
     logger.info("Unified RAG Service initialized (Adaptive RAG primary, manual fallback)")
     
+    # Initialize DuckDB + seed insights
+    try:
+        from src.data.market_schema import init_database
+        db_result = init_database(load_prices=False)  # Prices already loaded
+        logger.info(f"DuckDB ready: {db_result}")
+    except Exception as e:
+        logger.warning(f"DuckDB init: {e}")
+
+    try:
+        from src.api.insights import seed_initial_insights, start_background_insights
+        seed_initial_insights()
+        start_background_insights(interval_minutes=30)
+        logger.info("Ambient insights engine started (every 30 min)")
+    except Exception as e:
+        logger.warning(f"Insights engine: {e}")
+
     # Market state will be populated dynamically as recommendations are generated
-    # No hardcoded values - sentiment scores come from real agent analysis
-    # The heatmap will populate as users query different tickers
     
     # Capture loop for thread-safe scheduling
     loop = asyncio.get_running_loop()

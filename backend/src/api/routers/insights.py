@@ -90,3 +90,11 @@ async def dismiss_insight(insight_id: str):
         return {"status": "ok"}
     finally:
         con.close()
+
+
+@router.post("/insights/generate")
+async def force_generate():
+    """Force regeneration of insights (for demo/testing)."""
+    from src.api.insights import generate_insights
+    count = generate_insights()
+    return {"status": "ok", "generated": count}
