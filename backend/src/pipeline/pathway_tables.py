@@ -73,7 +73,12 @@ def extract_tickers(content: str) -> str:
     """Extract ticker symbols from content."""
     import re
     # Common tickers - extend as needed
-    known_tickers = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "AMD"]
+    # Indian market tickers — loaded dynamically
+    try:
+        from src.data.ticker_universe import get_all_tickers
+        known_tickers = get_all_tickers()
+    except Exception:
+        known_tickers = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK", "LT"]
     found = [t for t in known_tickers if t in content.upper()]
     return ",".join(found) if found else ""
 

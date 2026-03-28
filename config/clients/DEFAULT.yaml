@@ -28,3 +28,10 @@ enabled_signals:
 
 default_index: nifty50
 date_range_default_days: 90
+
+fusion_weights:
+  filing: 0.25
+  technical: 0.25
+  insider_flow: 0.20
+  sentiment: 0.15
+  backtest: 0.15

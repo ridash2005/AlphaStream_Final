@@ -204,8 +204,16 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Insights engine: {e}")
 
+    # Start data refresh service (replaces sample data with real signals)
+    try:
+        from src.data.data_refresh import start_background_refresh
+        start_background_refresh(interval_minutes=30)
+        logger.info("Data refresh scheduler started (every 30 min)")
+    except Exception as e:
+        logger.warning(f"Data refresh scheduler: {e}")
+
     # Market state will be populated dynamically as recommendations are generated
-    
+
     # Capture loop for thread-safe scheduling
     loop = asyncio.get_running_loop()
     

@@ -29,7 +29,7 @@ export function InsiderActivity() {
         setError(null);
 
         try {
-            const response = await fetch(`http://localhost:8000/insider/${currentTicker}`);
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/insider/${currentTicker}`);
             if (!response.ok) throw new Error('Failed to fetch insider data');
             const result = await response.json();
             setData(result);

@@ -152,7 +152,7 @@ class FinnhubSource(NewsSource):
         try:
             # Finnhub requires a stock symbol - extract from query or use defaults
             # Common tickers to fetch news for if no specific ticker in query
-            default_tickers = ["AAPL", "MSFT", "GOOGL", "TSLA", "NVDA"]
+            default_tickers = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK"]
             
             # Try to extract ticker from query
             if query:
@@ -228,7 +228,7 @@ class AlphaVantageSource(NewsSource):
         
         try:
             # Use NEWS_SENTIMENT endpoint - requires valid tickers
-            default_tickers = "AAPL,MSFT,GOOGL"
+            default_tickers = "RELIANCE.NS,TCS.NS,INFY.NS"
             
             # Try to extract ticker from query
             if query:

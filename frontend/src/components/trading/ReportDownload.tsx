@@ -27,7 +27,7 @@ export function ReportDownload() {
         setResult(null);
 
         try {
-            const response = await fetch(`http://localhost:8000/report/${currentTicker}`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/report/${currentTicker}`, {
                 method: 'POST'
             });
 

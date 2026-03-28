@@ -49,6 +49,9 @@ def run_full_refresh(load_prices: bool = True, run_signals: bool = True) -> dict
     # 5. Fetch RSS articles
     results["articles"] = _refresh_articles()
 
+    # 6. Update Groww live prices for dim_stocks market_cap
+    results["groww_refresh"] = _refresh_groww_data()
+
     # 6. Regenerate views
     con = get_connection()
     create_views(con)
@@ -166,6 +169,16 @@ def _refresh_articles() -> int:
         return ingest_rss_to_duckdb()
     except Exception as e:
         logger.warning(f"Article refresh failed: {e}")
+        return 0
+
+
+def _refresh_groww_data() -> int:
+    """Refresh stock data from Groww API (live prices, 52w range)."""
+    try:
+        from src.data.ticker_universe import refresh_dim_stocks
+        return refresh_dim_stocks()
+    except Exception as e:
+        logger.warning(f"Groww refresh failed: {e}")
         return 0
 
 

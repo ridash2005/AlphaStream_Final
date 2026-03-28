@@ -10,13 +10,25 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-WEIGHTS = {
-    "filing": 0.25,
-    "technical": 0.25,
-    "insider_flow": 0.20,
-    "sentiment": 0.15,
-    "backtest": 0.15,
-}
+def _load_weights() -> dict:
+    """Load fusion weights from config, fallback to defaults."""
+    try:
+        import yaml
+        from pathlib import Path
+        cfg_path = Path(__file__).resolve().parents[2] / "config" / "clients" / "DEFAULT.yaml"
+        with open(cfg_path) as f:
+            cfg = yaml.safe_load(f)
+        return cfg.get("fusion_weights", {
+            "filing": 0.25, "technical": 0.25, "insider_flow": 0.20,
+            "sentiment": 0.15, "backtest": 0.15,
+        })
+    except Exception:
+        return {
+            "filing": 0.25, "technical": 0.25, "insider_flow": 0.20,
+            "sentiment": 0.15, "backtest": 0.15,
+        }
+
+WEIGHTS = _load_weights()
 
 DIRECTION_THRESHOLDS = {
     "STRONG_BUY": 80,

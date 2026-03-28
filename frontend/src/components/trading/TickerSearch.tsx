@@ -43,7 +43,8 @@ export function TickerSearch() {
         }
     };
 
-    const popularTickers = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK'];
+    // Top tickers — could be fetched from API in future
+    const popularTickers = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'SBIN'];
 
     return (
         <div className="space-y-3">

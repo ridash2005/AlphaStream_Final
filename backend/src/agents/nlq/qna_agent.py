@@ -32,6 +32,49 @@ _MAX_RESULT_ROWS = 5_000
 _store = InMemoryStore()
 
 
+# ── MCP client (lazy init) ───────────────────────────────────────────────────
+
+_mcp_tools: dict[str, Any] = {}
+_mcp_initialized = False
+
+
+async def _init_mcp() -> dict[str, Any]:
+    """Lazily init MCP tool registry from market_data, signal, portfolio, search servers."""
+    global _mcp_tools, _mcp_initialized
+    if _mcp_initialized:
+        return _mcp_tools
+    _mcp_initialized = True
+    try:
+        import pathlib
+        import sys
+        from langchain_mcp_adapters.client import MultiServerMCPClient
+        _agents_dir = pathlib.Path(__file__).parent
+        client = MultiServerMCPClient({
+            "market_data_server": {
+                "command": sys.executable,
+                "args": [str(_agents_dir / "mcp_servers" / "market_data_server.py")],
+                "transport": "stdio",
+            },
+            "signal_server": {
+                "command": sys.executable,
+                "args": [str(_agents_dir / "mcp_servers" / "signal_server.py")],
+                "transport": "stdio",
+            },
+            "search_server": {
+                "command": sys.executable,
+                "args": [str(_agents_dir / "mcp_servers" / "search_server.py")],
+                "transport": "stdio",
+            },
+        })
+        tools_list = await client.get_tools()
+        _mcp_tools = {t.name: t for t in tools_list}
+        logger.info(f"MCP tools registered: {list(_mcp_tools.keys())}")
+    except Exception as e:
+        logger.warning(f"MCP init failed (degrading gracefully): {e}")
+        _mcp_tools = {}
+    return _mcp_tools
+
+
 # ── DB executor ──────────────────────────────────────────────────────────────
 
 def _execute_sql(sql: str) -> tuple[list[dict] | None, str | None]:
