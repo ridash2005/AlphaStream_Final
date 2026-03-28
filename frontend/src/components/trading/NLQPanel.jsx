@@ -262,7 +262,7 @@ function ChartDropZone({ onDrop }) {
 // ---------------------------------------------------------------------------
 // Message bubble
 // ---------------------------------------------------------------------------
-function MessageBubble({ msg }) {
+function MessageBubble({ msg, onSendMessage }) {
   const isBot = msg.role === 'bot'
 
   if (isBot) {
@@ -284,6 +284,16 @@ function MessageBubble({ msg }) {
             )}
           </div>
           {msg.thoughts && msg.thoughts.length > 0 && <ThoughtProcess steps={msg.thoughts} />}
+          {msg.suggested && msg.suggested.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {msg.suggested.map((q, i) => (
+                <button key={i} onClick={() => onSendMessage?.(q)}
+                  className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-purple-500/10 border border-purple-500/20 text-purple-300 hover:bg-purple-500/20 hover:text-purple-200 transition-colors">
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
           {msg.ts && <p className="text-[10px] text-[#333] mt-1 ml-1">{msg.ts}</p>}
         </div>
       </div>
@@ -901,7 +911,8 @@ export default function NLQPanel({ className = '' }) {
           )
           setMessages((prev) => [
             ...prev,
-            { role: 'bot', text: answerText, thoughts, filters: [], ts: formatTime(new Date()) },
+            { role: 'bot', text: answerText, thoughts, filters: [], ts: formatTime(new Date()),
+              suggested: event.suggested_questions || [] },
           ])
           if (event.chart_spec && event.chart_spec.type !== 'none') {
             setChartData({ chart_spec: event.chart_spec, sql: event.sql, answer: answerText })
@@ -1045,7 +1056,7 @@ export default function NLQPanel({ className = '' }) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {messages.map((msg, i) => (
-          <MessageBubble key={i} msg={msg} />
+          <MessageBubble key={i} msg={msg} onSendMessage={sendMessage} />
         ))}
         {loading && (
           <div className="flex items-start gap-2.5">
@@ -1154,7 +1165,7 @@ export default function NLQPanel({ className = '' }) {
             <div className="flex flex-col w-full md:w-[480px] md:flex-shrink-0 border-b md:border-b-0 md:border-r border-[#1e1e1e] min-h-0 flex-1 md:flex-initial">
               <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
                 {messages.map((msg, i) => (
-                  <MessageBubble key={i} msg={msg} />
+                  <MessageBubble key={i} msg={msg} onSendMessage={sendMessage} />
                 ))}
                 {loading && (
                   <div className="flex items-start gap-2.5">
