@@ -79,7 +79,7 @@ export function InsiderActivity() {
                 {loading && (
                     <div className="text-xs text-muted-foreground text-center py-4">
                         <RefreshCw className="h-4 w-4 animate-spin mx-auto mb-2" />
-                        Analyzing SEC Form 4 filings...
+                        Analyzing NSE SAST/PIT filings...
                     </div>
                 )}
 
@@ -115,13 +115,13 @@ export function InsiderActivity() {
                             <div className="text-center">
                                 <div className="text-xs text-muted-foreground">Total Buys</div>
                                 <div className="text-sm font-bold text-emerald-400">
-                                    ${(data.total_buy_value / 1000000).toFixed(2)}M
+                                    ₹${(data.total_buy_value).toFixed(1)}L
                                 </div>
                             </div>
                             <div className="text-center">
                                 <div className="text-xs text-muted-foreground">Total Sells</div>
                                 <div className="text-sm font-bold text-red-400">
-                                    ${(data.total_sell_value / 1000000).toFixed(2)}M
+                                    ₹${(data.total_sell_value).toFixed(1)}L
                                 </div>
                             </div>
                         </div>

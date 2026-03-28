@@ -5,6 +5,7 @@ export { HistoryPanel } from './HistoryPanel';
 export { SystemStatus } from './SystemStatus';
 export { InsiderActivity } from './InsiderActivity';
 export { ReportDownload } from './ReportDownload';
+export { OpportunityRadar } from './OpportunityRadar';
 export {
     RecommendationBadge,
     SentimentBadge,

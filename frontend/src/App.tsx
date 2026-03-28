@@ -10,6 +10,7 @@ import {
   SystemStatus,
   InsiderActivity,
   ReportDownload,
+  OpportunityRadar,
 } from '@/components/trading';
 import { MarketHeatmap } from '@/components/trading/MarketHeatmap';
 import { AgentRadar } from '@/components/trading/AgentRadar';
@@ -64,6 +65,7 @@ function App() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main column - Recommendation */}
             <div className="lg:col-span-2 space-y-6">
+              <OpportunityRadar />
               <RecommendationCard />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <MarketHeatmap />
