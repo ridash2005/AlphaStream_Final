@@ -84,21 +84,27 @@ class GrowwConnector(IndianDataSource):
             return None
 
     def get_stock_quote(self, symbol: str) -> dict[str, Any]:
-        """Fetch stock quote from Groww."""
+        """Fetch stock quote from Groww using tr_live_prices endpoint."""
         clean = strip_suffix(symbol)
         data = self._api_get(
-            f"{GROWW_STOCK_URL}/{clean}/latest",
+            f"https://groww.in/v1/api/stocks_data/v1/tr_live_prices/exchange/NSE/segment/CASH/{clean}/latest",
         )
-        if data:
+        if data and data.get("ltp"):
             return {
                 "ticker": clean,
-                "price": data.get("ltp", data.get("close", 0)),
+                "price": data.get("ltp", 0),
+                "close": data.get("close", 0),
                 "change": data.get("dayChange", 0),
-                "change_pct": data.get("dayChangePerc", 0),
+                "change_pct": round(data.get("dayChangePerc", 0), 2),
                 "volume": data.get("volume", 0),
                 "high": data.get("high", 0),
                 "low": data.get("low", 0),
                 "open": data.get("open", 0),
+                "year_high": data.get("yearHighPrice", 0),
+                "year_low": data.get("yearLowPrice", 0),
+                "total_buy_qty": data.get("totalBuyQty", 0),
+                "total_sell_qty": data.get("totalSellQty", 0),
+                "last_trade_time": data.get("lastTradeTime", 0),
                 "source": "Groww",
             }
         return {"ticker": clean, "price": 0, "error": "Groww API unavailable", "source": "Groww"}
