@@ -31,7 +31,7 @@ from src.agents.chart_agent import ChartAgent
 from src.agents.report_agent import ReportAgent
 from src.agents.flow_agent import FlowAgent
 from src.pipeline.rag_core import RAGPipeline
-from src.pipeline.rag_service import UnifiedRAGService, get_unified_rag_service
+from src.pipeline.rag_service import UnifiedRAGService
 
 logger = logging.getLogger(__name__)
 
