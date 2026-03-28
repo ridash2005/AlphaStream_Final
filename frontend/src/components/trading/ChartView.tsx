@@ -134,10 +134,15 @@ export function ChartView() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Chart */}
-        <Card className="glass-card p-4 lg:col-span-2">
-          <div ref={chartContainerRef} className="w-full" style={{ minHeight: 400 }} />
+        <Card className="glass-card p-4 lg:col-span-3">
+          {loading && (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          <div ref={chartContainerRef} className="w-full" style={{ minHeight: chartRef.current ? 400 : 0 }} />
         </Card>
 
         {/* Patterns + Backtest */}

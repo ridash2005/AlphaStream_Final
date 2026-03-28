@@ -47,11 +47,13 @@ class PatternAgent:
 
         patterns = []
         for detector in [
+            self._detect_rsi_extreme,
             self._detect_rsi_divergence,
             self._detect_macd_crossover,
             self._detect_bollinger_breakout,
             self._detect_volume_breakout,
             self._detect_golden_death_cross,
+            self._detect_trend_strength,
         ]:
             result = detector(df, ticker)
             if result:
@@ -197,6 +199,63 @@ class PatternAgent:
                 "explanation": f"Volume ({today_vol:,.0f}) is {ratio:.1f}x the 20-day average ({avg_vol:,.0f}) — {direction} volume breakout with {price_change:+.1f}% price move",
                 "ticker": ticker,
                 "volume_ratio": round(ratio, 1),
+            }
+        return None
+
+    def _detect_rsi_extreme(self, df: pd.DataFrame, ticker: str) -> Optional[dict]:
+        """Detect RSI oversold (<35) or overbought (>65) conditions."""
+        rsi = ta.momentum.RSIIndicator(close=df["Close"], window=14).rsi()
+        if len(rsi.dropna()) < 5:
+            return None
+        current_rsi = float(rsi.iloc[-1])
+        if current_rsi < 35:
+            return {
+                "pattern": "rsi_oversold",
+                "direction": "bullish",
+                "confidence": round(min(0.85, 0.4 + (35 - current_rsi) / 50), 2),
+                "explanation": f"RSI at {current_rsi:.1f} — oversold territory (below 35). Potential bounce opportunity.",
+                "current_rsi": current_rsi,
+                "ticker": ticker,
+            }
+        if current_rsi > 65:
+            return {
+                "pattern": "rsi_overbought",
+                "direction": "bearish",
+                "confidence": round(min(0.85, 0.4 + (current_rsi - 65) / 50), 2),
+                "explanation": f"RSI at {current_rsi:.1f} — overbought territory (above 65). Risk of pullback.",
+                "current_rsi": current_rsi,
+                "ticker": ticker,
+            }
+        return None
+
+    def _detect_trend_strength(self, df: pd.DataFrame, ticker: str) -> Optional[dict]:
+        """Detect strong trend using price vs SMA20/SMA50."""
+        sma20 = ta.trend.SMAIndicator(close=df["Close"], window=20).sma_indicator()
+        sma50 = ta.trend.SMAIndicator(close=df["Close"], window=50).sma_indicator()
+        if len(sma50.dropna()) < 5:
+            return None
+
+        price = float(df["Close"].iloc[-1])
+        s20 = float(sma20.iloc[-1])
+        s50 = float(sma50.iloc[-1])
+
+        if price < s20 < s50:
+            pct_below = (s50 - price) / s50 * 100
+            return {
+                "pattern": "downtrend",
+                "direction": "bearish",
+                "confidence": round(min(0.8, 0.4 + pct_below / 20), 2),
+                "explanation": f"Price ₹{price:.0f} below SMA20 (₹{s20:.0f}) and SMA50 (₹{s50:.0f}) — {pct_below:.1f}% below SMA50, bearish trend",
+                "ticker": ticker,
+            }
+        if price > s20 > s50:
+            pct_above = (price - s50) / s50 * 100
+            return {
+                "pattern": "uptrend",
+                "direction": "bullish",
+                "confidence": round(min(0.8, 0.4 + pct_above / 20), 2),
+                "explanation": f"Price ₹{price:.0f} above SMA20 (₹{s20:.0f}) and SMA50 (₹{s50:.0f}) — {pct_above:.1f}% above SMA50, bullish trend",
+                "ticker": ticker,
             }
         return None
 
