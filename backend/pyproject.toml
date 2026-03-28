@@ -14,11 +14,12 @@ dependencies = [
     "pydantic>=2.5.0",
     "pydantic-settings>=2.1.0",
     "websockets>=12.0",
-    # LLM (OpenRouter compatible)
+    # LLM
     "openai>=1.3.0",
     "langchain>=0.3.0",
     "langchain-core>=0.3.0",
     "langchain-openai>=0.2.0",
+    "langchain-google-vertexai>=2.0.0",
     # LangGraph + MCP (NLQ agent)
     "langgraph>=0.2.0",
     "langchain-mcp-adapters>=0.0.1",
