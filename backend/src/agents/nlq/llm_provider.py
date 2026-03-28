@@ -18,6 +18,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 warnings.filterwarnings("ignore", message="Use.*ChatGoogleGenerativeAI", category=DeprecationWarning)
+warnings.filterwarnings("ignore", message=".*additionalProperties.*")
+# Suppress Gemini schema warnings at logging level too
+import logging
+logging.getLogger("google.ai.generativelanguage_v1beta").setLevel(logging.ERROR)
+logging.getLogger("vertexai").setLevel(logging.WARNING)
 
 GCP_PROJECT = os.environ.get("GCP_PROJECT_ID", "agrowise-192e3")
 GCP_REGION = os.environ.get("GCP_REGION", "us-central1")
