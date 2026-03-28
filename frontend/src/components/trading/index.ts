@@ -17,6 +17,7 @@ export { GlobalMarketBar } from './GlobalMarketBar';
 export { FearGreedGauge } from './FearGreedGauge';
 export { MacroSignalPanel } from './MacroSignalPanel';
 export { CommodityStrip } from './CommodityStrip';
+export { ErrorBoundary } from './ErrorBoundary';
 export {
     RecommendationBadge,
     SentimentBadge,

@@ -22,6 +22,7 @@ import {
   FearGreedGauge,
   MacroSignalPanel,
   CommodityStrip,
+  ErrorBoundary,
 } from '@/components/trading';
 import { MarketHeatmap } from '@/components/trading/MarketHeatmap';
 import { AgentRadar } from '@/components/trading/AgentRadar';
@@ -73,7 +74,9 @@ export default function Dashboard() {
       </header>
 
       {/* Bloomberg-style scrolling global market ticker */}
-      <GlobalMarketBar />
+      <ErrorBoundary section="Global Market Bar">
+        <GlobalMarketBar />
+      </ErrorBoundary>
 
       {/* Main content — dense Bloomberg layout */}
       <main ref={mainRef} className="flex-1 overflow-y-auto scrollbar-hide w-full relative">
@@ -113,17 +116,19 @@ export default function Dashboard() {
           </div>
 
           {/* Row 2.5: Global Intelligence (WorldMonitor) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
-            <div className="lg:col-span-3">
-              <FearGreedGauge />
+          <ErrorBoundary section="Global Intelligence">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+              <div className="lg:col-span-3">
+                <FearGreedGauge />
+              </div>
+              <div className="lg:col-span-4">
+                <MacroSignalPanel />
+              </div>
+              <div className="lg:col-span-5">
+                <CommodityStrip />
+              </div>
             </div>
-            <div className="lg:col-span-4">
-              <MacroSignalPanel />
-            </div>
-            <div className="lg:col-span-5">
-              <CommodityStrip />
-            </div>
-          </div>
+          </ErrorBoundary>
 
           {/* Row 3: Sector heatmap + Market sentiment + Insider + Network */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
