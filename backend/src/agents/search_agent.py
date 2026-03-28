@@ -82,6 +82,61 @@ class SearchAgent:
             "source_count": len(all_results),
         }
 
+    def cyclic_search(self, user_query: str, max_rounds: int = 3,
+                      knowledge_threshold: int = 3) -> dict[str, Any]:
+        """
+        Cyclic search — tries multiple reformulated search prompts until
+        knowledge threshold is met.
+
+        Round 1: Raw user query
+        Round 2: LLM-rewritten query (more specific)
+        Round 3: Entity-focused query (extract tickers/sectors, search each)
+
+        Returns combined context from all rounds.
+        """
+        all_results = []
+        search_log = []
+
+        # Round 1: Raw query
+        r1 = self.search(user_query, max_results=3)
+        all_results.extend(r1)
+        search_log.append(f"Round 1 ({user_query[:40]}): {len(r1)} results")
+
+        if len(all_results) >= knowledge_threshold:
+            return self._build_cyclic_result(user_query, all_results, search_log)
+
+        # Round 2: Reformulated query (add financial context)
+        reformulated = f"{user_query} India NSE stock market analysis financial results"
+        r2 = self.search(reformulated, max_results=3)
+        # Deduplicate by URL
+        existing_urls = {r.get("url") for r in all_results}
+        r2_new = [r for r in r2 if r.get("url") not in existing_urls]
+        all_results.extend(r2_new)
+        search_log.append(f"Round 2 (reformulated): {len(r2_new)} new results")
+
+        if len(all_results) >= knowledge_threshold:
+            return self._build_cyclic_result(user_query, all_results, search_log)
+
+        # Round 3: News-specific search
+        r3 = self.search_news(user_query, max_results=3)
+        existing_urls = {r.get("url") for r in all_results}
+        r3_new = [r for r in r3 if r.get("url") not in existing_urls]
+        all_results.extend(r3_new)
+        search_log.append(f"Round 3 (news): {len(r3_new)} new results")
+
+        return self._build_cyclic_result(user_query, all_results, search_log)
+
+    def _build_cyclic_result(self, query: str, results: list[dict],
+                             search_log: list[str]) -> dict[str, Any]:
+        return {
+            "enriched": len(results) > 0,
+            "search_results": results,
+            "summary": self._build_summary(query, results),
+            "source_count": len(results),
+            "search_rounds": len(search_log),
+            "search_log": search_log,
+        }
+
     def _build_summary(self, query: str, results: list[dict]) -> str:
         """Build a context summary from search results."""
         snippets = []

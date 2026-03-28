@@ -99,18 +99,18 @@ def enrich_node(state: AgentState) -> AgentState:
     web_context = None
     user_context = None
 
-    # 1. Web search for context enrichment
+    # 1. Cyclic web search for context enrichment (2-3 rounds with reformulated queries)
     try:
         from src.agents.search_agent import get_search_agent
         sa = get_search_agent()
-        # Search for financial context on the query
-        results = sa.search(query, max_results=3)
-        if results:
-            web_context = sa._build_summary(query, results)
+        enrichment = sa.cyclic_search(query, max_rounds=3, knowledge_threshold=3)
+        if enrichment.get("enriched"):
+            web_context = enrichment["summary"]
             thought_steps.append({
                 "node": "Enrich",
-                "action": "web_search",
-                "detail": f"Found {len(results)} web sources for context enrichment",
+                "action": "cyclic_search",
+                "detail": f"{enrichment['search_rounds']} rounds, {enrichment['source_count']} sources: "
+                          + " | ".join(enrichment.get("search_log", [])),
             })
     except Exception as e:
         thought_steps.append({
