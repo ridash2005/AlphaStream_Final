@@ -30,10 +30,10 @@ export function AgentRadar() {
     const rawRisk = recommendation.risk_score ?? 0; // 0 to 1
     const rawConfidence = recommendation.confidence ?? 0; // 0 to 100
 
-    const sentimentNorm = Math.round(((rawSentiment + 1) / 2) * 100);
-    const technicalNorm = Math.round(((rawTechnical + 1) / 2) * 100);
-    const riskNorm = Math.round(rawRisk * 100);
-    const confidence = Math.round(rawConfidence);
+    const sentimentNorm = Math.min(100, Math.max(0, Math.round(((rawSentiment + 1) / 2) * 100)));
+    const technicalNorm = Math.min(100, Math.max(0, Math.round(((rawTechnical + 1) / 2) * 100)));
+    const riskNorm = Math.min(100, Math.max(0, Math.round(rawRisk * 100)));
+    const confidence = Math.min(100, Math.max(0, Math.round(rawConfidence)));
 
     const data = [
         { subject: 'Sentiment', A: sentimentNorm, fullMark: 100 },

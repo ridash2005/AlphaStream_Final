@@ -48,12 +48,12 @@ export function FearGreedGauge() {
   const arcX = cx + radius * Math.cos(scoreAngle);
   const arcY = cy - radius * Math.sin(scoreAngle);
 
-  const getColor = (s: number) => {
-    if (s <= 25) return '#ef4444';
-    if (s <= 45) return '#f97316';
-    if (s <= 55) return '#eab308';
-    if (s <= 75) return '#84cc16';
-    return '#22c55e';
+  const getScoreInfo = (s: number) => {
+    if (s <= 25) return { color: '#ef4444', className: 'text-red-400' };
+    if (s <= 45) return { color: '#f97316', className: 'text-orange-400' };
+    if (s <= 55) return { color: '#eab308', className: 'text-yellow-400' };
+    if (s <= 75) return { color: '#84cc16', className: 'text-lime-400' };
+    return { color: '#22c55e', className: 'text-emerald-400' };
   };
 
   const getVixColor = (status: string) => {
@@ -90,7 +90,7 @@ export function FearGreedGauge() {
               <path
                 d={`M ${cx - radius} ${cy} A ${radius} ${radius} 0 ${score > 50 ? 1 : 0} 1 ${arcX.toFixed(1)} ${arcY.toFixed(1)}`}
                 fill="none"
-                stroke={getColor(score)}
+                stroke={getScoreInfo(score).color}
                 strokeWidth="10"
                 strokeLinecap="round"
               />
@@ -104,13 +104,7 @@ export function FearGreedGauge() {
 
           {/* Score display */}
           <div className="text-center -mt-2">
-            <div className={cn("text-2xl font-bold font-mono", {
-              "text-red-400": score <= 25,
-              "text-orange-400": score > 25 && score <= 45,
-              "text-yellow-400": score > 45 && score <= 55,
-              "text-lime-400": score > 55 && score <= 75,
-              "text-emerald-400": score > 75,
-            })}>
+            <div className={cn("text-2xl font-bold font-mono", getScoreInfo(score).className)}>
               {score.toFixed(0)}
             </div>
             <div className="text-xs text-muted-foreground">{label}</div>

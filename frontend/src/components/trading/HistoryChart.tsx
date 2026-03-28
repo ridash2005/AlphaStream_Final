@@ -10,8 +10,8 @@ export function HistoryChart() {
         idx: i + 1,
         time: new Date(rec.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         confidence: rec.confidence,
-        sentiment: ((rec.sentiment_score + 1) / 2) * 100, // normalize -1..1 → 0..100
-        technical: ((rec.technical_score + 1) / 2) * 100,
+        sentiment: Math.max(0, Math.min(100, (((rec.sentiment_score ?? 0) + 1) / 2) * 100)),
+        technical: Math.max(0, Math.min(100, (((rec.technical_score ?? 0) + 1) / 2) * 100)),
         signal: rec.recommendation === 'BUY' ? 80 : rec.recommendation === 'SELL' ? 20 : 50,
     }));
 
