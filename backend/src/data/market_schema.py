@@ -24,10 +24,15 @@ _BACKEND_ROOT = Path(__file__).resolve().parent.parent.parent  # backend/
 
 
 def get_db_path() -> str:
-    """Get the DuckDB database path."""
+    """Get the DuckDB database path from config."""
     global _DB_PATH
     if _DB_PATH is None:
-        _DB_PATH = str(_BACKEND_ROOT / "market_analytics.duckdb")
+        from src.config import get_settings
+        settings = get_settings()
+        db_path = settings.duckdb_path
+        if not os.path.isabs(db_path):
+            db_path = str(_BACKEND_ROOT / db_path)
+        _DB_PATH = db_path
     return _DB_PATH
 
 

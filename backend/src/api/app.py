@@ -229,10 +229,12 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Global market bootstrap: {e}")
 
-    # Start background refresh for global market data (every 10 min)
+    # Start background refresh for global market data
     async def _global_market_refresh_loop():
         while True:
-            await asyncio.sleep(600)  # 10 minutes
+            from src.config import get_settings
+            _settings = get_settings()
+            await asyncio.sleep(_settings.global_market_refresh_minutes * 60)
             try:
                 from src.connectors.global_market_connector import get_global_market_connector
                 gmc = get_global_market_connector()
@@ -254,7 +256,7 @@ async def lifespan(app: FastAPI):
                 logger.warning(f"Global market refresh loop: {e}")
 
     asyncio.get_running_loop().create_task(_global_market_refresh_loop())
-    logger.info("Global market refresh loop started (every 10 min)")
+    logger.info("Global market refresh loop started")
 
     # Market state will be populated dynamically as recommendations are generated
 
