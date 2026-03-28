@@ -16,7 +16,9 @@ import requests
 logger = logging.getLogger(__name__)
 
 # Indian financial news RSS feeds (no API key required)
+# Sources: AlphaStream originals + WorldMonitor's curated _feeds.ts (Asia + Finance categories)
 RSS_FEEDS = [
+    # ── India Financial ─────────────────────────────────────────
     {
         "name": "ET Markets - Stocks",
         "url": "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms",
@@ -41,6 +43,33 @@ RSS_FEEDS = [
         "name": "LiveMint - Markets",
         "url": "https://www.livemint.com/rss/markets",
         "source": "LiveMint"
+    },
+    # ── India General (from WorldMonitor Asia feeds) ────────────
+    {
+        "name": "NDTV - Top Stories",
+        "url": "https://feeds.feedburner.com/ndtvnews-top-stories",
+        "source": "NDTV"
+    },
+    {
+        "name": "The Hindu",
+        "url": "https://www.thehindu.com/feeder/default.rss",
+        "source": "The Hindu"
+    },
+    # ── Global Finance (from WorldMonitor Finance feeds) ────────
+    {
+        "name": "CNBC Top News",
+        "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",
+        "source": "CNBC"
+    },
+    {
+        "name": "Reuters Business",
+        "url": "https://www.reutersagency.com/feed/?best-topics=business-finance",
+        "source": "Reuters"
+    },
+    {
+        "name": "MarketWatch Top Stories",
+        "url": "https://feeds.content.dowjones.io/public/rss/mw_topstories",
+        "source": "MarketWatch"
     },
 ]
 

@@ -48,14 +48,21 @@ Synthesize the following analyses:
 3. RISK ASSESSMENT:
 {risk_data}
 
+4. GLOBAL MARKET CONTEXT:
+{global_context}
+
+Consider how global factors (VIX, Fear & Greed, commodity prices, yield curve)
+affect this Indian stock. Oil prices impact ONGC/Reliance, US tech affects TCS/Infy,
+gold correlates with defensive plays. A RISK-OFF global environment warrants caution.
+
 Make a definitive recommendation (BUY, SELL, or HOLD).
 
 {format_instructions}
 """,
-            input_variables=["ticker", "sentiment_data", "technical_data", "risk_data"],
+            input_variables=["ticker", "sentiment_data", "technical_data", "risk_data", "global_context"],
             partial_variables={"format_instructions": self.parser.get_format_instructions()},
         )
-        
+
         self.chain = self.prompt | self.llm | self.parser
 
     def decide(
@@ -63,18 +70,21 @@ Make a definitive recommendation (BUY, SELL, or HOLD).
         ticker: str,
         sentiment_data: Dict[str, Any],
         technical_data: Dict[str, Any],
-        risk_data: Dict[str, Any]
+        risk_data: Dict[str, Any],
+        global_context: Dict[str, Any] | None = None,
     ) -> Dict[str, Any]:
         """
         Generate final trading decision.
         """
         try:
+            ctx_str = json.dumps(global_context) if global_context else "No global context available."
             # Invoke chain
             result = self.chain.invoke({
                 "ticker": ticker,
                 "sentiment_data": json.dumps(sentiment_data),
                 "technical_data": json.dumps(technical_data),
-                "risk_data": json.dumps(risk_data)
+                "risk_data": json.dumps(risk_data),
+                "global_context": ctx_str,
             })
             
             return result.model_dump()

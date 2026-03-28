@@ -15,7 +15,7 @@ load_dotenv()
 warnings.filterwarnings("ignore", message="Use.*ChatGoogleGenerativeAI", category=DeprecationWarning)
 warnings.filterwarnings("ignore", message=".*additionalProperties.*")
 
-GCP_PROJECT = os.environ.get("GCP_PROJECT_ID", "agrowise-192e3")
+GCP_PROJECT = os.environ.get("GCP_PROJECT_ID", "")
 GCP_REGION = os.environ.get("GCP_REGION", "us-central1")
 VERTEX_MODEL = os.environ.get("VERTEX_MODEL", "gemini-2.0-flash")
 

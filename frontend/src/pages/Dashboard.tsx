@@ -14,6 +14,14 @@ import {
   OpportunityRadar,
   ChartView,
   NotificationBell,
+  NetworkGraph,
+  FlowChart,
+  HistoryChart,
+  SectorHeatmap,
+  GlobalMarketBar,
+  FearGreedGauge,
+  MacroSignalPanel,
+  CommodityStrip,
 } from '@/components/trading';
 import { MarketHeatmap } from '@/components/trading/MarketHeatmap';
 import { AgentRadar } from '@/components/trading/AgentRadar';
@@ -35,14 +43,14 @@ export default function Dashboard() {
     <div className="h-screen w-full overflow-hidden terminal-bg flex flex-col relative">
       {/* Header */}
       <header className="glass border-b border-border/50 shrink-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20 glow-primary">
-              <Zap className="h-5 w-5 text-primary" />
+            <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20 glow-primary">
+              <Zap className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight">AlphaStream India</h1>
-              <p className="text-xs text-muted-foreground">AI Investment Intelligence</p>
+              <h1 className="text-base font-bold tracking-tight leading-none">AlphaStream India</h1>
+              <p className="text-[10px] text-muted-foreground">AI Investment Intelligence</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -64,11 +72,14 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Main content */}
+      {/* Bloomberg-style scrolling global market ticker */}
+      <GlobalMarketBar />
+
+      {/* Main content — dense Bloomberg layout */}
       <main ref={mainRef} className="flex-1 overflow-y-auto scrollbar-hide w-full relative">
-        <div className="max-w-7xl mx-auto px-4 pt-6 pb-40">
+        <div className="max-w-[1600px] mx-auto px-4 pt-4 pb-40">
           {error && (
-            <Alert variant="destructive" className="mb-4 glass-card">
+            <Alert variant="destructive" className="mb-3 glass-card">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="flex items-center justify-between">
                 <span>{error}</span>
@@ -77,28 +88,59 @@ export default function Dashboard() {
             </Alert>
           )}
 
-          <div className="mb-6">
+          <div className="mb-4">
             <TickerSearch />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <OpportunityRadar />
+          {/* Row 1: Chart + Recommendation + Agent Radar (primary data) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+            <div className="lg:col-span-7">
               <ChartView />
-              <RecommendationCard />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <MarketHeatmap />
-                <AgentRadar />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InsiderActivity />
-                <ReportDownload />
-              </div>
-              <HistoryPanel />
             </div>
+            <div className="lg:col-span-3">
+              <RecommendationCard />
+            </div>
+            <div className="lg:col-span-2">
+              <AgentRadar />
+            </div>
+          </div>
 
-            <div className="lg:col-span-1">
+          {/* Row 2: Opportunity signals + Flow chart + Signal history */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+            <OpportunityRadar />
+            <FlowChart />
+            <HistoryChart />
+          </div>
+
+          {/* Row 2.5: Global Intelligence (WorldMonitor) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+            <div className="lg:col-span-3">
+              <FearGreedGauge />
+            </div>
+            <div className="lg:col-span-4">
+              <MacroSignalPanel />
+            </div>
+            <div className="lg:col-span-5">
+              <CommodityStrip />
+            </div>
+          </div>
+
+          {/* Row 3: Sector heatmap + Market sentiment + Insider + Network */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <SectorHeatmap />
+            <MarketHeatmap />
+            <InsiderActivity />
+            <NetworkGraph />
+          </div>
+
+          {/* Row 4: News + Report + History */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2">
               <ArticlesList />
+            </div>
+            <div className="space-y-4">
+              <ReportDownload />
+              <HistoryPanel />
             </div>
           </div>
         </div>

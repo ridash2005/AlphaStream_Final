@@ -8,7 +8,7 @@ import {
     ConfidenceBar,
     LatencyIndicator,
 } from './Indicators';
-import { Clock, TrendingUp, Shield, Newspaper, Bot } from 'lucide-react';
+import { Clock, TrendingUp, Shield, Newspaper, Bot, Cpu } from 'lucide-react';
 
 export function RecommendationCard() {
     const { recommendation, isLoading, currentTicker, agentStatus } = useAppStore();
@@ -84,10 +84,18 @@ export function RecommendationCard() {
                 {/* Main recommendation */}
                 <div className="flex items-center justify-between">
                     <RecommendationBadge recommendation={recommendation.recommendation} size="lg" />
-                    <SentimentBadge
-                        sentiment={recommendation.sentiment_label}
-                        score={recommendation.sentiment_score}
-                    />
+                    <div className="flex items-center gap-2">
+                        {recommendation.rag_engine && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
+                                <Cpu className="h-2.5 w-2.5" />
+                                {recommendation.rag_engine === 'adaptive' ? 'Adaptive RAG' : 'Manual RAG'}
+                            </span>
+                        )}
+                        <SentimentBadge
+                            sentiment={recommendation.sentiment_label}
+                            score={recommendation.sentiment_score}
+                        />
+                    </div>
                 </div>
 
                 {/* Confidence bar */}
@@ -95,6 +103,30 @@ export function RecommendationCard() {
                     confidence={recommendation.confidence}
                     recommendation={recommendation.recommendation}
                 />
+
+                {/* Technical & Risk scores */}
+                {(recommendation.technical_score !== undefined || recommendation.risk_score !== undefined) && (
+                    <div className="flex gap-4 text-xs">
+                        {recommendation.technical_score !== undefined && (
+                            <div className="flex items-center gap-1.5">
+                                <TrendingUp className="h-3 w-3 text-blue-400" />
+                                <span className="text-muted-foreground">Technical:</span>
+                                <span className={recommendation.technical_score > 0 ? 'text-green-400' : recommendation.technical_score < 0 ? 'text-red-400' : 'text-muted-foreground'}>
+                                    {recommendation.technical_score > 0 ? '+' : ''}{recommendation.technical_score.toFixed(2)}
+                                </span>
+                            </div>
+                        )}
+                        {recommendation.risk_score !== undefined && (
+                            <div className="flex items-center gap-1.5">
+                                <Shield className="h-3 w-3 text-amber-400" />
+                                <span className="text-muted-foreground">Risk:</span>
+                                <span className={recommendation.risk_score < 3 ? 'text-green-400' : recommendation.risk_score > 7 ? 'text-red-400' : 'text-amber-400'}>
+                                    {recommendation.risk_score.toFixed(1)}/10
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 <Separator className="bg-border/50" />
 

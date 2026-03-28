@@ -29,6 +29,7 @@ from src.agents.decision_agent import DecisionAgent
 from src.agents.insider_agent import InsiderAgent
 from src.agents.chart_agent import ChartAgent
 from src.agents.report_agent import ReportAgent
+from src.agents.flow_agent import FlowAgent
 from src.pipeline.rag_core import RAGPipeline
 from src.pipeline.rag_service import UnifiedRAGService, get_unified_rag_service
 
@@ -102,6 +103,9 @@ technical_agent: TechnicalAgent | None = None
 risk_agent: RiskAgent | None = None
 decision_agent: DecisionAgent | None = None
 
+# Global components - Flow agent (institutional signals)
+flow_agent: FlowAgent | None = None
+
 # Global components - SEC agents (Stage 5)
 insider_agent: InsiderAgent | None = None
 chart_agent: ChartAgent | None = None
@@ -120,7 +124,7 @@ market_state = MarketState()
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown."""
     global rag_pipeline, sentiment_agent, technical_agent, risk_agent, decision_agent
-    global insider_agent, chart_agent, report_agent, unified_rag
+    global flow_agent, insider_agent, chart_agent, report_agent, unified_rag
     
     logger.info("Initializing AlphaStream Live AI...")
 
@@ -131,6 +135,9 @@ async def lifespan(app: FastAPI):
     risk_agent = RiskAgent()
     decision_agent = DecisionAgent()
     
+    # Initialize flow agent (FII/DII institutional signals)
+    flow_agent = FlowAgent()
+
     # Initialize SEC agents (Stage 5)
     insider_agent = InsiderAgent()
     chart_agent = ChartAgent()
@@ -156,14 +163,15 @@ async def lifespan(app: FastAPI):
         )
         logger.info(f"Adaptive RAG Server started with PID: {rag_server_process.pid}")
         
-        # Wait for Adaptive RAG server to be ready (up to 45 seconds)
+        # Wait for Adaptive RAG server to be ready
         import httpx
-        max_wait = 45
+        adaptive_rag_url = os.environ.get("ADAPTIVE_RAG_URL", "http://localhost:8001")
+        max_wait = int(os.environ.get("RAG_STARTUP_TIMEOUT", "45"))
         wait_interval = 2
         for i in range(max_wait // wait_interval):
             try:
                 with httpx.Client(timeout=3.0) as client:
-                    resp = client.get("http://localhost:8001/")
+                    resp = client.get(f"{adaptive_rag_url}/")
                     if resp.status_code in [200, 404, 405]:  # Server is responding
                         logger.info(f"✅ Adaptive RAG Server ready after {(i+1) * wait_interval}s")
                         break
@@ -178,7 +186,7 @@ async def lifespan(app: FastAPI):
 
     # Initialize Unified RAG Service (Adaptive RAG primary, manual fallback)
     unified_rag = UnifiedRAGService(
-        adaptive_rag_url="http://localhost:8001",
+        adaptive_rag_url=os.environ.get("ADAPTIVE_RAG_URL", "http://localhost:8001"),
         manual_rag=rag_pipeline
     )
     logger.info("Unified RAG Service initialized (Adaptive RAG primary, manual fallback)")
@@ -212,6 +220,42 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Data refresh scheduler: {e}")
 
+    # Bootstrap global market data (WorldMonitor integration)
+    try:
+        from src.connectors.global_market_connector import get_global_market_connector
+        gmc = get_global_market_connector()
+        gmc.bootstrap()
+        logger.info("Global market connector bootstrapped (WorldMonitor integration)")
+    except Exception as e:
+        logger.warning(f"Global market bootstrap: {e}")
+
+    # Start background refresh for global market data (every 10 min)
+    async def _global_market_refresh_loop():
+        while True:
+            await asyncio.sleep(600)  # 10 minutes
+            try:
+                from src.connectors.global_market_connector import get_global_market_connector
+                gmc = get_global_market_connector()
+                gmc.bootstrap()
+                # Broadcast updated global data to all WS clients
+                await ws_manager.broadcast_global({
+                    "type": "global_market_update",
+                    "data": {
+                        "indices": gmc.get_global_indices(),
+                        "commodities": gmc.get_commodity_quotes(),
+                        "vix": gmc.get_vix(),
+                        "fear_greed": gmc.get_fear_greed(),
+                        "crypto": gmc.get_crypto_quotes(),
+                        "currencies": gmc.get_currency_quotes(),
+                    }
+                })
+                logger.debug("Global market data refreshed and broadcast")
+            except Exception as e:
+                logger.warning(f"Global market refresh loop: {e}")
+
+    asyncio.get_running_loop().create_task(_global_market_refresh_loop())
+    logger.info("Global market refresh loop started (every 10 min)")
+
     # Market state will be populated dynamically as recommendations are generated
 
     # Capture loop for thread-safe scheduling
@@ -244,6 +288,23 @@ async def lifespan(app: FastAPI):
             pass
             
         ingest_start = time.time()
+
+        # 0.5 Classify article threat level (WorldMonitor classifier)
+        try:
+            from src.connectors.news_classifier import classify_article
+            from src.connectors.geopolitical_connector import get_geopolitical_connector
+            classification = classify_article(
+                article.get("title", ""),
+                article.get("content", article.get("text", "")),
+            )
+            article["threat_level"] = classification["level"]
+            article["threat_category"] = classification["category"]
+            article["threat_confidence"] = classification["confidence"]
+            # Feed into geopolitical risk model
+            geo = get_geopolitical_connector()
+            geo.ingest_classification(classification, article.get("title", ""))
+        except Exception as e:
+            logger.debug(f"News classification failed: {e}")
 
         # 1. Ingest into manual RAG
         rag_pipeline.ingest_article(article)
@@ -327,8 +388,14 @@ async def lifespan(app: FastAPI):
     pw.io.subscribe(news_table, pathway_callback)
 
     # 3. Run Pathway in a background thread
+    def _run_pathway():
+        try:
+            pw.run()
+        except Exception as e:
+            logger.error(f"Pathway engine crashed: {e}", exc_info=True)
+
     logger.info("Starting Pathway engine in background thread...")
-    pw_thread = threading.Thread(target=pw.run, daemon=True)
+    pw_thread = threading.Thread(target=_run_pathway, daemon=True)
     pw_thread.start()
 
     logger.info(f"System initialized with {rag_pipeline.document_count} document chunks")
@@ -373,10 +440,12 @@ app.add_middleware(
 from src.api.routers.nlq import router as nlq_router
 from src.api.routers.market import router as market_router
 from src.api.routers.insights import router as insights_router
+from src.api.routers.global_market import router as global_market_router
 
 app.include_router(nlq_router, prefix="/api", tags=["NLQ"])
 app.include_router(market_router, prefix="/api", tags=["Market"])
 app.include_router(insights_router, prefix="/api", tags=["Insights"])
+app.include_router(global_market_router, prefix="/api/global", tags=["Global Market"])
 
 
 # Request/Response models
@@ -402,6 +471,10 @@ class RecommendationResponse(BaseModel):
     sources: list[str]
     latency_ms: float
     rag_engine: str = "manual"  # "adaptive" or "manual"
+    # Global market context (WorldMonitor enrichment)
+    global_verdict: str = ""  # RISK-ON, RISK-OFF, MIXED
+    vix: float | None = None
+    fear_greed_score: float | None = None
 
 
 class HealthResponse(BaseModel):
@@ -516,16 +589,61 @@ async def generate_recommendation_logic(ticker: str, update_callback: Callable[[
     # 4. Risk
     await send_update("Risk Agent", "Assessing volatility and position checks...")
     risk = risk_agent.analyze(ticker, technical)
-    
-    # 5. Decision
+
+    # 4.5 Flow analysis (FII/DII institutional signals)
+    flow_data = {}
+    if flow_agent:
+        try:
+            await send_update("Flow Agent", "Analyzing FII/DII institutional flows...")
+            flow_data = flow_agent.analyze(days=30)
+        except Exception as e:
+            logger.warning(f"Flow agent failed: {e}")
+
+    # 4.6 Global market context (WorldMonitor enrichment)
+    global_ctx = {}
+    try:
+        from src.connectors.global_market_connector import get_global_market_connector
+        gmc = get_global_market_connector()
+        await send_update("Global Context", "Fetching VIX, Fear & Greed, commodities...")
+        global_ctx = gmc.get_decision_context()
+    except Exception as e:
+        logger.warning(f"Global context fetch failed: {e}")
+
+    # Merge flow data into global context so decision agent sees everything
+    if flow_data.get("observations"):
+        global_ctx["fii_dii_observations"] = flow_data["observations"][:3]
+    if flow_data.get("net_fii"):
+        global_ctx["fii_net_flow"] = flow_data["net_fii"]
+    if flow_data.get("net_dii"):
+        global_ctx["dii_net_flow"] = flow_data["net_dii"]
+
+    # 4.7 Geopolitical risk context
+    try:
+        from src.connectors.geopolitical_connector import get_geopolitical_connector
+        geo = get_geopolitical_connector()
+        geo_risk = geo.get_india_risk()
+        global_ctx["india_geo_risk"] = geo_risk.get("score", 20)
+        global_ctx["india_geo_level"] = geo_risk.get("level", "MODERATE")
+        if geo_risk.get("hotspot_alerts"):
+            global_ctx["geo_hotspots"] = [h["name"] for h in geo_risk["hotspot_alerts"]]
+    except Exception as e:
+        logger.debug(f"Geo risk fetch failed: {e}")
+
+    # 5. Decision (now includes flow signals + global context)
     await send_update("Decision Agent", "Synthesizing final recommendation...")
-    final_decision = decision_agent.decide(ticker, sentiment, technical, risk)
-    
+    final_decision = decision_agent.decide(ticker, sentiment, technical, risk, global_ctx)
+
     latency_ms = (time.time() - start_time) * 1000
-    
+
     combined_factors = [final_decision.get("reasoning", "")]
     combined_factors.extend(sentiment.get("key_factors", [])[:2])
     combined_factors.extend(technical.get("key_signals", [])[:2])
+    # Include flow observations in key factors
+    if flow_data.get("observations"):
+        combined_factors.extend(flow_data["observations"][:1])
+    # Include global market summary
+    if global_ctx.get("summary"):
+        combined_factors.append(global_ctx["summary"])
     combined_factors = [f for f in combined_factors if f]
 
     return RecommendationResponse(
@@ -541,6 +659,9 @@ async def generate_recommendation_logic(ticker: str, update_callback: Callable[[
         sources=rag_sources if rag_sources else [doc.get("source", "Unknown") for doc in retrieved_docs],
         latency_ms=round(latency_ms, 2),
         rag_engine=rag_engine,
+        global_verdict=global_ctx.get("global_verdict", ""),
+        vix=global_ctx.get("vix"),
+        fear_greed_score=global_ctx.get("fear_greed_score"),
     )
 
 
@@ -592,8 +713,8 @@ async def websocket_endpoint(websocket: WebSocket, ticker: str):
         logger.error(f"WebSocket error: {e}")
         try:
             ws_manager.disconnect(websocket, ticker)
-        except:
-            pass
+        except Exception as disconnect_err:
+            logger.warning(f"Error during WebSocket disconnect cleanup: {disconnect_err}")
 
 
 @app.get("/articles/{ticker}")
@@ -642,7 +763,8 @@ async def ingest_article(article: dict[str, Any]) -> dict[str, Any]:
             raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
 
     # Add defaults
-    article.setdefault("id", f"manual_{time.time()}")
+    import uuid
+    article.setdefault("id", f"manual_{uuid.uuid4().hex[:12]}")
     article.setdefault("source", "Breaking News")  # Mark as breaking news
     article.setdefault("url", "")
     article.setdefault("published_at", datetime.utcnow().isoformat())

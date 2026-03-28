@@ -73,9 +73,10 @@ def ingest_article_to_duckdb(article: dict[str, Any]) -> bool:
         con = duckdb.connect(get_db_path())
         try:
             con.execute("""
-                INSERT OR IGNORE INTO fact_articles
+                INSERT INTO fact_articles
                 (id, title, description, content, source, url, tickers, sentiment, published_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRY_CAST(? AS TIMESTAMP))
+                ON CONFLICT (id) DO NOTHING
             """, [article_id, title, description, content[:5000], source, url,
                   tickers, sentiment, published_at])
             return True

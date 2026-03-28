@@ -366,6 +366,8 @@ class NewsAggregator:
     - RSS (free, always available)
     """
     
+    _MAX_SEEN_IDS = 50_000  # Cap to prevent unbounded memory growth
+
     def __init__(self):
         self.sources: list[NewsSource] = []
         self.seen_ids: set[str] = set()
@@ -444,6 +446,11 @@ class NewsAggregator:
             logger.warning(f"RSS fetch failed: {e}")
             source_stats["RSS"] = 0
         
+        # Evict oldest entries if seen_ids grows too large
+        if len(self.seen_ids) > self._MAX_SEEN_IDS:
+            self.seen_ids.clear()
+            logger.info("Evicted seen_ids cache (exceeded max size)")
+
         # Deduplicate by title/URL hash
         unique = []
         for article in all_articles:

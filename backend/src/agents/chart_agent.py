@@ -142,12 +142,12 @@ class ChartAgent:
             ax.xaxis.set_major_locator(mdates.DayLocator())
             plt.xticks(rotation=45)
             
-            # Calculate price change
-            if len(prices) > 0:
+            # Calculate price change (guard against division by zero)
+            if len(prices) > 0 and prices[0] != 0:
                 price_change_7d = ((prices[-1] - prices[0]) / prices[0]) * 100
-                
+
                 # 24h change
-                if len(recent_prices) > 0 and len(prior_prices) > 0:
+                if len(recent_prices) > 0 and len(prior_prices) > 0 and prior_prices[-1] != 0:
                     price_change_24h = ((recent_prices[-1] - prior_prices[-1]) / prior_prices[-1]) * 100
                 else:
                     price_change_24h = 0

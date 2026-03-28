@@ -9,6 +9,7 @@ The service automatically falls back to manual RAG if Adaptive RAG is unavailabl
 """
 
 import logging
+import os
 import time
 from dataclasses import dataclass
 from typing import Optional
@@ -39,7 +40,7 @@ class UnifiedRAGService:
     
     def __init__(
         self,
-        adaptive_rag_url: str = "http://localhost:8001",
+        adaptive_rag_url: str = None,
         manual_rag: Optional[RAGPipeline] = None
     ):
         """
@@ -49,7 +50,7 @@ class UnifiedRAGService:
             adaptive_rag_url: URL of the Pathway Adaptive RAG server
             manual_rag: Manual RAG pipeline instance (created if None)
         """
-        self.adaptive_rag_url = adaptive_rag_url
+        self.adaptive_rag_url = adaptive_rag_url or os.environ.get("ADAPTIVE_RAG_URL", "http://localhost:8001")
         self.manual_rag = manual_rag or RAGPipeline()
         
         # Metrics

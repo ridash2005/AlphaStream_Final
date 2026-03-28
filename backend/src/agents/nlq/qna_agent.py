@@ -17,6 +17,8 @@ from langgraph.store.memory import InMemoryStore
 from langgraph.store.base import BaseStore
 from langgraph.types import Command
 
+import logging
+
 from src.agents.nlq.graph_state import AgentState
 from src.agents.nlq.middleware import (
     AlphaStreamInputGuardrail,
@@ -24,6 +26,8 @@ from src.agents.nlq.middleware import (
     _OFF_TOPIC_NARRATIVE,
 )
 from src.data.market_schema import get_db_path
+
+logger = logging.getLogger(__name__)
 
 _SIMILARITY_THRESHOLD = 0.75
 _SQL_TIMEOUT_SECS = 30

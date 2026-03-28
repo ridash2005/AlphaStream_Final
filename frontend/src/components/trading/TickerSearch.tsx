@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,15 @@ import { apiService } from '@/services/api';
 
 export function TickerSearch() {
     const [inputValue, setInputValue] = useState('');
+    const [popularTickers, setPopularTickers] = useState<string[]>(['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'SBIN']);
     const { setTicker, setArticles, setLoading, setError, isLoading, connectStream } = useAppStore();
+
+    // Fetch popular tickers from API on mount
+    useEffect(() => {
+        apiService.getPopularTickers()
+            .then(data => { if (data.tickers?.length) setPopularTickers(data.tickers.slice(0, 5)); })
+            .catch(() => {}); // Keep fallback
+    }, []);
 
     const executeSearch = async (tickerToSearch: string) => {
         const ticker = tickerToSearch.trim().toUpperCase();
@@ -42,9 +50,6 @@ export function TickerSearch() {
             executeSearch(inputValue);
         }
     };
-
-    // Top tickers — could be fetched from API in future
-    const popularTickers = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'SBIN'];
 
     return (
         <div className="space-y-3">

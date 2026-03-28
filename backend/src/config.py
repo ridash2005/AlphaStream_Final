@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # GCP / Vertex AI
-    gcp_project_id: str = Field(default="agrowise-192e3", alias="GCP_PROJECT_ID")
+    gcp_project_id: str = Field(default="", alias="GCP_PROJECT_ID")
     gcp_region: str = Field(default="us-central1", alias="GCP_REGION")
     vertex_model: str = Field(default="gemini-2.0-flash", alias="VERTEX_MODEL")
 
@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     # Groww API (pluggable)
     groww_api_token: str = Field(default="", alias="GROWW_API_TOKEN")
     groww_totp_secret: str = Field(default="", alias="GROWW_TOTP_SECRET")
+
+    # Global Market (WorldMonitor integration)
+    fred_api_key: str = Field(default="", alias="FRED_API_KEY")
+    global_market_refresh_minutes: int = Field(default=15, alias="GLOBAL_MARKET_REFRESH_MINUTES")
 
     # DuckDB (NLQ analytics database)
     duckdb_path: str = Field(default="market_analytics.duckdb", alias="DUCKDB_PATH")

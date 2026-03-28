@@ -87,16 +87,42 @@ async def get_news(ticker: str = Query(""), limit: int = Query(20, le=50)):
     con = duckdb.connect(get_db_path(), read_only=True)
     try:
         if ticker:
-            return con.execute(f"""
+            return con.execute("""
                 SELECT * FROM v_recent_news
-                WHERE '{ticker.upper()}' = ANY(tickers)
-                ORDER BY published_at DESC LIMIT {limit}
-            """).fetchdf().to_dict(orient="records")
-        return con.execute(f"SELECT * FROM v_recent_news LIMIT {limit}").fetchdf().to_dict(orient="records")
+                WHERE ? = ANY(tickers)
+                ORDER BY published_at DESC LIMIT ?
+            """, [ticker.upper(), limit]).fetchdf().to_dict(orient="records")
+        return con.execute("SELECT * FROM v_recent_news LIMIT ?", [limit]).fetchdf().to_dict(orient="records")
     except Exception:
         return []
     finally:
         con.close()
+
+
+@router.get("/tickers")
+async def get_tickers(sector: str = Query("", description="Filter by sector")):
+    """Get available tickers (dynamic from DuckDB, not hardcoded)."""
+    from src.data.ticker_universe import get_all_tickers, get_tickers_by_sector, get_sectors
+    if sector:
+        return {"tickers": get_tickers_by_sector(sector)}
+    return {"tickers": get_all_tickers(), "sectors": get_sectors()}
+
+
+@router.get("/tickers/popular")
+async def get_popular_tickers():
+    """Get top tickers by market cap for quick-access buttons."""
+    import duckdb
+    from src.data.market_schema import get_db_path
+    try:
+        con = duckdb.connect(get_db_path(), read_only=True)
+        rows = con.execute(
+            "SELECT ticker FROM dim_stocks ORDER BY market_cap_cr DESC LIMIT 10"
+        ).fetchall()
+        con.close()
+        tickers = [r[0] for r in rows]
+        return {"tickers": tickers if tickers else ["RELIANCE", "TCS", "INFY", "HDFCBANK", "SBIN"]}
+    except Exception:
+        return {"tickers": ["RELIANCE", "TCS", "INFY", "HDFCBANK", "SBIN"]}
 
 
 @router.get("/ohlcv/{ticker}")

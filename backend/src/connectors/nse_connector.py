@@ -87,6 +87,10 @@ class NSEConnector(IndianDataSource):
         return None
 
     def _set_cache(self, key: str, val: Any):
+        # Periodically evict stale entries to prevent unbounded growth
+        if len(self._cache) > 500:
+            now = time.time()
+            self._cache = {k: (ts, v) for k, (ts, v) in self._cache.items() if now - ts < self._cache_ttl}
         self._cache[key] = (time.time(), val)
 
     # ── Public API ─────────────────────────────────────────────
@@ -139,13 +143,29 @@ class NSEConnector(IndianDataSource):
 
         return {"ticker": clean, "price": 0, "error": "No data available", "source": "none"}
 
+    _hist_cache: dict[str, tuple[float, "pd.DataFrame"]] = {}
+    _HIST_CACHE_TTL = 900  # 15 min cache for historical data
+
     def get_historical_data(self, symbol: str, period: str = "1y") -> pd.DataFrame:
-        """Fetch historical OHLCV data via yfinance."""
+        """Fetch historical OHLCV data via yfinance with 15-min cache."""
+        cache_key = f"hist:{strip_suffix(symbol)}:{period}"
+        now = time.time()
+        if cache_key in self._hist_cache:
+            ts, df = self._hist_cache[cache_key]
+            if now - ts < self._HIST_CACHE_TTL:
+                return df
+
         if not YFINANCE_AVAILABLE:
             return pd.DataFrame()
         try:
             tk = yf.Ticker(ensure_ns_suffix(strip_suffix(symbol)))
             hist = tk.history(period=period, interval="1d")
+            if not hist.empty:
+                self._hist_cache[cache_key] = (now, hist)
+                # Evict old entries if cache grows too large
+                if len(self._hist_cache) > 200:
+                    cutoff = now - self._HIST_CACHE_TTL
+                    self._hist_cache = {k: (t, d) for k, (t, d) in self._hist_cache.items() if t > cutoff}
             return hist
         except Exception as e:
             logger.error(f"Historical data failed for {symbol}: {e}")

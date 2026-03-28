@@ -77,8 +77,11 @@ def extract_tickers(content: str) -> str:
     try:
         from src.data.ticker_universe import get_all_tickers
         known_tickers = get_all_tickers()
+        if not known_tickers:
+            raise ValueError("Empty ticker list")
     except Exception:
-        known_tickers = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK", "LT"]
+        from src.data.ticker_universe import _get_tickers_from_csv
+        known_tickers = _get_tickers_from_csv()
     found = [t for t in known_tickers if t in content.upper()]
     return ",".join(found) if found else ""
 

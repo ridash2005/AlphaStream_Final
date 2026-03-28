@@ -52,7 +52,10 @@ def run_full_refresh(load_prices: bool = True, run_signals: bool = True) -> dict
     # 6. Update Groww live prices for dim_stocks market_cap
     results["groww_refresh"] = _refresh_groww_data()
 
-    # 6. Regenerate views
+    # 7. Refresh global market data (WorldMonitor-sourced)
+    results["global_market"] = _refresh_global_market()
+
+    # 8. Regenerate views
     con = get_connection()
     create_views(con)
     con.close()
@@ -172,6 +175,18 @@ def _refresh_articles() -> int:
         return 0
 
 
+def _refresh_global_market() -> int:
+    """Refresh global market data (indices, commodities, VIX, Fear & Greed)."""
+    try:
+        from src.connectors.global_market_connector import get_global_market_connector
+        gmc = get_global_market_connector()
+        gmc.bootstrap()
+        return 1
+    except Exception as e:
+        logger.warning(f"Global market refresh failed: {e}")
+        return 0
+
+
 def _refresh_groww_data() -> int:
     """Refresh stock data from Groww API (live prices, 52w range)."""
     try:
@@ -197,6 +212,10 @@ def start_background_refresh(interval_minutes: int = 30):
     """Start background data refresh scheduler."""
     global _scheduler_task
     if _scheduler_task is None:
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         _scheduler_task = loop.create_task(_background_refresh_loop(interval_minutes))
         logger.info(f"Data refresh scheduler started (every {interval_minutes} min)")

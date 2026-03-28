@@ -92,6 +92,11 @@ export const apiService = {
         return response.data;
     },
 
+    async getPopularTickers(): Promise<{ tickers: string[] }> {
+        const response = await api.get('/api/tickers/popular');
+        return response.data;
+    },
+
     async getFlows(days = 30) {
         const response = await api.get('/api/flows', { params: { days } });
         return response.data;
@@ -126,6 +131,53 @@ export const apiService = {
 
     async dismissInsight(id: string) {
         const response = await api.post(`/api/insights/dismiss/${id}`);
+        return response.data;
+    },
+
+    // ── Global Market endpoints (WorldMonitor) ───────────
+
+    async getGlobalIndices() {
+        const response = await api.get('/api/global/indices');
+        return response.data;
+    },
+
+    async getCommodityQuotes() {
+        const response = await api.get('/api/global/commodities');
+        return response.data;
+    },
+
+    async getCryptoQuotes() {
+        const response = await api.get('/api/global/crypto');
+        return response.data;
+    },
+
+    async getVix() {
+        const response = await api.get('/api/global/vix');
+        return response.data;
+    },
+
+    async getFearGreed() {
+        const response = await api.get('/api/global/fear-greed');
+        return response.data;
+    },
+
+    async getSectorPerformance() {
+        const response = await api.get('/api/global/sectors');
+        return response.data;
+    },
+
+    async getMacroSignals() {
+        const response = await api.get('/api/global/macro');
+        return response.data;
+    },
+
+    async getCurrencyQuotes() {
+        const response = await api.get('/api/global/currencies');
+        return response.data;
+    },
+
+    async getGlobalContext() {
+        const response = await api.get('/api/global/context');
         return response.data;
     },
 };

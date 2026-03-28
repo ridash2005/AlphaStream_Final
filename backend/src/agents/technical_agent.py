@@ -99,22 +99,20 @@ class TechnicalAgent:
         }
 
     def _get_price_data(self, ticker: str) -> Any:
-        """Fetch real price data from yfinance."""
+        """Fetch price data via NSE connector (uses 15-min cache)."""
         import pandas as pd
-        
-        if YFINANCE_AVAILABLE:
-            try:
-                # Download minimal data for speed
-                ticker_obj = yf.Ticker(ensure_ns_suffix(ticker))
-                hist = ticker_obj.history(period="3mo", interval="1d")
-                if not hist.empty:
-                    return hist
-            except Exception as e:
-                logger.error(f"Error fetching data for {ticker}: {e}")
 
-        # NO MOCK DATA - Real data only for production
-        logger.warning(f"No price data available for {ticker} - yfinance may not be installed or ticker invalid")
-        return pd.DataFrame()  # Return empty, will trigger neutral response
+        try:
+            from src.connectors.nse_connector import get_nse_connector
+            nse = get_nse_connector()
+            hist = nse.get_historical_data(ticker, period="3mo")
+            if not hist.empty:
+                return hist
+        except Exception as e:
+            logger.error(f"Error fetching data for {ticker}: {e}")
+
+        logger.warning(f"No price data available for {ticker}")
+        return pd.DataFrame()
 
     def _calculate_rsi(self, series: Any, window: int = 14) -> Any:
         """Calculate RSI."""

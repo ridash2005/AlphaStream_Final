@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/appStore';
 import { FileText, Download, Loader2, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import api from '@/services/api';
 
 interface ReportResult {
     report_path: string;
@@ -27,13 +28,8 @@ export function ReportDownload() {
         setResult(null);
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/report/${currentTicker}`, {
-                method: 'POST'
-            });
-
-            if (!response.ok) throw new Error('Failed to generate report');
-
-            const data = await response.json();
+            const response = await api.post(`/report/${currentTicker}`);
+            const data = response.data;
 
             if (data.error) {
                 throw new Error(data.error);

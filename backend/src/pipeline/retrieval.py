@@ -41,7 +41,7 @@ class EmbeddingGenerator:
                 from vertexai.language_models import TextEmbeddingModel
                 import vertexai
                 vertexai.init(
-                    project=os.environ.get("GCP_PROJECT_ID", "agrowise-192e3"),
+                    project=os.environ.get("GCP_PROJECT_ID", ""),
                     location=os.environ.get("GCP_REGION", "us-central1"),
                 )
                 self._vertex_model = TextEmbeddingModel.from_pretrained("text-embedding-005")
@@ -89,9 +89,12 @@ class EmbeddingGenerator:
 class VectorStore:
     """
     In-memory vector store for document retrieval.
-    
+
     Uses cosine similarity for matching.
+    Evicts oldest documents when max_documents is exceeded.
     """
+
+    MAX_DOCUMENTS = 10_000
 
     def __init__(self, embedding_generator: EmbeddingGenerator):
         self.embedding_generator = embedding_generator
@@ -99,9 +102,16 @@ class VectorStore:
         self.embeddings: np.ndarray | None = None
 
     def add_document(self, doc: dict[str, Any], embedding: np.ndarray | None = None) -> None:
-        """Add a document to the store."""
+        """Add a document to the store. Evicts oldest when at capacity."""
         if embedding is None:
             embedding = self.embedding_generator.embed(doc["text"])
+
+        # Evict oldest documents when at capacity
+        if len(self.documents) >= self.MAX_DOCUMENTS:
+            evict_count = self.MAX_DOCUMENTS // 10  # Evict 10%
+            self.documents = self.documents[evict_count:]
+            self.embeddings = self.embeddings[evict_count:] if self.embeddings is not None else None
+            logger.info(f"VectorStore evicted {evict_count} oldest documents")
 
         self.documents.append(doc)
 

@@ -1,20 +1,44 @@
 {
-  "NVDA": [
+  "RELIANCE": [
     {
-      "insider_name": "Cook Tim",
+      "insider_name": "Mukesh Ambani",
+      "person_category": "Promoter",
       "transaction_type": "Purchase",
       "shares": 50000,
-      "price": 185.5,
-      "filing_date": "2026-01-21",
-      "ticker": "NVDA"
+      "value_lakhs": 625.0,
+      "trade_date": "2026-03-20",
+      "ticker": "RELIANCE"
     },
     {
-      "insider_name": "Maestri Luca",
+      "insider_name": "Nita Ambani",
+      "person_category": "Promoter Group",
       "transaction_type": "Purchase",
       "shares": 15000,
-      "price": 184.75,
-      "filing_date": "2026-01-20",
-      "ticker": "NVDA"
+      "value_lakhs": 187.5,
+      "trade_date": "2026-03-19",
+      "ticker": "RELIANCE"
+    }
+  ],
+  "TCS": [
+    {
+      "insider_name": "K Krithivasan",
+      "person_category": "KMP",
+      "transaction_type": "Purchase",
+      "shares": 5000,
+      "value_lakhs": 195.0,
+      "trade_date": "2026-03-18",
+      "ticker": "TCS"
+    }
+  ],
+  "INFY": [
+    {
+      "insider_name": "Salil Parekh",
+      "person_category": "KMP",
+      "transaction_type": "Sale",
+      "shares": 20000,
+      "value_lakhs": 320.0,
+      "trade_date": "2026-03-17",
+      "ticker": "INFY"
     }
   ]
 }

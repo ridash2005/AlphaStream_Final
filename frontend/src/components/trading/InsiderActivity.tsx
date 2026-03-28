@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/store/appStore';
 import { Users, TrendingUp, TrendingDown, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import api from '@/services/api';
 
 interface InsiderData {
     ticker: string;
@@ -29,9 +30,8 @@ export function InsiderActivity() {
         setError(null);
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/insider/${currentTicker}`);
-            if (!response.ok) throw new Error('Failed to fetch insider data');
-            const result = await response.json();
+            const response = await api.get(`/insider/${currentTicker}`);
+            const result = response.data;
             setData(result);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unknown error');

@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Zap, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAppStore } from '@/store/appStore';
 
-const TEST_USERS = [
-  { email: 'judge@etmedia.com', password: 'hackathon2026', name: 'ET Judge', role: 'Judge' },
-  { email: 'demo@alphastream.in', password: 'demo123', name: 'Demo User', role: 'Investor' },
-];
+const TEST_USERS = JSON.parse(
+  import.meta.env.VITE_TEST_USERS || '[{"email":"judge@etmedia.com","password":"hackathon2026","name":"ET Judge","role":"Judge"},{"email":"demo@alphastream.in","password":"demo123","name":"Demo User","role":"Investor"}]'
+) as { email: string; password: string; name: string; role: string }[];
 
 export default function LoginPage() {
   const navigate = useNavigate();

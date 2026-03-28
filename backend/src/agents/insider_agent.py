@@ -83,7 +83,8 @@ Values are in ₹ Lakhs.
             # Check for demo override file
             import os
             import json
-            demo_file = "data/demo_insider.json"
+            from pathlib import Path
+            demo_file = str(Path(__file__).resolve().parents[2] / "data" / "demo_insider.json")
             if os.path.exists(demo_file):
                 try:
                     with open(demo_file, "r") as f:

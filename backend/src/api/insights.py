@@ -311,6 +311,10 @@ def start_background_insights(interval_minutes: int = 30):
     """Start the background insight generation scheduler."""
     global _scheduler_task
     if _scheduler_task is None:
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         _scheduler_task = loop.create_task(_background_insight_loop(interval_minutes))
         logger.info(f"Background insight scheduler started (every {interval_minutes} min)")
