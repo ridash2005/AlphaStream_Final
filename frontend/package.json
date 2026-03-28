@@ -17,10 +17,13 @@
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.38.0",
+    "lightweight-charts": "^5.1.0",
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-is": "^19.2.3",
+    "react-markdown": "^10.1.0",
     "recharts": "^3.6.0",
     "tailwind-merge": "^3.4.0",
     "zustand": "^5.0.10"

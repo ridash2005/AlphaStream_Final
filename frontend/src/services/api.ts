@@ -57,6 +57,77 @@ export const apiService = {
         const response = await api.get<{ data: { ticker: string; score: number; updated: string }[] }>('/market/heatmap');
         return response.data;
     },
+
+    // ── NLQ endpoints ──────────────────────────────
+
+    async nlqQuery(question: string, sessionId = 'default', portfolioContext?: string) {
+        const response = await api.post('/api/nlq', { question, session_id: sessionId, portfolio_context: portfolioContext });
+        return response.data;
+    },
+
+    openNLQStream(question: string, sessionId = 'default', onEvent: (event: any) => void) {
+        const url = `${API_BASE_URL}/api/nlq/stream?question=${encodeURIComponent(question)}&session_id=${sessionId}`;
+        const source = new EventSource(url);
+        source.onmessage = (e) => {
+            try { onEvent(JSON.parse(e.data)); } catch {}
+        };
+        source.onerror = () => { source.close(); };
+        return source;
+    },
+
+    // ── Market endpoints ──────────────────────────
+
+    async getRadar(topN = 10) {
+        const response = await api.get('/api/radar', { params: { top_n: topN } });
+        return response.data;
+    },
+
+    async getPatterns(ticker: string) {
+        const response = await api.get(`/api/patterns/${ticker}`);
+        return response.data;
+    },
+
+    async getBacktest(ticker: string, pattern: string, years = 3) {
+        const response = await api.get(`/api/backtest/${ticker}/${pattern}`, { params: { years } });
+        return response.data;
+    },
+
+    async getFlows(days = 30) {
+        const response = await api.get('/api/flows', { params: { days } });
+        return response.data;
+    },
+
+    async setPortfolio(holdings: { ticker: string; quantity: number; buy_price: number }[]) {
+        const response = await api.post('/api/portfolio', { holdings });
+        return response.data;
+    },
+
+    async getOHLCV(ticker: string, period = '6mo') {
+        const response = await api.get(`/api/ohlcv/${ticker}`, { params: { period } });
+        return response.data;
+    },
+
+    // ── Insights endpoints ────────────────────────
+
+    async getInsights(limit = 20, unreadOnly = false) {
+        const response = await api.get('/api/insights', { params: { limit, unread_only: unreadOnly } });
+        return response.data;
+    },
+
+    async getInsightsCount() {
+        const response = await api.get('/api/insights/count');
+        return response.data;
+    },
+
+    async markInsightRead(id?: string) {
+        const response = await api.post('/api/insights/mark-read', { id });
+        return response.data;
+    },
+
+    async dismissInsight(id: string) {
+        const response = await api.post(`/api/insights/dismiss/${id}`);
+        return response.data;
+    },
 };
 
 export default api;

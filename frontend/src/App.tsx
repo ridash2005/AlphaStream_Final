@@ -14,6 +14,8 @@ import {
 import { MarketHeatmap } from '@/components/trading/MarketHeatmap';
 import { AgentRadar } from '@/components/trading/AgentRadar';
 import { Footer } from '@/components/Footer';
+import NLQPanel from '@/components/trading/NLQPanel';
+import NLQButton from '@/components/trading/NLQButton';
 
 function App() {
   const { error, clearError } = useAppStore();
@@ -29,8 +31,8 @@ function App() {
               <Zap className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight">AlphaStream</h1>
-              <p className="text-xs text-muted-foreground">Live AI Trading Agent</p>
+              <h1 className="text-lg font-bold tracking-tight">AlphaStream India</h1>
+              <p className="text-xs text-muted-foreground">AI Investment Intelligence</p>
             </div>
           </div>
           <SystemStatus />
@@ -99,6 +101,10 @@ function App() {
           <ArrowDown className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
         </button>
       </div>
+
+      {/* NLQ Chat Panel + FAB */}
+      <NLQPanel />
+      <NLQButton />
 
       {/* Footer - Pinned */}
       <Footer />

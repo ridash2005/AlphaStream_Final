@@ -57,6 +57,10 @@ interface AppState {
     // History
     recommendationHistory: Recommendation[];
 
+    // NLQ state
+    nlqOpen: boolean;
+    nlqSessionId: string;
+
     // Actions
     setTicker: (ticker: string) => void;
     setRecommendation: (rec: Recommendation) => void;
@@ -71,6 +75,10 @@ interface AppState {
     connectStream: (ticker: string) => void;
     disconnectStream: () => void;
     socket: WebSocket | null;
+
+    // NLQ actions
+    setNlqOpen: (open: boolean) => void;
+    setNlqSessionId: (id: string) => void;
 }
 
 
@@ -89,6 +97,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     error: null,
     recommendationHistory: [],
     socket: null,
+    nlqOpen: false,
+    nlqSessionId: 'default',
 
     // Actions
     setTicker: (ticker) => set({ currentTicker: ticker.toUpperCase() }),
@@ -179,5 +189,9 @@ export const useAppStore = create<AppState>((set, get) => ({
             socket.close();
             set({ socket: null });
         }
-    }
+    },
+
+    // NLQ
+    setNlqOpen: (open) => set({ nlqOpen: open }),
+    setNlqSessionId: (id) => set({ nlqSessionId: id }),
 }));
