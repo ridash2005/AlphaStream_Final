@@ -24,6 +24,13 @@ import {
   CommodityStrip,
   ErrorBoundary,
   GeoRiskPanel,
+  StockFundamentals,
+  AnomalyPanel,
+  GlobalMarketsPanel,
+  StockScreener,
+  CorporateFilings,
+  PortfolioManager,
+  WatchlistPanel,
 } from '@/components/trading';
 import { MarketHeatmap } from '@/components/trading/MarketHeatmap';
 import { AgentRadar } from '@/components/trading/AgentRadar';
@@ -136,6 +143,16 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Row 1.5: Fundamentals + Anomaly Detection */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+              <div className="lg:col-span-5">
+                <StockFundamentals />
+              </div>
+              <div className="lg:col-span-4">
+                <AnomalyPanel />
+              </div>
+            </div>
+
             {/* Row 2: Opportunity signals + Flow chart + Signal history */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <OpportunityRadar />
@@ -148,6 +165,10 @@ export default function Dashboard() {
         {/* Signals tab */}
         <TabsContent value="signals" className="flex-1 overflow-y-auto scrollbar-hide mt-0 border-0 p-0">
           <div className="max-w-[1600px] mx-auto px-4 pt-4 pb-40">
+            {/* Stock Screener — full width */}
+            <div className="mb-4">
+              <StockScreener />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <SectorHeatmap />
               <MarketHeatmap />
@@ -161,6 +182,10 @@ export default function Dashboard() {
         <TabsContent value="global" className="flex-1 overflow-y-auto scrollbar-hide mt-0 border-0 p-0">
           <div className="max-w-[1600px] mx-auto px-4 pt-4 pb-40">
             <ErrorBoundary section="Global Intelligence">
+              {/* Global Markets Panel — Crypto / FX / Sectors */}
+              <div className="mb-4">
+                <GlobalMarketsPanel />
+              </div>
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 <div className="lg:col-span-3">
                   <FearGreedGauge />
@@ -187,6 +212,8 @@ export default function Dashboard() {
                 <ArticlesList />
               </div>
               <div className="space-y-4">
+                <CorporateFilings />
+                <WatchlistPanel />
                 <ReportDownload />
                 <HistoryPanel />
               </div>
@@ -196,12 +223,8 @@ export default function Dashboard() {
 
         {/* Portfolio tab */}
         <TabsContent value="portfolio" className="flex-1 overflow-y-auto scrollbar-hide mt-0 border-0 p-0">
-          <div className="max-w-[1600px] mx-auto px-4 pt-4">
-            <div className="glass-card rounded-lg p-8 text-center">
-              <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-30" />
-              <p className="text-sm text-muted-foreground">Portfolio management UI coming soon</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Use the NLQ panel to query your holdings</p>
-            </div>
+          <div className="max-w-[1600px] mx-auto px-4 pt-4 pb-40">
+            <PortfolioManager />
           </div>
         </TabsContent>
       </Tabs>
