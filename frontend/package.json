@@ -24,6 +24,7 @@
     "react-dom": "^19.2.0",
     "react-is": "^19.2.3",
     "react-markdown": "^10.1.0",
+    "react-router-dom": "^7.13.2",
     "recharts": "^3.6.0",
     "tailwind-merge": "^3.4.0",
     "zustand": "^5.0.10"

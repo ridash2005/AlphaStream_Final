@@ -1,4 +1,20 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+// Auth
+export interface UserProfile {
+    email: string;
+    name: string;
+    role: string;
+    isLoggedIn: boolean;
+}
+
+// Portfolio
+export interface Holding {
+    ticker: string;
+    quantity: number;
+    buy_price: number;
+}
 
 // Types
 export interface Recommendation {
@@ -40,6 +56,9 @@ export interface AgentStatus {
 
 // Store state
 interface AppState {
+    // Auth
+    user: UserProfile | null;
+
     // Data
     recommendation: Recommendation | null;
     articles: Article[];
@@ -47,7 +66,10 @@ interface AppState {
     marketHeatmap: { ticker: string; score: number; updated: string }[];
     indexingLatency: number | null;
     documentCount: number | null;
-    agentStatus: AgentStatus | null;  // Current agent status
+    agentStatus: AgentStatus | null;
+
+    // Portfolio
+    portfolio: Holding[];
 
     // UI State
     currentTicker: string;
@@ -62,6 +84,9 @@ interface AppState {
     nlqSessionId: string;
 
     // Actions
+    setUser: (user: UserProfile | null) => void;
+    logout: () => void;
+    setPortfolio: (holdings: Holding[]) => void;
     setTicker: (ticker: string) => void;
     setRecommendation: (rec: Recommendation) => void;
     setArticles: (articles: Article[]) => void;
@@ -83,7 +108,12 @@ interface AppState {
 
 
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>()(
+  persist(
+    (set, get) => ({
+    // Auth
+    user: null,
+
     // Initial state
     recommendation: null,
     articles: [],
@@ -99,6 +129,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     socket: null,
     nlqOpen: false,
     nlqSessionId: 'default',
+
+    // Portfolio
+    portfolio: [],
+
+    // Auth actions
+    setUser: (user) => set({ user }),
+    logout: () => set({ user: null, portfolio: [], recommendationHistory: [] }),
+    setPortfolio: (holdings) => set({ portfolio: holdings }),
 
     // Actions
     setTicker: (ticker) => set({ currentTicker: ticker.toUpperCase() }),
@@ -194,4 +232,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     // NLQ
     setNlqOpen: (open) => set({ nlqOpen: open }),
     setNlqSessionId: (id) => set({ nlqSessionId: id }),
-}));
+  }),
+  {
+    name: 'alphastream-store',
+    partialize: (state) => ({
+      user: state.user,
+      portfolio: state.portfolio,
+      currentTicker: state.currentTicker,
+      nlqSessionId: state.nlqSessionId,
+    }),
+  }
+));
