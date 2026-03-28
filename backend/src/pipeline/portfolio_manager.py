@@ -98,6 +98,42 @@ class PortfolioManager:
         """Return tickers in portfolio."""
         return [h["ticker"] for h in self.holdings]
 
+    def get_concentration_warnings(self) -> list[str]:
+        """Check sector concentration and return warnings."""
+        if not self.holdings:
+            return []
+
+        import csv
+        from pathlib import Path
+        csv_path = Path(__file__).resolve().parents[1] / "data" / "nifty50_symbols.csv"
+        sector_map = {}
+        try:
+            with open(csv_path) as f:
+                for row in csv.DictReader(f):
+                    sector_map[row["ticker"]] = row["sector"]
+        except Exception:
+            return []
+
+        sector_value: dict[str, float] = {}
+        total = 0
+        for h in self.holdings:
+            sector = sector_map.get(h["ticker"], "Unknown")
+            price = self._get_current_price(h["ticker"]) or h.get("buy_price", 0)
+            val = h.get("quantity", 0) * price
+            sector_value[sector] = sector_value.get(sector, 0) + val
+            total += val
+
+        warnings = []
+        if total > 0:
+            for sector, val in sorted(sector_value.items(), key=lambda x: -x[1]):
+                pct = val / total * 100
+                if pct > 30:
+                    warnings.append(
+                        f"High concentration: {pct:.0f}% of your portfolio is in {sector} "
+                        f"(recommended max 30%). Consider diversifying."
+                    )
+        return warnings
+
     def _get_current_price(self, ticker: str) -> Optional[float]:
         """Fetch current price via yfinance."""
         if not YFINANCE_AVAILABLE:

@@ -71,6 +71,31 @@ function SignalCard({ signal }: { signal: Signal }) {
   );
 }
 
+// Group signals by sector theme
+function groupByTheme(signals: Signal[]): Record<string, Signal[]> {
+  const groups: Record<string, Signal[]> = {};
+  for (const s of signals) {
+    // Extract sector from top_signals evidence if available
+    const sector = (s as any).sector || 'Other';
+    if (!groups[sector]) groups[sector] = [];
+    groups[sector].push(s);
+  }
+  return groups;
+}
+
+function ThemeBadge({ sector, signals }: { sector: string; signals: Signal[] }) {
+  const bullish = signals.filter(s => ['BUY', 'STRONG_BUY'].includes(s.direction)).length;
+  const bearish = signals.filter(s => ['SELL', 'STRONG_SELL'].includes(s.direction)).length;
+  const color = bullish > bearish ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+    : bearish > bullish ? 'text-red-400 bg-red-500/10 border-red-500/20'
+    : 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${color}`}>
+      {sector}: {bullish}B {bearish}S
+    </span>
+  );
+}
+
 export function OpportunityRadar() {
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,7 +103,7 @@ export function OpportunityRadar() {
   const fetchRadar = async () => {
     setLoading(true);
     try {
-      const data = await apiService.getRadar(10);
+      const data = await apiService.getRadar(15);
       setSignals(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error('Radar fetch failed:', e);
@@ -88,6 +113,8 @@ export function OpportunityRadar() {
   };
 
   useEffect(() => { fetchRadar(); }, []);
+
+  const themes = groupByTheme(signals);
 
   return (
     <Card className="glass-card p-4">
@@ -103,6 +130,16 @@ export function OpportunityRadar() {
           {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
         </Button>
       </div>
+
+      {/* Sector themes */}
+      {Object.keys(themes).length > 1 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {Object.entries(themes).map(([sector, sigs]) => (
+            <ThemeBadge key={sector} sector={sector} signals={sigs} />
+          ))}
+        </div>
+      )}
+
       {signals.length === 0 && !loading && (
         <p className="text-sm text-muted-foreground text-center py-8">No signals detected. Try refreshing.</p>
       )}
