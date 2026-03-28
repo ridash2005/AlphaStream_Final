@@ -28,6 +28,10 @@ class AgentState(TypedDict, total=False):
     sources: Annotated[Optional[list[str]], _last]
     confidence: Annotated[Optional[str], _last]
 
+    # Search enrichment
+    web_search_results: Annotated[Optional[str], _last]
+    search_enriched: Annotated[bool, _last]
+
     # Signal/KPI matching (set by router)
     _matched_signal: Annotated[Optional[str], _last]
     _signal_definition: Annotated[Optional[str], _last]

@@ -378,7 +378,24 @@ def text2sql_node(state: AgentState) -> AgentState:
             "detail": f"rows={len(result) if result else 0}, error={error}",
         })
 
-        return {**state, "sql": final_sql, "result": result, "error": error, "thought_steps": thought_steps}
+        # Search enrichment: if few results, auto-search web
+        web_context = None
+        try:
+            from src.agents.search_agent import get_search_agent
+            sa = get_search_agent()
+            enrichment = sa.enrich_context(query, len(result) if result else 0)
+            if enrichment.get("enriched"):
+                web_context = enrichment["summary"]
+                thought_steps.append({
+                    "node": "Text2SQL", "action": "search_enrich",
+                    "detail": f"Web search added {enrichment['source_count']} sources (DB had <5 rows)",
+                })
+        except Exception:
+            pass
+
+        return {**state, "sql": final_sql, "result": result, "error": error,
+                "thought_steps": thought_steps,
+                "web_search_results": web_context, "search_enriched": bool(web_context)}
 
     except ImportError:
         # Text2SQL pipeline not yet built — fallback to simple query
@@ -457,7 +474,8 @@ def narrate_node(state: AgentState) -> AgentState:
         return {**state, "narrative": narrative, "thought_steps": thought_steps, "history": history[-20:]}
 
     # Generate narrative via LLM
-    narrative, chart_spec, suggested = _generate_financial_narrative(query, result, sql, history)
+    web_context = state.get("web_search_results")
+    narrative, chart_spec, suggested = _generate_financial_narrative(query, result, sql, history, web_context)
 
     thought_steps.append({
         "node": "Narrate", "action": "narrate",
@@ -476,7 +494,8 @@ def narrate_node(state: AgentState) -> AgentState:
 
 
 def _generate_financial_narrative(
-    query: str, result: list[dict], sql: str, history: list[dict]
+    query: str, result: list[dict], sql: str, history: list[dict],
+    web_context: str = None,
 ) -> tuple[str, dict, list[str]]:
     """Generate narrative + chart spec + follow-up questions."""
     data = result

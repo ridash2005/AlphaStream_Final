@@ -18,15 +18,9 @@ class PortfolioInput(BaseModel):
 async def get_radar(top_n: int = Query(10, le=50)):
     """Top N opportunity signals by Alpha Score."""
     from src.pipeline.fusion_engine import FusionEngine
-    import csv
-    from pathlib import Path
+    from src.data.ticker_universe import get_all_tickers
 
-    csv_path = Path(__file__).parents[2] / "data" / "nifty50_symbols.csv"
-    tickers = []
-    with open(csv_path) as f:
-        for row in csv.DictReader(f):
-            tickers.append(row["ticker"])
-
+    tickers = get_all_tickers()
     fe = FusionEngine()
     return fe.scan_opportunities(tickers[:20], top_n=top_n)
 
