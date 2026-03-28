@@ -10,6 +10,8 @@ from typing import Any, Dict
 
 import numpy as np
 
+from src.connectors.base_connector import ensure_ns_suffix
+
 logger = logging.getLogger(__name__)
 
 # Optional dependencies
@@ -103,7 +105,7 @@ class TechnicalAgent:
         if YFINANCE_AVAILABLE:
             try:
                 # Download minimal data for speed
-                ticker_obj = yf.Ticker(ticker)
+                ticker_obj = yf.Ticker(ensure_ns_suffix(ticker))
                 hist = ticker_obj.history(period="3mo", interval="1d")
                 if not hist.empty:
                     return hist

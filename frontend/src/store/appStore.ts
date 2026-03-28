@@ -84,7 +84,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     indexingLatency: null,
     documentCount: null,
     agentStatus: null,
-    currentTicker: 'AAPL',
+    currentTicker: 'RELIANCE',
     isLoading: false,
     error: null,
     recommendationHistory: [],

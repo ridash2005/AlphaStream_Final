@@ -9,6 +9,8 @@ from typing import Any, Dict
 
 import numpy as np
 
+from src.connectors.base_connector import ensure_ns_suffix
+
 logger = logging.getLogger(__name__)
 
 # Optional dependencies
@@ -93,7 +95,7 @@ class RiskAgent:
             return 0.02  # Default 2% daily volatility
         
         try:
-            ticker_obj = yf.Ticker(ticker)
+            ticker_obj = yf.Ticker(ensure_ns_suffix(ticker))
             hist = ticker_obj.history(period="3mo", interval="1d")
             
             if hist.empty or len(hist) < 10:

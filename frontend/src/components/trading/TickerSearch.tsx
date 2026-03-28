@@ -43,7 +43,7 @@ export function TickerSearch() {
         }
     };
 
-    const popularTickers = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN'];
+    const popularTickers = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK'];
 
     return (
         <div className="space-y-3">
@@ -51,7 +51,7 @@ export function TickerSearch() {
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Enter ticker symbol (e.g., AAPL)"
+                        placeholder="Enter ticker symbol (e.g., RELIANCE)"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value.toUpperCase())}
                         onKeyDown={handleKeyDown}

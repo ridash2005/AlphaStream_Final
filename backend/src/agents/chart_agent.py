@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np
 
+from src.connectors.base_connector import ensure_ns_suffix
+
 logger = logging.getLogger(__name__)
 
 # Optional yfinance for price data
@@ -71,7 +73,7 @@ class ChartAgent:
         
         try:
             # Fetch price data
-            ticker_obj = yf.Ticker(ticker)
+            ticker_obj = yf.Ticker(ensure_ns_suffix(ticker))
             hist = ticker_obj.history(period=f"{days}d", interval="1h")
             
             if hist.empty:
@@ -130,7 +132,7 @@ class ChartAgent:
             # Styling
             ax.set_title(f'{ticker} - 7 Day Price Action', fontsize=14, color='white', pad=15)
             ax.set_xlabel('Date', fontsize=10, color='#888888')
-            ax.set_ylabel('Price ($)', fontsize=10, color='#888888')
+            ax.set_ylabel('Price (₹)', fontsize=10, color='#888888')
             ax.tick_params(colors='#888888')
             ax.grid(True, alpha=0.2, color='#333333')
             ax.legend(loc='upper left', facecolor='#1a1a2e', edgecolor='#333333')
