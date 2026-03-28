@@ -85,6 +85,26 @@ async def get_filings(ticker: str, days: int = Query(30, le=90)):
     return bse.get_announcements(days=days)
 
 
+@router.get("/news")
+async def get_news(ticker: str = Query(""), limit: int = Query(20, le=50)):
+    """Get recent news, optionally filtered by ticker."""
+    import duckdb
+    from src.data.market_schema import get_db_path
+    con = duckdb.connect(get_db_path(), read_only=True)
+    try:
+        if ticker:
+            return con.execute(f"""
+                SELECT * FROM v_recent_news
+                WHERE '{ticker.upper()}' = ANY(tickers)
+                ORDER BY published_at DESC LIMIT {limit}
+            """).fetchdf().to_dict(orient="records")
+        return con.execute(f"SELECT * FROM v_recent_news LIMIT {limit}").fetchdf().to_dict(orient="records")
+    except Exception:
+        return []
+    finally:
+        con.close()
+
+
 @router.get("/ohlcv/{ticker}")
 async def get_ohlcv(ticker: str, period: str = Query("6mo")):
     """OHLCV data for charting (consumed by TradingView Lightweight Charts)."""

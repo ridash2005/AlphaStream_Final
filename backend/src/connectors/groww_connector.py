@@ -110,8 +110,32 @@ class GrowwConnector(IndianDataSource):
         return {"ticker": clean, "price": 0, "error": "Groww API unavailable", "source": "Groww"}
 
     def get_historical_data(self, symbol: str, period: str = "1y"):
-        """Groww doesn't provide bulk historical data — use NSE/yfinance instead."""
+        """Fetch OHLCV candles from Groww charting service."""
         import pandas as pd
+        import time as _time
+
+        clean = strip_suffix(symbol)
+        now = int(_time.time() * 1000)
+        period_ms = {
+            "1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "2y": 730, "5y": 1825,
+        }
+        days = period_ms.get(period, 365)
+        start = now - (days * 24 * 3600 * 1000)
+
+        data = self._api_get(
+            f"https://groww.in/v1/api/charting_service/v2/chart/exchange/NSE/segment/CASH/{clean}",
+            params={
+                "endTimeInMillis": now,
+                "intervalInMinutes": 1440,
+                "startTimeInMillis": start,
+            },
+        )
+        if data and "candles" in data and data["candles"]:
+            candles = data["candles"]
+            df = pd.DataFrame(candles, columns=["timestamp", "Open", "High", "Low", "Close", "Volume"])
+            df["Date"] = pd.to_datetime(df["timestamp"], unit="s")
+            df = df.set_index("Date").drop(columns=["timestamp"])
+            return df
         return pd.DataFrame()
 
     def search_stocks(self, query: str) -> list[dict]:

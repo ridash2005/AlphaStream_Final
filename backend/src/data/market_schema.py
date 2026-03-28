@@ -143,6 +143,22 @@ def create_schema(con: duckdb.DuckDBPyConnection) -> None:
         )
     """)
 
+    # Fact: news articles (for NLQ querying)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS fact_articles (
+            id          VARCHAR PRIMARY KEY,
+            title       VARCHAR,
+            description TEXT,
+            content     TEXT,
+            source      VARCHAR,
+            url         VARCHAR,
+            tickers     VARCHAR[],
+            sentiment   VARCHAR,
+            published_at TIMESTAMP,
+            ingested_at  TIMESTAMP DEFAULT current_timestamp
+        )
+    """)
+
     # Insights table (for ambient alerts)
     con.execute("""
         CREATE TABLE IF NOT EXISTS insights (
@@ -263,6 +279,14 @@ def create_views(con: duckdb.DuckDBPyConnection) -> None:
                    ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY signal_date DESC) AS rn
             FROM fact_signals
         ) latest_sig ON d.ticker = latest_sig.ticker AND latest_sig.rn = 1
+    """)
+
+    con.execute("""
+        CREATE OR REPLACE VIEW v_recent_news AS
+        SELECT id, title, source, tickers, sentiment, published_at,
+               LEFT(description, 200) AS summary
+        FROM fact_articles
+        ORDER BY published_at DESC
     """)
 
     logger.info("DuckDB views created")

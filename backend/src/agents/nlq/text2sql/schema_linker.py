@@ -46,12 +46,18 @@ TABLE: fact_quarterly_results
   yoy_pat_growth (DOUBLE)
   PRIMARY KEY (ticker, quarter)
 
+TABLE: fact_articles
+  id (VARCHAR PK), title (VARCHAR), description (TEXT), content (TEXT),
+  source (VARCHAR), url (VARCHAR), tickers (VARCHAR[]),
+  sentiment (VARCHAR), published_at (TIMESTAMP), ingested_at (TIMESTAMP)
+
 PRE-BUILT VIEWS:
   v_signal_summary — signals joined with stock info, ordered by alpha_score
   v_insider_activity_30d — insider trades last 30 days with stock info
   v_fii_dii_trend — FII/DII flows with 5d/20d rolling sums
   v_sector_heatmap — sector-wise signal counts and avg alpha scores
   v_stock_screener — latest price + latest signal per stock
+  v_recent_news — recent news articles with tickers and sentiment
 
 Dimension values:
 - sector: Financial Services, Information Technology, Energy, Automobile, Healthcare, Fast Moving Consumer Goods, Materials, Industrials, Consumer Durables, Utilities, Construction Materials, Communication Services

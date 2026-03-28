@@ -35,6 +35,10 @@ _SCHEMA_DOCS = [
     {"id": "term_rsi", "text": "RSI, RSI divergence, oversold, overbought — signal_type='technical' AND pattern='rsi_divergence' in fact_signals", "type": "term"},
     {"id": "term_macd", "text": "MACD, MACD crossover — signal_type='technical' AND pattern='macd_crossover' in fact_signals", "type": "term"},
     {"id": "term_nifty50", "text": "Nifty 50, Nifty50, large cap, blue chip — 'nifty50' = ANY(index_membership) in dim_stocks", "type": "term"},
+    # Articles/News
+    {"id": "fact_articles", "text": "fact_articles: News articles from ET Markets, MoneyControl, LiveMint with title, content, source, tickers mentioned, sentiment (positive/negative/neutral)", "type": "table"},
+    {"id": "v_recent_news", "text": "v_recent_news: Recent news headlines with tickers and sentiment — use for news queries", "type": "view"},
+    {"id": "term_news", "text": "News, headlines, articles, market updates — query fact_articles or v_recent_news table", "type": "term"},
 ]
 
 _SIMILARITY_THRESHOLD = 0.3  # ChromaDB default embeddings need lower threshold

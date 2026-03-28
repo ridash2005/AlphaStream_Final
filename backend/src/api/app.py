@@ -196,6 +196,11 @@ async def lifespan(app: FastAPI):
         seed_initial_insights()
         start_background_insights(interval_minutes=30)
         logger.info("Ambient insights engine started (every 30 min)")
+
+        # Seed RSS articles into DuckDB for NLQ
+        from src.data.article_ingest import ingest_rss_to_duckdb
+        rss_count = ingest_rss_to_duckdb()
+        logger.info(f"Seeded {rss_count} RSS articles into DuckDB")
     except Exception as e:
         logger.warning(f"Insights engine: {e}")
 
@@ -231,9 +236,16 @@ async def lifespan(app: FastAPI):
             pass
             
         ingest_start = time.time()
-        
+
         # 1. Ingest into manual RAG
         rag_pipeline.ingest_article(article)
+
+        # 1.5 Also write to DuckDB for NLQ querying
+        try:
+            from src.data.article_ingest import ingest_article_to_duckdb
+            ingest_article_to_duckdb(article)
+        except Exception as e:
+            logger.warning(f"DuckDB article ingest failed: {e}")
         
         # 2. Also write to data/articles/ for Adaptive RAG to pick up
         try:

@@ -105,6 +105,8 @@ _CLASSIFY_SYSTEM = (
     "(e.g., 'What are FIIs doing?', 'DII buying trend').\n\n"
     "STOCK_LOOKUP — User asks about a specific stock's data, price, fundamentals "
     "(e.g., 'Tell me about RELIANCE', 'TCS price').\n\n"
+    "NEWS_QUERY — User asks about recent news, articles, market headlines "
+    "(e.g., 'What news about RELIANCE?', 'Latest market headlines').\n\n"
     "PORTFOLIO_AWARE — User references 'my portfolio', 'my stocks', 'my holdings' "
     "(e.g., 'How does this affect my portfolio?').\n\n"
     "AD_HOC — Any other analytics question needing custom SQL "
@@ -125,7 +127,7 @@ def _classify_query(query: str) -> str:
         ).strip().upper()
 
         valid = ("OFF_TOPIC", "GREETING", "SIGNAL_QUERY", "INSIDER_QUERY",
-                 "FLOW_QUERY", "STOCK_LOOKUP", "PORTFOLIO_AWARE", "AD_HOC")
+                 "FLOW_QUERY", "STOCK_LOOKUP", "NEWS_QUERY", "PORTFOLIO_AWARE", "AD_HOC")
         if result in valid:
             return result
         if result.startswith("SIGNAL_DEF:"):
@@ -180,6 +182,7 @@ _INTENT_SQL = {
     "INSIDER_QUERY": "SELECT * FROM v_insider_activity_30d ORDER BY trade_date DESC LIMIT 20",
     "FLOW_QUERY": "SELECT * FROM v_fii_dii_trend ORDER BY date DESC LIMIT 20",
     "STOCK_LOOKUP": "SELECT * FROM v_stock_screener ORDER BY ticker LIMIT 50",
+    "NEWS_QUERY": "SELECT * FROM v_recent_news ORDER BY published_at DESC LIMIT 20",
 }
 
 
