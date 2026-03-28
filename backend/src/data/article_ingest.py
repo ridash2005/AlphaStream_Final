@@ -70,15 +70,22 @@ def ingest_article_to_duckdb(article: dict[str, Any]) -> bool:
         neg = sum(1 for w in neg_words if w in title_lower)
         sentiment = "positive" if pos > neg else "negative" if neg > pos else "neutral"
 
+        # Threat classification (set by news_classifier in on_new_article callback)
+        threat_level = article.get("threat_level", "info")
+        threat_category = article.get("threat_category", "general")
+        threat_confidence = article.get("threat_confidence", 0.3)
+
         con = duckdb.connect(get_db_path())
         try:
             con.execute("""
                 INSERT INTO fact_articles
-                (id, title, description, content, source, url, tickers, sentiment, published_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRY_CAST(? AS TIMESTAMP))
+                (id, title, description, content, source, url, tickers, sentiment,
+                 threat_level, threat_category, threat_confidence, published_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRY_CAST(? AS TIMESTAMP))
                 ON CONFLICT (id) DO NOTHING
             """, [article_id, title, description, content[:5000], source, url,
-                  tickers, sentiment, published_at])
+                  tickers, sentiment, threat_level, threat_category, threat_confidence,
+                  published_at])
             return True
         finally:
             con.close()

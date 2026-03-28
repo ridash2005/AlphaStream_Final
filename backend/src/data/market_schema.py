@@ -159,6 +159,9 @@ def create_schema(con: duckdb.DuckDBPyConnection) -> None:
             url         VARCHAR,
             tickers     VARCHAR[],
             sentiment   VARCHAR,
+            threat_level    VARCHAR DEFAULT 'info',
+            threat_category VARCHAR DEFAULT 'general',
+            threat_confidence DOUBLE DEFAULT 0.3,
             published_at TIMESTAMP,
             ingested_at  TIMESTAMP DEFAULT current_timestamp
         )
@@ -181,7 +184,23 @@ def create_schema(con: duckdb.DuckDBPyConnection) -> None:
         )
     """)
 
+    # Migrate existing databases: add threat columns if missing
+    _migrate_threat_columns(con)
+
     logger.info("DuckDB schema created")
+
+
+def _migrate_threat_columns(con: duckdb.DuckDBPyConnection) -> None:
+    """Add threat columns to fact_articles if they don't exist (migration)."""
+    try:
+        cols = [row[0] for row in con.execute("PRAGMA table_info('fact_articles')").fetchall()]
+        if 'threat_level' not in cols:
+            con.execute("ALTER TABLE fact_articles ADD COLUMN threat_level VARCHAR DEFAULT 'info'")
+            con.execute("ALTER TABLE fact_articles ADD COLUMN threat_category VARCHAR DEFAULT 'general'")
+            con.execute("ALTER TABLE fact_articles ADD COLUMN threat_confidence DOUBLE DEFAULT 0.3")
+            logger.info("Migrated fact_articles: added threat_* columns")
+    except Exception as e:
+        logger.debug(f"Threat column migration: {e}")
 
 
 # ── Views ──────────────────────────────────────────────────────
