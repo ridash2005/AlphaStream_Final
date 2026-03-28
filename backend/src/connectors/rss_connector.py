@@ -15,28 +15,33 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-# Public financial news RSS feeds (no API key required)
+# Indian financial news RSS feeds (no API key required)
 RSS_FEEDS = [
     {
-        "name": "Yahoo Finance",
-        "url": "https://finance.yahoo.com/news/rssindex",
-        "source": "Yahoo Finance"
+        "name": "ET Markets - Stocks",
+        "url": "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms",
+        "source": "ET Markets"
     },
     {
-        "name": "Reuters Business",
-        "url": "https://ir.thomsonreuters.com/rss/news-releases.xml?items=15",
-        "source": "Reuters"
+        "name": "ET Markets - Economy",
+        "url": "https://economictimes.indiatimes.com/news/economy/rssfeeds/1373380680.cms",
+        "source": "ET Markets"
     },
     {
-        "name": "MarketWatch",
-        "url": "https://feeds.marketwatch.com/marketwatch/topstories/",
-        "source": "MarketWatch"
+        "name": "MoneyControl - Top News",
+        "url": "https://www.moneycontrol.com/rss/MCtopnews.xml",
+        "source": "MoneyControl"
     },
     {
-        "name": "Seeking Alpha",
-        "url": "https://seekingalpha.com/market_currents.xml",
-        "source": "Seeking Alpha"
-    }
+        "name": "MoneyControl - Business",
+        "url": "https://www.moneycontrol.com/rss/business.xml",
+        "source": "MoneyControl"
+    },
+    {
+        "name": "LiveMint - Markets",
+        "url": "https://www.livemint.com/rss/markets",
+        "source": "LiveMint"
+    },
 ]
 
 

@@ -1,5 +1,5 @@
 """
-Insider Trading Agent - Analyzes SEC Form 4 filings.
+Insider Trading Agent - Analyzes NSE SAST/PIT filings.
 
 Extracts insider trading signals and calculates net insider sentiment.
 Uses LLM for complex parsing and summarization when needed.
@@ -14,7 +14,7 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
 from src.config import get_settings
-from src.connectors.sec_connector import get_sec_connector
+from src.connectors.insider_connector import get_insider_connector
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +23,8 @@ class InsiderAnalysis(BaseModel):
     """Schema for insider trading analysis output."""
     insider_score: float = Field(description="Score from -1.0 (heavy selling) to 1.0 (heavy buying)")
     sentiment: str = Field(description="BEARISH, NEUTRAL, or BULLISH based on insider activity")
-    total_buy_value: float = Field(description="Total value of insider purchases in USD")
-    total_sell_value: float = Field(description="Total value of insider sales in USD")
+    total_buy_value: float = Field(description="Total value of insider purchases in ₹ Lakhs")
+    total_sell_value: float = Field(description="Total value of insider sales in ₹ Lakhs")
     key_transactions: list[str] = Field(description="List of notable insider transactions")
     summary: str = Field(description="Brief summary of insider activity patterns")
 
@@ -39,7 +39,7 @@ class InsiderAgent:
     def __init__(self, model: str | None = None):
         settings = get_settings()
         self.model = model or settings.llm_model
-        self.sec_connector = get_sec_connector()
+        self.insider_connector = get_insider_connector()
         
         # Initialize LLM for complex parsing
         self.llm = ChatOpenAI(
@@ -54,20 +54,22 @@ class InsiderAgent:
         self.parser = PydanticOutputParser(pydantic_object=InsiderAnalysis)
         
         self.prompt = PromptTemplate(
-            template="""Analyze the following insider trading data for {ticker}.
+            template="""Analyze the following insider trading data for {ticker} (Indian stock market, NSE SAST/PIT regulations).
 
-Insider Transactions (last 24-48 hours):
+Insider Transactions:
 {transactions}
 
 Consider:
 1. Net buying vs selling activity
-2. Who is trading (CEO, CFO, Directors are more significant)
+2. Who is trading (Promoter, Director, KMP are most significant under SEBI regulations)
 3. Size of transactions relative to typical activity
-4. Timing patterns (clustered buying/selling)
+4. Timing patterns (clustered buying/selling by 3+ insiders = strong signal)
 
 A score of 1.0 means heavy insider buying (very bullish signal).
 A score of -1.0 means heavy insider selling (bearish signal).
 A score of 0.0 means neutral or no significant activity.
+
+Values are in ₹ Lakhs.
 
 {format_instructions}
 """,
@@ -106,9 +108,9 @@ A score of 0.0 means neutral or no significant activity.
                 except Exception as e:
                     logger.warning(f"Failed to load demo data: {e}")
 
-            # Fetch insider trades from SEC
+            # Fetch insider trades from NSE (SAST/PIT)
             logger.info(f"🔍 Insider Agent: Fetching trades for {ticker} (last {days} days)")
-            transactions = self.sec_connector.get_insider_trades(ticker, days=days)
+            transactions = self.insider_connector.get_insider_trades(ticker, days=days)
             
             
             logger.info(f"🔍 Insider Agent: Found {len(transactions)} transactions")
@@ -148,10 +150,12 @@ A score of 0.0 means neutral or no significant activity.
         parts = []
         for i, trans in enumerate(transactions[:15], 1):  # Limit to 15
             parts.append(
-                f"[{i}] {trans.get('insider_name', 'Unknown')} - "
-                f"{trans.get('transaction_type', 'Unknown')} - "
-                f"{trans.get('shares', 0)} shares @ ${trans.get('price', 0):.2f} - "
-                f"Filed: {trans.get('filing_date', 'Unknown')}"
+                f"[{i}] {trans.get('person_name', trans.get('insider_name', 'Unknown'))} "
+                f"({trans.get('person_category', 'Unknown')}) - "
+                f"{trans.get('trade_type', trans.get('transaction_type', 'Unknown'))} - "
+                f"{trans.get('quantity', trans.get('shares', 0))} shares - "
+                f"₹{trans.get('value_lakhs', 0):.2f}L - "
+                f"Date: {trans.get('trade_date', trans.get('filing_date', 'Unknown'))}"
             )
         return "\n".join(parts)
     
