@@ -124,21 +124,16 @@ def create_adaptive_rag_from_news(
     from pathway.xpacks.llm.document_store import DocumentStore
     from pathway.xpacks.llm.question_answering import AdaptiveRAGQuestionAnswerer
     
-    # Configure OpenRouter as OpenAI-compatible endpoint
-    # Pathway xpacks use OPENAI_API_KEY and OPENAI_BASE_URL env vars
-    openrouter_key = os.getenv("OPENROUTER_API_KEY")
-    openrouter_base = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-    
-    if openrouter_key:
-        os.environ["OPENAI_API_KEY"] = openrouter_key
-        os.environ["OPENAI_BASE_URL"] = openrouter_base
-        logger.info(f"Configured OpenRouter as OpenAI-compatible endpoint")
-    else:
-        raise ValueError("OPENROUTER_API_KEY is required in .env file")
-    
+    # Configure Vertex AI via environment
+    # Pathway xpacks can use OpenAI-compatible or native Vertex AI
+    # Set a dummy OpenAI key to satisfy Pathway's check, actual calls go through Vertex
+    if not os.getenv("OPENAI_API_KEY"):
+        os.environ["OPENAI_API_KEY"] = "vertex-ai-managed"
+    logger.info("Using Vertex AI for Pathway Adaptive RAG")
+
     # Use model from env or default
     if model is None:
-        model = os.getenv("LLM_MODEL", "anthropic/claude-3.5-sonnet")
+        model = os.getenv("VERTEX_MODEL", "gemini-2.0-flash")
     
     # Ensure articles directory exists
     Path(articles_path).mkdir(parents=True, exist_ok=True)

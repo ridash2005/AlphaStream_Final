@@ -8,11 +8,10 @@ from pydantic import Field
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
-    # OpenRouter API
-    openrouter_api_key: str = Field(..., alias="OPENROUTER_API_KEY")
-    openrouter_base_url: str = Field(
-        default="https://openrouter.ai/api/v1", alias="OPENROUTER_BASE_URL"
-    )
+    # GCP / Vertex AI
+    gcp_project_id: str = Field(default="agrowise-192e3", alias="GCP_PROJECT_ID")
+    gcp_region: str = Field(default="us-central1", alias="GCP_REGION")
+    vertex_model: str = Field(default="gemini-2.0-flash", alias="VERTEX_MODEL")
 
     # News APIs
     newsapi_key: str = Field(..., alias="NEWS_API_KEY")
@@ -28,10 +27,10 @@ class Settings(BaseSettings):
 
     # Model selection
     llm_model: str = Field(
-        default="anthropic/claude-3.5-sonnet", alias="LLM_MODEL"
+        default="gemini-2.0-flash", alias="LLM_MODEL"
     )
     embedding_model: str = Field(
-        default="sentence-transformers/all-MiniLM-L6-v2", alias="EMBEDDING_MODEL"
+        default="text-embedding-005", alias="EMBEDDING_MODEL"
     )
 
     # Indian Market Configuration

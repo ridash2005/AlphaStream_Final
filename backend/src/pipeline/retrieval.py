@@ -2,7 +2,7 @@
 Hybrid retrieval system combining dense and sparse search.
 
 Components:
-- EmbeddingGenerator: Wraps sentence-transformers
+- EmbeddingGenerator: Vertex AI embeddings (text-embedding-005)
 - VectorStore: In-memory dense vector search
 - SparseRetriever: BM25 implementation
 - HybridRetriever: Combines VectorStore and SparseRetriever using RRF
@@ -10,6 +10,7 @@ Components:
 
 import logging
 import math
+import os
 from collections import Counter
 from typing import Any, List, Dict
 
@@ -19,51 +20,70 @@ from src.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-try:
-    from sentence_transformers import SentenceTransformer
-    SENTENCE_TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    SENTENCE_TRANSFORMERS_AVAILABLE = False
-    logger.warning("sentence-transformers not installed. RAG pipeline will fail unless using API embeddings.")
-
 
 class EmbeddingGenerator:
     """
-    Generate embeddings for text using sentence-transformers.
-    
-    Uses a local model for fast, free embeddings.
+    Generate embeddings using Vertex AI (text-embedding-005).
+    Falls back to sentence-transformers if Vertex AI unavailable.
     """
 
     def __init__(self, model_name: str | None = None):
         settings = get_settings()
         self.model_name = model_name or settings.embedding_model
-        self._model = None
+        self._vertex_model = None
+        self._local_model = None
+        self._use_vertex = True
+        self._dim = 768
 
-    @property
-    def model(self) -> Any:
-        """Lazy load the embedding model."""
-        if self._model is None:
-            if not SENTENCE_TRANSFORMERS_AVAILABLE:
-                raise RuntimeError(
-                    "sentence-transformers not installed. "
-                    "Please install it with: uv pip install sentence-transformers"
+    def _get_vertex_model(self):
+        if self._vertex_model is None:
+            try:
+                from vertexai.language_models import TextEmbeddingModel
+                import vertexai
+                vertexai.init(
+                    project=os.environ.get("GCP_PROJECT_ID", "agrowise-192e3"),
+                    location=os.environ.get("GCP_REGION", "us-central1"),
                 )
-            logger.info(f"Loading embedding model: {self.model_name}")
-            self._model = SentenceTransformer(self.model_name)
-        return self._model
+                self._vertex_model = TextEmbeddingModel.from_pretrained("text-embedding-005")
+            except Exception as e:
+                logger.warning(f"Vertex AI embeddings unavailable ({e}), falling back to local")
+                self._use_vertex = False
+        return self._vertex_model
+
+    def _get_local_model(self):
+        if self._local_model is None:
+            try:
+                from sentence_transformers import SentenceTransformer
+                self._local_model = SentenceTransformer("all-MiniLM-L6-v2")
+                self._dim = self._local_model.get_sentence_embedding_dimension()
+            except ImportError:
+                raise RuntimeError("Neither Vertex AI nor sentence-transformers available for embeddings")
+        return self._local_model
 
     @property
     def embedding_dim(self) -> int:
-        """Get embedding dimension."""
-        return self.model.get_sentence_embedding_dimension()
+        return self._dim
 
     def embed(self, text: str) -> np.ndarray:
-        """Generate embedding for a single text."""
-        return self.model.encode(text, convert_to_numpy=True)
+        if self._use_vertex:
+            model = self._get_vertex_model()
+            if model:
+                embeddings = model.get_embeddings([text])
+                return np.array(embeddings[0].values)
+        return self._get_local_model().encode(text, convert_to_numpy=True)
 
     def embed_batch(self, texts: list[str]) -> np.ndarray:
-        """Generate embeddings for multiple texts."""
-        return self.model.encode(texts, convert_to_numpy=True)
+        if self._use_vertex:
+            model = self._get_vertex_model()
+            if model:
+                # Vertex AI batch limit is 250
+                all_embeddings = []
+                for i in range(0, len(texts), 250):
+                    batch = texts[i:i + 250]
+                    embeddings = model.get_embeddings(batch)
+                    all_embeddings.extend([np.array(e.values) for e in embeddings])
+                return np.array(all_embeddings)
+        return self._get_local_model().encode(texts, convert_to_numpy=True)
 
 
 class VectorStore:

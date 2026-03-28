@@ -8,10 +8,9 @@ from typing import Any
 
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-from src.config import get_settings
+from src.llm import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -29,15 +28,7 @@ class FilingAgent:
     """Analyzes BSE/NSE corporate filings using LLM."""
 
     def __init__(self):
-        settings = get_settings()
-        self.llm = ChatOpenAI(
-            api_key=settings.openrouter_api_key,
-            base_url=settings.openrouter_base_url,
-            model=settings.llm_model,
-            temperature=0,
-            max_retries=3,
-            request_timeout=30,
-        )
+        self.llm = get_llm(temperature=0.0)
         self.parser = PydanticOutputParser(pydantic_object=FilingAnalysis)
         self.prompt = PromptTemplate(
             template="""You are an Indian market financial analyst specializing in BSE/NSE corporate filings.

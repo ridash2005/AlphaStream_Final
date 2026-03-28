@@ -9,10 +9,9 @@ from typing import Any, Dict
 
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-from src.config import get_settings
+from src.llm import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -31,17 +30,7 @@ class DecisionAgent:
     """
 
     def __init__(self, model: str | None = None):
-        settings = get_settings()
-        self.model = model or settings.llm_model
-        
-        self.llm = ChatOpenAI(
-            api_key=settings.openrouter_api_key,
-            base_url=settings.openrouter_base_url,
-            model=self.model,
-            temperature=0.1,
-            max_retries=5,
-            request_timeout=60,
-        )
+        self.llm = get_llm(temperature=0.1)
         
         self.parser = PydanticOutputParser(pydantic_object=DecisionOutput)
         
