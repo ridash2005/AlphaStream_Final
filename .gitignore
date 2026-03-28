@@ -44,4 +44,5 @@ demo_output.json
 Thumbs.db
 *.log
 backend/logs/
-!backend/logs/.gitkeep
+!backend/logs/.gitkeep*.duckdb
+*.duckdb.wal
