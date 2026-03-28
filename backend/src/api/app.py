@@ -320,9 +320,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="AlphaStream Live AI",
-    description="Real-time trading recommendations powered by Pathway streaming RAG",
-    version="1.0.0",
+    title="AlphaStream India",
+    description="AI-powered investment intelligence for the Indian investor — signals, NLQ, backtesting",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -335,12 +335,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount NLQ + Market + Insights routers
+from src.api.routers.nlq import router as nlq_router
+from src.api.routers.market import router as market_router
+from src.api.routers.insights import router as insights_router
+
+app.include_router(nlq_router, prefix="/api", tags=["NLQ"])
+app.include_router(market_router, prefix="/api", tags=["Market"])
+app.include_router(insights_router, prefix="/api", tags=["Insights"])
+
 
 # Request/Response models
 class RecommendationRequest(BaseModel):
     """Request model for trading recommendation."""
 
-    ticker: str = Field(..., description="Stock ticker symbol (e.g., AAPL)")
+    ticker: str = Field(..., description="Stock ticker symbol (e.g., RELIANCE)")
     query: str | None = Field(None, description="Optional custom query")
 
 
