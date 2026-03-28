@@ -191,8 +191,8 @@ class ReportAgent:
                     ['Metric', 'Value'],
                     ['Insider Sentiment', insider_sentiment],
                     ['Insider Score', f"{insider_score:.2f}"],
-                    ['Total Buy Value', f"${insider_data.get('total_buy_value', 0):,.0f}"],
-                    ['Total Sell Value', f"${insider_data.get('total_sell_value', 0):,.0f}"],
+                    ['Total Buy Value', f"₹{insider_data.get('total_buy_value', 0):,.0f}"],
+                    ['Total Sell Value', f"₹{insider_data.get('total_sell_value', 0):,.0f}"],
                 ]
                 
                 table = Table(insider_table_data, colWidths=[2*inch, 3*inch])
