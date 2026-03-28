@@ -83,6 +83,60 @@ def output_guardrail_node(state: AgentState) -> AgentState:
     return _output_guardrail.after_agent(state)
 
 
+# ── Enrich node (runs BEFORE router) ─────────────────────────────────────────
+
+def enrich_node(state: AgentState) -> AgentState:
+    """
+    Search-first enrichment: runs BEFORE router.
+    1. Web search for context on the user query
+    2. Load persistent memory for user preferences
+    3. Rewrite/enrich the query with additional context
+    """
+    query = state.get("query", "")
+    session_id = state.get("session_id", "default")
+    thought_steps = list(state.get("thought_steps", []))
+
+    web_context = None
+    user_context = None
+
+    # 1. Web search for context enrichment
+    try:
+        from src.agents.search_agent import get_search_agent
+        sa = get_search_agent()
+        # Search for financial context on the query
+        results = sa.search(query, max_results=3)
+        if results:
+            web_context = sa._build_summary(query, results)
+            thought_steps.append({
+                "node": "Enrich",
+                "action": "web_search",
+                "detail": f"Found {len(results)} web sources for context enrichment",
+            })
+    except Exception as e:
+        thought_steps.append({
+            "node": "Enrich", "action": "web_search_skip",
+            "detail": f"Web search unavailable: {str(e)[:50]}",
+        })
+
+    # 2. Load persistent memory
+    try:
+        from src.agents.nlq.memory import get_user_context, save_query_pattern
+        user_context = get_user_context(session_id)
+        if user_context:
+            thought_steps.append({
+                "node": "Enrich", "action": "memory",
+                "detail": f"Loaded user context: {user_context[:80]}",
+            })
+    except Exception:
+        pass
+
+    return {
+        **state,
+        "web_search_results": web_context,
+        "thought_steps": thought_steps,
+    }
+
+
 # ── Router ───────────────────────────────────────────────────────────────────
 
 _CLASSIFY_SYSTEM = (
@@ -483,6 +537,14 @@ def narrate_node(state: AgentState) -> AgentState:
     })
 
     history.append({"query": query, "answer": narrative, "sql": sql or ""})
+
+    # Persist query pattern to long-term memory
+    try:
+        from src.agents.nlq.memory import save_query_pattern
+        save_query_pattern(state.get("session_id", "default"), query, state.get("intent", "unknown"))
+    except Exception:
+        pass
+
     return {
         **state,
         "narrative": narrative,
@@ -609,19 +671,23 @@ def _infer_chart_heuristic(data: list[dict]) -> dict:
 def _build_graph() -> StateGraph:
     builder = StateGraph(AgentState)
 
+    # Nodes
     builder.add_node("input_guardrail", input_guardrail_node)
+    builder.add_node("enrich", enrich_node)  # Search-first enrichment
     builder.add_node("router", router_node)
     builder.add_node("analytics", analytics_node)
     builder.add_node("text2sql", text2sql_node)
     builder.add_node("narrate", narrate_node)
     builder.add_node("output_guardrail", output_guardrail_node)
 
+    # Flow: START → input_guardrail → {error? narrate : enrich} → router → ...
     builder.add_edge(START, "input_guardrail")
     builder.add_conditional_edges(
         "input_guardrail",
-        lambda state: "narrate" if state.get("error") else "router",
-        {"narrate": "narrate", "router": "router"},
+        lambda state: "narrate" if state.get("error") else "enrich",
+        {"narrate": "narrate", "enrich": "enrich"},
     )
+    builder.add_edge("enrich", "router")  # Enrich THEN route
     # Router uses Command → analytics, text2sql, or narrate
     builder.add_edge("text2sql", "narrate")
     builder.add_edge("narrate", "output_guardrail")
