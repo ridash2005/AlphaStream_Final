@@ -989,7 +989,7 @@ export default function NLQPanel({ className = '' }) {
             <Sparkles size={14} className="text-[#e63946]" />
           </div>
           <div>
-            <p className="text-sm font-bold text-white leading-none">Ask MediaFlow AI</p>
+            <p className="text-sm font-bold text-white leading-none">Ask AlphaStream</p>
             <p className="text-[10px] text-[#555] mt-0.5 leading-none">Powered by Claude · Analytics</p>
           </div>
         </div>
@@ -1018,7 +1018,7 @@ export default function NLQPanel({ className = '' }) {
         <div className="flex flex-wrap gap-1.5">
           {(chartCtx
             ? CONTEXT_PROMPTS.chart_dropped
-            : CONTEXT_PROMPTS[activeTab] || QUICK_PROMPTS
+            : CONTEXT_PROMPTS.default || QUICK_PROMPTS
           ).slice(0, 2).map((p) => (
             <button
               key={p}
@@ -1108,7 +1108,7 @@ export default function NLQPanel({ className = '' }) {
                 <Sparkles size={17} className="text-[#e63946]" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-white">Ask MediaFlow AI</h2>
+                <h2 className="text-base font-bold text-white">Ask AlphaStream</h2>
                 <p className="text-[10px] text-[#555] uppercase tracking-wider">Full analytics view · Claude Sonnet</p>
               </div>
             </div>
@@ -1136,7 +1136,7 @@ export default function NLQPanel({ className = '' }) {
           {/* Quick prompts - context-aware */}
           <div className="flex-shrink-0 flex items-center gap-2 px-6 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
             <span className="text-[10px] text-[#555] uppercase tracking-wider flex-shrink-0">Try:</span>
-            {(chartCtx ? CONTEXT_PROMPTS.chart_dropped : CONTEXT_PROMPTS[activeTab] || QUICK_PROMPTS).map((p) => (
+            {(chartCtx ? CONTEXT_PROMPTS.chart_dropped : CONTEXT_PROMPTS.default || QUICK_PROMPTS).map((p) => (
               <button
                 key={p}
                 onClick={() => sendMessage(p)}
