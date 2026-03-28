@@ -1,0 +1,90 @@
+signals:
+  ALPHA_SCORE:
+    name: "Alpha Score"
+    description: "Composite signal combining filing, technical, insider/flow, sentiment, and backtest signals (0-100)"
+    type: sql
+    view: v_signal_summary
+    page: Radar
+
+  RSI_DIVERGENCE:
+    name: "RSI Divergence"
+    description: "Price makes new high/low but RSI does not — potential reversal"
+    type: sql
+    table: fact_signals
+    filter: "signal_type = 'technical' AND evidence_json->>'pattern' = 'rsi_divergence'"
+    page: Charts
+
+  MACD_CROSSOVER:
+    name: "MACD Crossover"
+    description: "MACD line crosses signal line with histogram confirmation"
+    type: sql
+    table: fact_signals
+    filter: "signal_type = 'technical' AND evidence_json->>'pattern' = 'macd_crossover'"
+    page: Charts
+
+  BOLLINGER_BREAKOUT:
+    name: "Bollinger Breakout"
+    description: "Price breaks out of squeezed Bollinger Bands"
+    type: sql
+    table: fact_signals
+    filter: "signal_type = 'technical' AND evidence_json->>'pattern' = 'bollinger_breakout'"
+    page: Charts
+
+  VOLUME_BREAKOUT:
+    name: "Volume Breakout"
+    description: "Volume exceeds 2x the 20-day average"
+    type: sql
+    table: fact_signals
+    filter: "signal_type = 'technical' AND evidence_json->>'pattern' = 'volume_breakout'"
+    page: Charts
+
+  GOLDEN_CROSS:
+    name: "Golden Cross"
+    description: "50-day SMA crosses above 200-day SMA — bullish long-term trend"
+    type: sql
+    table: fact_signals
+    filter: "signal_type = 'technical' AND evidence_json->>'pattern' = 'golden_cross'"
+    page: Charts
+
+  INSIDER_BUY:
+    name: "Insider Buying"
+    description: "Promoter/director/KMP purchases in open market (SAST/PIT regulated)"
+    type: sql
+    view: v_insider_activity_30d
+    page: Radar
+
+  FII_STREAK:
+    name: "FII Buying Streak"
+    description: "Foreign Institutional Investors net buying for 5+ consecutive sessions"
+    type: sql
+    view: v_fii_dii_trend
+    page: Radar
+
+  MATERIAL_FILING:
+    name: "Material Filing"
+    description: "BSE/NSE corporate announcement classified as high materiality"
+    type: sql
+    table: fact_filings
+    filter: "materiality = 'high'"
+    page: Radar
+
+dimensions:
+  sector:
+    source_column: sector
+    dim_table: dim_stocks
+    values: ["Financial Services", "Information Technology", "Energy", "Automobile", "Healthcare", "Fast Moving Consumer Goods", "Materials", "Industrials", "Consumer Durables", "Utilities", "Construction Materials", "Communication Services"]
+
+  index_membership:
+    source_column: index_membership
+    dim_table: dim_stocks
+    values: ["nifty50", "nifty100", "nifty500"]
+
+  signal_type:
+    source_column: signal_type
+    dim_table: fact_signals
+    values: ["technical", "filing", "insider", "flow", "sentiment"]
+
+  direction:
+    source_column: direction
+    dim_table: fact_signals
+    values: ["bullish", "bearish", "neutral"]

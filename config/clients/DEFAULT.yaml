@@ -1,0 +1,30 @@
+client_id: DEFAULT
+display_name: AlphaStream India
+
+thresholds:
+  alpha_score_high: 80
+  alpha_score_medium: 60
+  fii_streak_days: 5
+  fii_net_buy_cr: 2000
+  insider_cluster_count: 3
+  insider_cluster_days: 30
+  volume_breakout_multiplier: 2.0
+  max_sector_concentration_pct: 30
+
+alert_channels:
+  email: ""
+  slack_webhook: ""
+
+enabled_signals:
+  - ALPHA_SCORE
+  - RSI_DIVERGENCE
+  - MACD_CROSSOVER
+  - BOLLINGER_BREAKOUT
+  - VOLUME_BREAKOUT
+  - GOLDEN_CROSS
+  - INSIDER_BUY
+  - FII_STREAK
+  - MATERIAL_FILING
+
+default_index: nifty50
+date_range_default_days: 90

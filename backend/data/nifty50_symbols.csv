@@ -1,0 +1,51 @@
+ticker,company_name,sector,industry,isin
+RELIANCE,Reliance Industries Ltd,Energy,Oil Gas & Consumable Fuels,INE002A01018
+TCS,Tata Consultancy Services Ltd,Information Technology,IT Services & Consulting,INE467B01029
+HDFCBANK,HDFC Bank Ltd,Financial Services,Banks,INE040A01034
+INFY,Infosys Ltd,Information Technology,IT Services & Consulting,INE009A01021
+ICICIBANK,ICICI Bank Ltd,Financial Services,Banks,INE090A01021
+HINDUNILVR,Hindustan Unilever Ltd,Fast Moving Consumer Goods,FMCG,INE030A01027
+ITC,ITC Ltd,Fast Moving Consumer Goods,Tobacco,INE154A01025
+SBIN,State Bank of India,Financial Services,Banks,INE062A01020
+BHARTIARTL,Bharti Airtel Ltd,Communication Services,Telecom Services,INE397D01024
+KOTAKBANK,Kotak Mahindra Bank Ltd,Financial Services,Banks,INE237A01028
+LT,Larsen & Toubro Ltd,Industrials,Construction & Engineering,INE018A01030
+AXISBANK,Axis Bank Ltd,Financial Services,Banks,INE238A01034
+BAJFINANCE,Bajaj Finance Ltd,Financial Services,Consumer Finance,INE296A01024
+ASIANPAINT,Asian Paints Ltd,Consumer Durables,Paints,INE021A01026
+MARUTI,Maruti Suzuki India Ltd,Automobile,Passenger Cars,INE585B01010
+TITAN,Titan Company Ltd,Consumer Durables,Precious Metals & Jewellery,INE280A01028
+SUNPHARMA,Sun Pharmaceutical Industries Ltd,Healthcare,Pharmaceuticals,INE044A01036
+TATAMOTORS,Tata Motors Ltd,Automobile,Commercial Vehicles,INE155A01022
+BAJAJFINSV,Bajaj Finserv Ltd,Financial Services,Holding Companies,INE918I01018
+WIPRO,Wipro Ltd,Information Technology,IT Services & Consulting,INE075A01022
+ULTRACEMCO,UltraTech Cement Ltd,Construction Materials,Cement,INE481G01011
+ONGC,Oil & Natural Gas Corporation Ltd,Energy,Oil Gas & Consumable Fuels,INE213A01029
+NTPC,NTPC Ltd,Utilities,Power Generation,INE733E01010
+HCLTECH,HCL Technologies Ltd,Information Technology,IT Services & Consulting,INE860A01027
+POWERGRID,Power Grid Corporation of India Ltd,Utilities,Power Transmission,INE752E01010
+TATASTEEL,Tata Steel Ltd,Materials,Iron & Steel,INE081A01020
+M&M,Mahindra & Mahindra Ltd,Automobile,Passenger Cars & Utility Vehicles,INE101A01026
+ADANIENT,Adani Enterprises Ltd,Industrials,Trading & Distribution,INE423A01024
+JSWSTEEL,JSW Steel Ltd,Materials,Iron & Steel,INE019A01038
+TECHM,Tech Mahindra Ltd,Information Technology,IT Services & Consulting,INE669C01036
+INDUSINDBK,IndusInd Bank Ltd,Financial Services,Banks,INE095A01012
+HINDALCO,Hindalco Industries Ltd,Materials,Aluminium,INE038A01020
+COALINDIA,Coal India Ltd,Energy,Mining,INE522F01014
+ADANIPORTS,Adani Ports and Special Economic Zone Ltd,Industrials,Port & Port Services,INE742F01042
+DRREDDY,Dr. Reddys Laboratories Ltd,Healthcare,Pharmaceuticals,INE089A01023
+BPCL,Bharat Petroleum Corporation Ltd,Energy,Petroleum Products,INE029A01011
+EICHERMOT,Eicher Motors Ltd,Automobile,Two Wheelers,INE066A01021
+DIVISLAB,Divis Laboratories Ltd,Healthcare,Pharmaceuticals,INE361B01024
+GRASIM,Grasim Industries Ltd,Materials,Cement & Cement Products,INE047A01021
+CIPLA,Cipla Ltd,Healthcare,Pharmaceuticals,INE059A01026
+NESTLEIND,Nestle India Ltd,Fast Moving Consumer Goods,Food Products,INE239A01016
+HEROMOTOCO,Hero MotoCorp Ltd,Automobile,Two Wheelers,INE158A01026
+APOLLOHOSP,Apollo Hospitals Enterprise Ltd,Healthcare,Hospitals & Diagnostics,INE437A01024
+BRITANNIA,Britannia Industries Ltd,Fast Moving Consumer Goods,Food Products,INE216A01030
+SBILIFE,SBI Life Insurance Company Ltd,Financial Services,Life Insurance,INE123W01016
+HDFCLIFE,HDFC Life Insurance Company Ltd,Financial Services,Life Insurance,INE795G01014
+BAJAJ-AUTO,Bajaj Auto Ltd,Automobile,Two Wheelers,INE917I01010
+TATACONSUM,Tata Consumer Products Ltd,Fast Moving Consumer Goods,Tea & Coffee,INE192A01025
+LTIM,LTIMindtree Ltd,Information Technology,IT Services & Consulting,INE214T01019
+SHRIRAMFIN,Shriram Finance Ltd,Financial Services,Consumer Finance,INE721A01013

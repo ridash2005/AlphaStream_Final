@@ -1,0 +1,93 @@
+dimensions:
+  sector:
+    description: "Industry sector classification for NSE-listed stocks"
+    source_column: sector
+    dim_table: dim_stocks
+    cardinality: 12
+    values:
+      - Financial Services
+      - Information Technology
+      - Energy
+      - Automobile
+      - Healthcare
+      - Fast Moving Consumer Goods
+      - Materials
+      - Industrials
+      - Consumer Durables
+      - Utilities
+      - Construction Materials
+      - Communication Services
+
+  index_membership:
+    description: "NSE index membership (Nifty 50, 100, 500)"
+    source_column: index_membership
+    dim_table: dim_stocks
+    cardinality: 3
+    values:
+      - nifty50
+      - nifty100
+      - nifty500
+
+  signal_type:
+    description: "Type of trading signal detected"
+    source_column: signal_type
+    dim_table: fact_signals
+    cardinality: 5
+    values:
+      - technical
+      - filing
+      - insider
+      - flow
+      - sentiment
+
+  direction:
+    description: "Signal direction (bullish, bearish, neutral)"
+    source_column: direction
+    dim_table: fact_signals
+    cardinality: 3
+    values:
+      - bullish
+      - bearish
+      - neutral
+
+  trade_type:
+    description: "Insider trade type"
+    source_column: trade_type
+    dim_table: fact_insider_trades
+    cardinality: 2
+    values:
+      - buy
+      - sell
+
+  person_category:
+    description: "Category of insider making the trade"
+    source_column: person_category
+    dim_table: fact_insider_trades
+    cardinality: 3
+    values:
+      - promoter
+      - director
+      - kmp
+
+  filing_type:
+    description: "Type of BSE/NSE corporate filing"
+    source_column: filing_type
+    dim_table: fact_filings
+    cardinality: 6
+    values:
+      - board_meeting
+      - acquisition
+      - debt
+      - expansion
+      - regulatory
+      - routine
+
+  materiality:
+    description: "Filing materiality classification"
+    source_column: materiality
+    dim_table: fact_filings
+    cardinality: 3
+    values:
+      - high
+      - medium
+      - low

@@ -1,7 +1,7 @@
 [project]
-name = "alphastream-dataquest"
-version = "0.1.0"
-description = "Real-time trading recommendations powered by Pathway streaming RAG"
+name = "alphastream-india"
+version = "0.2.0"
+description = "AI-powered investment intelligence for the Indian investor — Pathway streaming, multi-agent signals, NLQ analytics"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 dependencies = [
@@ -19,15 +19,27 @@ dependencies = [
     "langchain>=0.3.0",
     "langchain-core>=0.3.0",
     "langchain-openai>=0.2.0",
+    # LangGraph + MCP (NLQ agent)
+    "langgraph>=0.2.0",
+    "langchain-mcp-adapters>=0.0.1",
+    "fastmcp>=2.0.0",
     # Data processing
     "pandas>=2.1.0",
     "numpy>=1.26.0",
     "requests>=2.31.0",
     "aiohttp>=3.9.0",
     "nltk>=3.8.0",
-    # Financial data
+    # Financial data — Indian market
     "yfinance>=0.2.32",
     "ta>=0.10.2",
+    "pandas-ta>=0.3.14",
+    "mplfinance>=0.12.10",
+    "jugaad-data>=0.16",
+    # Analytics DB
+    "duckdb>=1.0.0",
+    "chromadb>=0.4.0",
+    # Auth
+    "pyotp>=2.9.0",
     # Utilities
     "python-dotenv>=1.0.0",
     "edgartools>=5.10.2",

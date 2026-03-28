@@ -1,0 +1,66 @@
+{
+  "sectors": {
+    "Financial Services": {
+      "group": "Financials",
+      "tickers": ["HDFCBANK", "ICICIBANK", "SBIN", "KOTAKBANK", "AXISBANK", "BAJFINANCE", "BAJAJFINSV", "INDUSINDBK", "SBILIFE", "HDFCLIFE", "SHRIRAMFIN"]
+    },
+    "Information Technology": {
+      "group": "Technology",
+      "tickers": ["TCS", "INFY", "WIPRO", "HCLTECH", "TECHM", "LTIM"]
+    },
+    "Energy": {
+      "group": "Energy",
+      "tickers": ["RELIANCE", "ONGC", "COALINDIA", "BPCL"]
+    },
+    "Automobile": {
+      "group": "Auto",
+      "tickers": ["MARUTI", "TATAMOTORS", "M&M", "EICHERMOT", "HEROMOTOCO", "BAJAJ-AUTO"]
+    },
+    "Healthcare": {
+      "group": "Pharma & Healthcare",
+      "tickers": ["SUNPHARMA", "DRREDDY", "DIVISLAB", "CIPLA", "APOLLOHOSP"]
+    },
+    "Fast Moving Consumer Goods": {
+      "group": "FMCG",
+      "tickers": ["HINDUNILVR", "ITC", "NESTLEIND", "BRITANNIA", "TATACONSUM"]
+    },
+    "Materials": {
+      "group": "Metals & Mining",
+      "tickers": ["TATASTEEL", "JSWSTEEL", "HINDALCO", "GRASIM"]
+    },
+    "Industrials": {
+      "group": "Infrastructure",
+      "tickers": ["LT", "ADANIENT", "ADANIPORTS"]
+    },
+    "Consumer Durables": {
+      "group": "Consumer",
+      "tickers": ["ASIANPAINT", "TITAN"]
+    },
+    "Utilities": {
+      "group": "Power",
+      "tickers": ["NTPC", "POWERGRID"]
+    },
+    "Construction Materials": {
+      "group": "Cement",
+      "tickers": ["ULTRACEMCO"]
+    },
+    "Communication Services": {
+      "group": "Telecom",
+      "tickers": ["BHARTIARTL"]
+    }
+  },
+  "indices": {
+    "nifty50": {
+      "name": "NIFTY 50",
+      "description": "Top 50 companies by free-float market cap on NSE"
+    },
+    "nifty100": {
+      "name": "NIFTY 100",
+      "description": "Top 100 companies by free-float market cap on NSE"
+    },
+    "nifty500": {
+      "name": "NIFTY 500",
+      "description": "Top 500 companies by free-float market cap on NSE"
+    }
+  }
+}
