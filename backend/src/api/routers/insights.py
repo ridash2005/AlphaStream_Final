@@ -28,15 +28,18 @@ async def get_insights(
     con = duckdb.connect(get_db_path(), read_only=True)
     try:
         sql = "SELECT * FROM insights WHERE dismissed = false"
+        params = []
         if type:
-            sql += f" AND type = '{type}'"
+            sql += " AND type = ?"
+            params.append(type)
         if severity:
-            sql += f" AND severity = '{severity}'"
+            sql += " AND severity = ?"
+            params.append(severity)
         if unread_only:
             sql += " AND read = false"
-        sql += f" ORDER BY created_at DESC LIMIT {limit}"
-
-        return con.execute(sql).fetchdf().to_dict(orient="records")
+        sql += " ORDER BY created_at DESC LIMIT ?"
+        params.append(limit)
+        return con.execute(sql, params).fetchdf().to_dict(orient="records")
     except Exception:
         return []
     finally:
