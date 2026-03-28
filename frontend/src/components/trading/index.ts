@@ -18,6 +18,7 @@ export { FearGreedGauge } from './FearGreedGauge';
 export { MacroSignalPanel } from './MacroSignalPanel';
 export { CommodityStrip } from './CommodityStrip';
 export { ErrorBoundary } from './ErrorBoundary';
+export { GeoRiskPanel } from './GeoRiskPanel';
 export {
     RecommendationBadge,
     SentimentBadge,

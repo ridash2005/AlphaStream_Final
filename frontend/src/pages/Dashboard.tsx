@@ -23,6 +23,7 @@ import {
   MacroSignalPanel,
   CommodityStrip,
   ErrorBoundary,
+  GeoRiskPanel,
 } from '@/components/trading';
 import { MarketHeatmap } from '@/components/trading/MarketHeatmap';
 import { AgentRadar } from '@/components/trading/AgentRadar';
@@ -130,12 +131,13 @@ export default function Dashboard() {
             </div>
           </ErrorBoundary>
 
-          {/* Row 3: Sector heatmap + Market sentiment + Insider + Network */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          {/* Row 3: Sector heatmap + Market sentiment + Insider + Network + Geo-Risk */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
             <SectorHeatmap />
             <MarketHeatmap />
             <InsiderActivity />
             <NetworkGraph />
+            <GeoRiskPanel />
           </div>
 
           {/* Row 4: News + Report + History */}

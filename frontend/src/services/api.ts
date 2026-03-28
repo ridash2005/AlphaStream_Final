@@ -176,6 +176,11 @@ export const apiService = {
         return response.data;
     },
 
+    async getGeoRisk() {
+        const response = await api.get('/api/global/geo-risk');
+        return response.data;
+    },
+
     async getGlobalContext() {
         const response = await api.get('/api/global/context');
         return response.data;
