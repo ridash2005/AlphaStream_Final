@@ -32,9 +32,7 @@ dependencies = [
     # Financial data — Indian market
     "yfinance>=0.2.32",
     "ta>=0.10.2",
-    "pandas-ta>=0.3.14",
-    "mplfinance>=0.12.10",
-    "jugaad-data>=0.16",
+    "mplfinance>=0.12.9",
     # Analytics DB
     "duckdb>=1.0.0",
     "chromadb>=0.4.0",
