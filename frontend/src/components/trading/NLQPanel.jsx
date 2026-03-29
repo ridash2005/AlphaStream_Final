@@ -662,14 +662,17 @@ function StaticFallback() {
   )
 }
 
-function ChartPreviewArea({ chartData, chartCtx }) {
+function ChartPreviewArea({ chartData, chartCtx, lastQuery }) {
   const hasData = chartData?.chart_spec && chartData.chart_spec.type !== 'none'
   const hasCtx = !hasData && chartCtx && (chartCtx.image_base64 || chartCtx.data || chartCtx.title)
+  const panelTitle = lastQuery
+    ? (lastQuery.length > 42 ? lastQuery.slice(0, 42) + '…' : lastQuery)
+    : 'Visual Analysis'
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className="flex items-center gap-2">
         <BarChart2 size={15} className="text-primary" />
-        <span className="text-sm font-semibold text-white">Visual Analysis</span>
+        <span className="text-sm font-semibold text-white" title={lastQuery || undefined}>{panelTitle}</span>
         {hasData && chartData.sql && (
           <span className="text-[9px] text-[#333] ml-auto font-mono truncate max-w-[160px]" title={chartData.sql}>
             {chartData.sql.trim().slice(0, 60)}...
@@ -882,6 +885,7 @@ export default function NLQPanel({ className = '' }) {
   const [liveThoughts, setLiveThoughts] = useState([])  // SSE thought steps (live)
   const [chartData, setChartData] = useState(null)       // latest chart_spec from agent
   const [chartCtx, setChartCtx]   = useState(null)       // dropped chart image/CSV context
+  const [lastQuery, setLastQuery] = useState('')          // last submitted question for chart title
   const messagesEndRef             = useRef(null)
   const inputRef                   = useRef(null)
   const activeSourceRef            = useRef(null)  // current EventSource / abort handle
@@ -925,6 +929,7 @@ export default function NLQPanel({ className = '' }) {
       if (!query || loading) return
 
       setMessages((prev) => [...prev, { role: 'user', text: query, ts: formatTime(new Date()) }])
+      setLastQuery(query)
       setInput('')
 
       // Close any existing SSE connection
@@ -1237,7 +1242,7 @@ export default function NLQPanel({ className = '' }) {
             {/* Charts / visual column - hidden on mobile */}
             <div className="hidden md:flex flex-1 overflow-y-auto px-4 sm:px-6 py-5 bg-[#090909] flex-col">
               <ChartDropZone onDrop={(ctx) => { setChartCtx(ctx); setInput('Analyze this chart') }} />
-              <ChartPreviewArea chartData={chartData} chartCtx={chartCtx} />
+              <ChartPreviewArea chartData={chartData} chartCtx={chartCtx} lastQuery={lastQuery} />
             </div>
           </div>
         </div>
