@@ -166,9 +166,9 @@ export function ChartView() {
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Controls */}
-      <Card className="glass-card p-4">
+      <Card className="glass-card p-3">
         <div className="flex items-center gap-3 flex-wrap">
           <BarChart2 className="h-5 w-5 text-primary" />
           <Input
@@ -199,30 +199,28 @@ export function ChartView() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        {/* Chart */}
-        <Card className="glass-card p-4 lg:col-span-3">
-          {loading && (
-            <div className="flex items-center justify-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          )}
-          <div ref={chartContainerRef} className="w-full" style={{ minHeight: chartRef.current ? 400 : 0 }} />
-          {showIndicators && (
-            <div ref={rsiContainerRef} className="w-full border-t border-border/20" />
-          )}
-        </Card>
+      {/* Chart — full width */}
+      <Card className="glass-card p-4 w-full">
+        {loading && (
+          <div className="flex items-center justify-center h-[480px]">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
+        <div ref={chartContainerRef} className="w-full" style={{ height: loading ? 0 : 480 }} />
+        {showIndicators && (
+          <div ref={rsiContainerRef} className="w-full border-t border-border/20" style={{ height: showIndicators ? 110 : 0 }} />
+        )}
+      </Card>
 
-        {/* Patterns + Backtest */}
-        <div className="space-y-4">
-          <Card className="glass-card p-4">
-            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" /> Detected Patterns
-            </h3>
-            {patterns.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No patterns detected on {ticker} currently.</p>
-            ) : (
-              <div className="space-y-3">
+      {/* Patterns + Backtest — below chart in a row */}
+      {(patterns.length > 0 || (backtest && backtest.instances_found > 0)) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {patterns.length > 0 && (
+            <Card className="glass-card p-4">
+              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" /> Detected Patterns
+              </h3>
+              <div className="space-y-2">
                 {patterns.map((p, i) => (
                   <div key={i} className="p-2 rounded-lg bg-secondary/30 border border-border/30">
                     <div className="flex items-center justify-between mb-1">
@@ -236,8 +234,8 @@ export function ChartView() {
                   </div>
                 ))}
               </div>
-            )}
-          </Card>
+            </Card>
+          )}
 
           {backtest && backtest.instances_found > 0 && (
             <Card className="glass-card p-4">
@@ -265,7 +263,7 @@ export function ChartView() {
             </Card>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

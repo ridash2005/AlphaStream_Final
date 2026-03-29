@@ -130,25 +130,23 @@ export default function Dashboard() {
               <TickerSearch />
             </div>
 
-            {/* Row 1: Chart + Recommendation + Agent Radar */}
+            {/* Row 1: Chart — full width */}
+            <div className="mb-4">
+              <ChartView />
+            </div>
+
+            {/* Row 2: Recommendation + AgentRadar + Fundamentals + Anomaly */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
-              <div className="lg:col-span-7">
-                <ChartView />
-              </div>
-              <div className="lg:col-span-3">
+              <div className="lg:col-span-4">
                 <RecommendationCard />
               </div>
               <div className="lg:col-span-2">
                 <AgentRadar />
               </div>
-            </div>
-
-            {/* Row 1.5: Fundamentals + Anomaly Detection */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
-              <div className="lg:col-span-5">
+              <div className="lg:col-span-4">
                 <StockFundamentals />
               </div>
-              <div className="lg:col-span-4">
+              <div className="lg:col-span-2">
                 <AnomalyPanel />
               </div>
             </div>

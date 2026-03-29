@@ -36,7 +36,7 @@ const FEATURES = [
 
 const STATS = [
   { value: '50+', label: 'Nifty Stocks Tracked' },
-  { value: '11', label: 'AI Agents' },
+  { value: '13', label: 'AI Agents' },
   { value: '<2s', label: 'Signal Latency' },
   { value: '6+', label: 'Data Sources' },
 ];
@@ -140,20 +140,60 @@ export default function LandingPage() {
       {/* Architecture */}
       <section className="py-20 px-6 border-t border-white/5">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Production-Grade Architecture</h2>
-          <p className="text-gray-400 mb-8">Not a ChatGPT wrapper. A real-time intelligence platform.</p>
-          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 text-left font-mono text-sm text-gray-400 leading-relaxed">
-            <pre>{`Data Sources (NSE, BSE, FII/DII, Groww, ET Markets RSS)
-        │
-  Pathway Streaming Engine (<2s real-time)
-        │
-  11 AI Agents (Sentiment, Technical, Pattern, Backtest, Filing, Flow...)
-        │
-  NLQ Agent (LangGraph → Text2SQL → Guardrails → Correction Loop)
-        │
-  Fusion Engine (Alpha Score = weighted multi-signal composite)
-        │
-  React Dashboard + NLQ Chat + Ambient Alerts`}</pre>
+          <h2 className="text-3xl font-bold mb-3">Production-Grade Architecture</h2>
+          <p className="text-gray-400 mb-10">Not a ChatGPT wrapper. A real-time intelligence platform built layer by layer.</p>
+          <div className="space-y-2">
+            {[
+              {
+                label: 'Data Sources',
+                desc: 'NSE · BSE · FII/DII · Groww · ET Markets RSS · WorldMonitor · FRED',
+                color: 'border-purple-500/30 bg-purple-500/5',
+                dot: 'bg-purple-400',
+              },
+              {
+                label: 'Pathway Streaming Engine',
+                desc: 'Real-time news ingestion → Chunking → Embedding → Adaptive RAG  (<2s latency)',
+                color: 'border-blue-500/30 bg-blue-500/5',
+                dot: 'bg-blue-400',
+              },
+              {
+                label: '13 AI Agents',
+                desc: 'Sentiment · Technical (RSI/SMA) · Risk · Pattern · Backtest · Flow · Filing · Anomaly (River ML) · Decision',
+                color: 'border-cyan-500/30 bg-cyan-500/5',
+                dot: 'bg-cyan-400',
+              },
+              {
+                label: 'NLQ Agent (LangGraph 8-node)',
+                desc: 'Guardrail → Web Enrich → Route → Text2SQL → Narrate · Portfolio-aware · Source-cited',
+                color: 'border-emerald-500/30 bg-emerald-500/5',
+                dot: 'bg-emerald-400',
+              },
+              {
+                label: 'Fusion Engine',
+                desc: 'Alpha Score = weighted composite of all agent signals (0–100)',
+                color: 'border-amber-500/30 bg-amber-500/5',
+                dot: 'bg-amber-400',
+              },
+              {
+                label: 'Bloomberg Terminal (5 tabs)',
+                desc: 'Overview · Signals · Global Intel · Company · Portfolio — React + WebSocket + SSE',
+                color: 'border-pink-500/30 bg-pink-500/5',
+                dot: 'bg-pink-400',
+              },
+            ].map((layer, i, arr) => (
+              <div key={i} className="flex flex-col items-center">
+                <div className={`w-full rounded-xl border px-6 py-4 text-left flex items-center gap-4 ${layer.color}`}>
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${layer.dot}`} />
+                  <div>
+                    <span className="text-white font-semibold text-sm">{layer.label}</span>
+                    <p className="text-gray-400 text-xs mt-0.5">{layer.desc}</p>
+                  </div>
+                </div>
+                {i < arr.length - 1 && (
+                  <div className="w-px h-4 bg-white/10" />
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>

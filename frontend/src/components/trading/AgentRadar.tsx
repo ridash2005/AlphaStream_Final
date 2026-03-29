@@ -51,7 +51,7 @@ export function AgentRadar() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height={280}>
                     <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
                         <PolarGrid stroke="rgba(255,255,255,0.1)" />
                         <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10 }} />
