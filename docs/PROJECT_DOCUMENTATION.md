@@ -1,6 +1,6 @@
 # AlphaStream India: Real-Time AI Investment Intelligence
 ## Comprehensive Project Documentation
-### ET AI Hackathon 2026 — Problem Statement 6: AI for the Indian Investor
+### ET AI Hackathon 2026 - Problem Statement 6: AI for the Indian Investor
 
 ---
 
@@ -9,12 +9,12 @@
 AlphaStream India is a **production-grade Bloomberg-style terminal** for the Indian retail investor, built on **Pathway streaming RAG + multi-agent AI**. It addresses the critical gap between institutional-grade analytics and what 14 crore+ Indian demat account holders actually have access to.
 
 **Key Innovations**:
-1. **Pathway Adaptive RAG** — <2s latency from news arrival to recommendation update
-2. **13-agent reasoning pipeline** — Sentiment, Technical (RSI/SMA), Risk, Decision, Flow, Pattern, Backtest, Filing, Insider, Chart, Report, Search, Anomaly (River ML)
-3. **5-tab Bloomberg terminal** — Overview · Signals · Global Intel · Company · Portfolio
-4. **WorldMonitor global backbone** — Live global indices, commodities, crypto, FX, macro signals, geopolitical risk wired into every recommendation
-5. **DuckDB analytics layer** — Pre-aggregated views (v_stock_screener, v_signal_summary, v_sector_heatmap) powering the screener and NLQ engine
-6. **India-first context** — ₹ currency, IST timezone, NSE/BSE, Nifty 50 universe, Crores/Lakhs formatting throughout
+1. **Pathway Adaptive RAG** - <2s latency from news arrival to recommendation update
+2. **13-agent reasoning pipeline** - Sentiment, Technical (RSI/SMA), Risk, Decision, Flow, Pattern, Backtest, Filing, Insider, Chart, Report, Search, Anomaly (River ML)
+3. **5-tab Bloomberg terminal** - Overview · Signals · Global Intel · Company · Portfolio
+4. **WorldMonitor global backbone** - Live global indices, commodities, crypto, FX, macro signals, geopolitical risk wired into every recommendation
+5. **DuckDB analytics layer** - Pre-aggregated views (v_stock_screener, v_signal_summary, v_sector_heatmap) powering the screener and NLQ engine
+6. **India-first context** - ₹ currency, IST timezone, NSE/BSE, Nifty 50 universe, Crores/Lakhs formatting throughout
 
 **Team**: ET AI Hackathon 2026 Participants
 
@@ -123,10 +123,13 @@ AlphaStream implements the **"Live AI" paradigm** - a system that:
 
 | Layer | Components | Purpose |
 |-------|------------|---------|
-| Data Ingestion | NewsAPI, Finnhub, Alpha Vantage, MediaStack, RSS | Real-time news from 5 parallel sources |
-| Streaming Engine | Pathway (pw.io, pw.xpacks.llm) | Incremental processing, auto-updating indexes |
-| Reasoning | 7 specialized AI agents | Multi-perspective market analysis |
-| Presentation | FastAPI, WebSocket, React | Real-time delivery to users |
+| Indian Data Sources | NSE API, BSE API, FII/DII (NSDL), Groww API, ET Markets RSS, NewsAPI, Finnhub, Alpha Vantage | Real-time Indian market data + news from 5+ parallel sources |
+| Global Data Sources | WorldMonitor (yfinance indices, crypto, FX, commodities), CNN Fear and Greed, FRED Macro | Global context wired into every recommendation |
+| Streaming Engine | Pathway (pw.io, pw.xpacks.llm, Adaptive RAG) | Incremental processing, auto-updating indexes |
+| Analytics Layer | DuckDB (fact_articles, fact_signals, v_stock_screener, dim_stocks) | Pre-aggregated views for screener + NLQ |
+| Reasoning | 13 specialized AI agents | Multi-perspective market analysis |
+| NLQ Agent | LangGraph 8-node pipeline (Guardrail, Route, Text2SQL, Narrate) | Natural language queries grounded in real data |
+| Presentation | FastAPI + WebSocket + SSE, React 19 (5-tab Bloomberg terminal) | Real-time delivery to users |
 
 ---
 
@@ -225,17 +228,23 @@ Each agent is a specialized LangChain chain with a specific analytical focus:
 
 ![Multi-Agent Consensus System](multi_agent_system.png)
 
-### Agent Specifications
+### Agent Specifications (13 Agents)
 
 | Agent | Input | Output | Technology |
 |-------|-------|--------|------------|
-| **Sentiment** | News articles | Score (-1 to +1), Label | LangChain + OpenRouter |
-| **Technical** | Ticker symbol | RSI, SMA, Trend signals | yfinance + numpy |
-| **Risk** | Technical data | Volatility, Position size | Statistical calculation |
-| **Insider** | Ticker symbol | SEC transactions, Sentiment | edgartools + LLM |
+| **Sentiment** | News articles | Score (-1 to +1), Label | LangChain + Gemini (Vertex AI) |
+| **Technical** | NSE ticker | RSI(14), SMA20/SMA50, Trend signals | yfinance + numpy |
+| **Risk** | Technical data | Volatility, Position size, Stop loss | Statistical calculation |
+| **Pattern** | NSE ticker | Chart patterns (RSI divergence, MACD crossover, etc.) | yfinance + custom detectors |
+| **Backtest** | Ticker + pattern | Win rate, avg return, Sharpe (5yr history) | yfinance + statistical analysis |
+| **Flow** | FII/DII data | Net flow signal, streak detection, divergence | NSDL data + analysis |
+| **Filing** | BSE announcements | Filing type, materiality, market impact | BSE API + Gemini LLM |
+| **Insider** | NSE SAST/PIT data | Cluster buying/selling, transaction analysis | NSE connector + Gemini LLM |
+| **Anomaly** | OHLCV time series | Price/volume anomaly flags with scores | River ML (HalfSpaceTrees) |
+| **Search** | NLQ query | Reformulated multi-round search results | LangGraph cyclic agent |
 | **Chart** | Ticker + events | PNG chart image | Matplotlib |
 | **Report** | All agent data | PDF document | ReportLab |
-| **Decision** | All agent outputs | Final recommendation | LangChain + OpenRouter |
+| **Decision** | All agent outputs + global context | Final BUY/HOLD/SELL + Alpha Score | LangChain + Gemini (Vertex AI) |
 
 ---
 
@@ -306,85 +315,107 @@ class NewsAggregator:
 
 ### Backend
 
-| Component | Technology | Version |
+| Component | Technology | Purpose |
 |-----------|------------|---------|
-| Streaming Engine | Pathway | Latest |
-| Web Framework | FastAPI | 0.100+ |
-| Python | Python | 3.11 |
-| LLM Framework | LangChain | 0.1+ |
-| LLM Provider | OpenRouter | API |
-| Market Data | yfinance | 0.2+ |
-| SEC Data | edgartools | Latest |
-| PDF Generation | ReportLab | 4.0+ |
-| Charts | Matplotlib | 3.8+ |
-| Embeddings | sentence-transformers | 2.2+ |
-| Package Manager | uv | Latest |
+| Streaming Engine | Pathway | Real-time RAG, <2s latency |
+| Web Framework | FastAPI + WebSocket + SSE | REST + real-time push |
+| LLM | Gemini 2.0 Flash (Vertex AI) | All agent reasoning via GCP |
+| Agent Framework | LangChain + LangGraph | Multi-agent orchestration + NLQ pipeline |
+| Analytics DB | DuckDB | Pre-aggregated views, screener, NLQ Text2SQL |
+| Vector Search | ChromaDB | Embedding-based article retrieval |
+| Anomaly Detection | River ML (HalfSpaceTrees) | Online price/volume anomaly detection |
+| Indian Market Data | NSE API, BSE API, Groww API, NSDL | OHLCV, filings, FII/DII flows, fundamentals |
+| Global Market Data | WorldMonitor (yfinance), CNN, FRED | Indices, commodities, crypto, FX, macro |
+| Python | 3.11 | Runtime |
+| Package Manager | uv | Dependency management |
 
 ### Frontend
 
-| Component | Technology | Version |
+| Component | Technology | Purpose |
 |-----------|------------|---------|
-| Framework | React | 18 |
-| Build Tool | Vite | 5+ |
-| Styling | Tailwind CSS | 3+ |
-| Components | Shadcn/ui | Latest |
-| State | Zustand | 4+ |
-| Charts | Recharts | 2+ |
+| Framework | React 19 | UI framework |
+| Build Tool | Vite 6 | Dev server + bundling |
+| Styling | Tailwind CSS 4 | Utility-first CSS |
+| Components | Shadcn/ui | Accessible UI primitives |
+| State | Zustand (persisted) | Client state + localStorage |
+| Candlestick Charts | lightweight-charts 5.1 | TradingView charting |
+| Data Charts | Recharts 3.6 | BarChart, PieChart, RadarChart |
+| Icons | Lucide React | Consistent iconography |
 
 ---
 
-## 7. API Reference
+## 7. API Reference (24 Verified Endpoints)
 
-### REST Endpoints
+### Market Intelligence
 
-#### POST /recommend
-Get trading recommendation for a ticker.
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/ohlcv/{ticker}` | GET | OHLCV candlestick data + optional RSI/SMA20/SMA50 (`?indicators=true`) |
+| `/api/fundamentals/{ticker}` | GET | PE, PB, ROE, Div Yield, 52w H/L from Groww API |
+| `/api/radar` | GET | Top signals by Alpha Score |
+| `/api/screener` | GET | Filter Nifty 50 by sector/direction/alpha (DuckDB view) |
+| `/api/patterns/{ticker}` | GET | Chart pattern detection (RSI divergence, MACD, etc.) |
+| `/api/backtest/{ticker}/{pattern}` | GET | Historical backtest (5yr) with win rate |
+| `/api/flows` | GET | FII/DII flow analysis with streak detection |
+| `/api/anomalies/{ticker}` | GET | Price/volume anomaly detection (River ML) |
+| `/api/filings/{ticker}` | GET | BSE corporate announcements |
+| `/api/tickers` | GET | Nifty 50 universe with sectors |
+| `/api/tickers/popular` | GET | Top 10 by market cap |
+| `/api/news` | GET | Recent articles from DuckDB |
+| `/api/portfolio` | POST | Set user portfolio holdings |
+| `/api/portfolio/summary` | GET | Live P&L summary |
+| `/api/insights` | GET | Ambient AI alerts |
+
+### Global Market (WorldMonitor)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/global/indices` | GET | NIFTY, SENSEX, S&P 500, DOW, etc. |
+| `/api/global/commodities` | GET | Gold, Crude, Silver, Copper, etc. |
+| `/api/global/crypto` | GET | BTC, ETH, SOL, XRP |
+| `/api/global/currencies` | GET | INR/USD, DXY |
+| `/api/global/sectors` | GET | 12 US sector ETF returns |
+| `/api/global/fear-greed` | GET | CNN Fear and Greed index |
+| `/api/global/macro` | GET | FRED macro signals + verdict |
+| `/api/global/vix` | GET | VIX volatility index |
+| `/api/global/geo-risk` | GET | India geopolitical risk score |
+
+### Core + NLQ
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/recommend` | POST | Full multi-agent recommendation |
+| `/api/nlq` | POST | Natural language query (blocking) |
+| `/api/nlq/stream` | GET/POST | NLQ with SSE streaming |
+| `/insider/{ticker}` | GET | NSE SAST/PIT insider trading |
+| `/report/{ticker}` | POST | PDF report generation |
+| `/ws/stream/{ticker}` | WS | Real-time updates (recommendation, market, global) |
+
+### Example: Recommendation
 
 **Request:**
 ```json
-{
-  "ticker": "AAPL",
-  "query": "optional custom query"
-}
+{ "ticker": "RELIANCE" }
 ```
 
 **Response:**
 ```json
 {
-  "ticker": "AAPL",
-  "timestamp": "2026-01-18T12:00:00Z",
+  "ticker": "RELIANCE",
+  "timestamp": "2026-03-29T06:55:00+05:30",
   "recommendation": "BUY",
   "confidence": 78.5,
   "sentiment_score": 0.65,
   "sentiment_label": "BULLISH",
   "technical_score": 0.42,
   "risk_score": 3.2,
-  "key_factors": ["Strong earnings beat", "RSI indicates momentum"],
-  "sources": ["Reuters", "Bloomberg", "CNBC"],
-  "latency_ms": 1250
+  "key_factors": ["FII buying streak", "RSI divergence bullish"],
+  "sources": ["ET Markets", "Moneycontrol"],
+  "latency_ms": 1250,
+  "global_verdict": "RISK-ON",
+  "vix": 31.05,
+  "fear_greed_score": 50
 }
-```
-
-#### GET /insider/{ticker}
-Get SEC insider trading activity.
-
-#### GET /chart/{ticker}
-Generate price comparison chart.
-
-#### POST /report/{ticker}
-Generate comprehensive PDF report.
-
-### WebSocket
-
-#### /ws/stream/{ticker}
-Real-time recommendation updates.
-
-```javascript
-const ws = new WebSocket('ws://localhost:8000/ws/stream/AAPL');
-ws.onmessage = (event) => {
-  const recommendation = JSON.parse(event.data);
-  updateDashboard(recommendation);
-};
 ```
 
 ---
@@ -402,28 +433,26 @@ ws.onmessage = (event) => {
 
 ```bash
 # Clone repository
-git clone https://github.com/your-repo/alphastream.git
-cd alphastream
+git clone https://github.com/wildcraft958/AlphaStream_India.git
+cd AlphaStream_India
 
 # Backend setup
 cd backend
+cp .env.example .env  # Add your API keys (GCP, Groww, NewsAPI)
 uv sync
+.venv/bin/python -m src.data.market_schema  # Initialize DuckDB with Nifty 50 data
 
 # Frontend setup
 cd ../frontend
 npm install
-
-# Configure environment
-cp backend/.env.example backend/.env
-# Edit .env with your API keys
 ```
 
 ### Running the Application
 
 ```bash
-# Terminal 1: Backend
+# Terminal 1: Backend (cold start ~75s due to langchain imports)
 cd backend
-uv run uvicorn src.api.app:app --host 0.0.0.0 --port 8000
+.venv/bin/python -m uvicorn src.api.app:app --host 0.0.0.0 --port 8000
 
 # Terminal 2: Frontend
 cd frontend
@@ -432,10 +461,23 @@ npm run dev
 
 Access at: http://localhost:5173
 
-### Docker Deployment
+### Environment Variables
 
-```bash
-docker-compose up --build
+```env
+# Required - GCP / Vertex AI
+GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
+GCP_PROJECT_ID=your-project
+GCP_REGION=us-central1
+
+# News APIs (at least one recommended)
+NEWS_API_KEY=...
+
+# Indian market data (optional but recommended)
+GROWW_API_TOKEN=...
+GROWW_TOTP_SECRET=...
+
+# Enable Pathway streaming (optional, adds 45s to startup)
+ENABLE_PATHWAY=true
 ```
 
 ---
@@ -448,29 +490,32 @@ The demonstration pipeline proves the system's real-time capabilities:
 
 ```bash
 # Step 1: Start the system
-cd backend && uv run uvicorn src.api.app:app --port 8000 &
+cd backend && .venv/bin/python -m uvicorn src.api.app:app --port 8000 &
 cd frontend && npm run dev &
 
-# Step 2: Query initial recommendation
+# Step 2: Open dashboard, login as judge@etmedia.com
+# RELIANCE loads by default - chart, recommendation, fundamentals visible
+
+# Step 3: Query initial recommendation
 curl -X POST http://localhost:8000/recommend \
   -H "Content-Type: application/json" \
-  -d '{"ticker":"AAPL"}'
-# Note: recommendation = "HOLD", confidence = 65%
+  -d '{"ticker":"RELIANCE"}'
 
-# Step 3: Inject breaking news (bearish)
+# Step 4: Inject breaking news (bearish)
 curl -X POST http://localhost:8000/ingest \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Apple Faces Major Class Action Lawsuit",
-    "content": "Apple Inc. is facing a significant class action lawsuit..."
+    "title": "SEBI Investigation into Reliance Industries",
+    "content": "SEBI has launched a preliminary investigation into Reliance Industries regarding potential disclosure irregularities..."
   }'
 
-# Step 4: Observe real-time update (<2 seconds)
+# Step 5: Observe real-time update (<2 seconds)
 # Dashboard automatically updates via WebSocket
-# New: recommendation = "SELL", confidence = 72%
 
-# Step 5: Generate PDF report
-curl -X POST http://localhost:8000/report/AAPL
+# Step 6: Test NLQ
+curl -X POST http://localhost:8000/api/nlq \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Which Nifty 50 stocks have bullish signals today?"}'
 ```
 
 ### Expected Latencies
@@ -515,19 +560,19 @@ The following features from the original roadmap have been **fully implemented**
 
 | Feature | Status | Component |
 |---------|--------|-----------|
-| Portfolio Mode | ✅ Done | `PortfolioManager` — holdings, real-time P&L, BarChart by ticker |
-| Alert System | ✅ Done | `NotificationBell` + `AnomalyPanel` — River ML anomaly detection with badges |
-| Backtesting | ✅ Done | `PatternAgent` + `/api/backtest/{ticker}/{pattern}` — 5-year pattern backtest |
-| Options Flow | ✅ Done (FII/DII) | `FlowChart` + `FlowAgent` — FII/DII net flow analysis |
+| Portfolio Mode | ✅ Done | `PortfolioManager` - holdings, real-time P&L, BarChart by ticker |
+| Alert System | ✅ Done | `NotificationBell` + `AnomalyPanel` - River ML anomaly detection with badges |
+| Backtesting | ✅ Done | `PatternAgent` + `/api/backtest/{ticker}/{pattern}` - 5-year pattern backtest |
+| Options Flow | ✅ Done (FII/DII) | `FlowChart` + `FlowAgent` - FII/DII net flow analysis |
 
 ### Remaining Roadmap
 
-1. **Social Media Integration** — Twitter/X, Reddit WallStreetBets India sentiment scraping for retail investor mood
-2. **Earnings Calendar** — Scheduled BSE result announcements with pre/post earnings drift analysis
-3. **SMS / Push Alerts** — WhatsApp Business API or FCM for critical threat_level=critical article alerts
-4. **Options Chain Analysis** — NSE F&O open interest, max pain, PCR ratio with visual strike overlay
-5. **Multi-Language NLQ** — Hindi language support for NLQ queries (Devanagari input, mixed-language response)
-6. **Mobile PWA** — Progressive Web App with offline caching for watchlist and last recommendation
+1. **Social Media Integration** - Twitter/X, Reddit WallStreetBets India sentiment scraping for retail investor mood
+2. **Earnings Calendar** - Scheduled BSE result announcements with pre/post earnings drift analysis
+3. **SMS / Push Alerts** - WhatsApp Business API or FCM for critical threat_level=critical article alerts
+4. **Options Chain Analysis** - NSE F&O open interest, max pain, PCR ratio with visual strike overlay
+5. **Multi-Language NLQ** - Hindi language support for NLQ queries (Devanagari input, mixed-language response)
+6. **Mobile PWA** - Progressive Web App with offline caching for watchlist and last recommendation
 
 ---
 
@@ -583,5 +628,5 @@ FRED_API_KEY=...
 
 **Document Version**: 2.0
 **Last Updated**: March 2026
-**Competition**: ET AI Hackathon 2026 — Problem Statement 6
+**Competition**: ET AI Hackathon 2026 - Problem Statement 6
 **Team**: AlphaStream India

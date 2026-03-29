@@ -1,4 +1,4 @@
-# AlphaStream India — Architecture
+# AlphaStream India - Architecture
 
 Detailed technical architecture for the AlphaStream India AI trading terminal.
 
@@ -8,10 +8,10 @@ Detailed technical architecture for the AlphaStream India AI trading terminal.
 
 AlphaStream India implements a **streaming RAG + multi-agent** architecture focused on the Indian equity market (NSE/BSE). The system is designed for:
 
-1. **Real-time data ingestion** — Pathway streaming, <2s latency from news to recommendation
-2. **Incremental updates** — Knowledge base updates continuously via Adaptive RAG
-3. **Explainable AI** — Every recommendation traces back to sources, agent scores, and signals
-4. **India-first context** — ₹ currency, IST timezone, NSE/BSE tickers, Nifty 50 universe
+1. **Real-time data ingestion** - Pathway streaming, <2s latency from news to recommendation
+2. **Incremental updates** - Knowledge base updates continuously via Adaptive RAG
+3. **Explainable AI** - Every recommendation traces back to sources, agent scores, and signals
+4. **India-first context** - ₹ currency, IST timezone, NSE/BSE tickers, Nifty 50 universe
 
 ---
 

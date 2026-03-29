@@ -1,4 +1,4 @@
-# AlphaStream India — Architecture Document
+# AlphaStream India - Architecture Document
 
 ## System Overview
 
@@ -56,7 +56,7 @@ Agents communicate via **shared state** (LangGraph AgentState). The NLQ agent us
 | **LLM timeout** | Heuristic fallback in DecisionAgent, PatternAgent returns empty |
 | **Text2SQL generates bad SQL** | Correction loop: classify error → LLM fix → retry (max 2) |
 | **DuckDB query timeout** | Hard 30s timeout, 5000 row cap, error returned to user |
-| **MCP server crash** | Agent degrades gracefully — direct DuckDB queries |
+| **MCP server crash** | Agent degrades gracefully - direct DuckDB queries |
 | **Guardrail blocks DDL/DML** | Regex hard-stop, query rejected before execution |
 
 ## Data Flow

@@ -1,4 +1,4 @@
-# AlphaStream India — Impact Model
+# AlphaStream India - Impact Model
 
 ## Problem Scale
 
@@ -6,7 +6,7 @@
 - **~3 Cr** active traders
 - Average retail investor spends **2+ hours/day** on research
 - **80%** rely on WhatsApp tips and unverified sources
-- Average missed opportunity cost: **₹3,000–10,000/quarter**
+- Average missed opportunity cost: **₹3,000-10,000/quarter**
 
 ## AlphaStream India Impact
 
@@ -54,7 +54,7 @@
 2. Average return estimates use median, not mean (to reduce outlier effect)
 3. Time savings assumes basic digital literacy and daily market participation
 4. Premium conversion rate of 0.3% is conservative (industry average 0.5-1%)
-5. Back-of-envelope calculations — detailed validation would require A/B testing
+5. Back-of-envelope calculations - detailed validation would require A/B testing
 
 ## What Makes This Different
 

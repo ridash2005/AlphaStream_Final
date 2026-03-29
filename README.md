@@ -4,7 +4,7 @@
 
 > *14 crore+ demat accounts. Most retail investors flying blind. AlphaStream India turns ET Markets data into actionable, money-making decisions.*
 
-Built for **ET AI Hackathon 2026** — Problem Statement 6: AI for the Indian Investor.
+Built for **ET AI Hackathon 2026** - Problem Statement 6: AI for the Indian Investor.
 
 ---
 
@@ -16,18 +16,18 @@ AlphaStream India is a real-time investment intelligence terminal that combines 
 
 | Feature | Description |
 |---|---|
-| **Tabbed Bloomberg Terminal** | 5-tab layout: Overview · Signals · Global Intel · Company · Portfolio — each focused on a different investor workflow |
-| **Opportunity Radar** | AI monitors NSE/BSE filings, insider trades, FII/DII flows, chart patterns — surfaces signals with Alpha Score (0-100) |
+| **Tabbed Bloomberg Terminal** | 5-tab layout: Overview · Signals · Global Intel · Company · Portfolio - each focused on a different investor workflow |
+| **Opportunity Radar** | AI monitors NSE/BSE filings, insider trades, FII/DII flows, chart patterns - surfaces signals with Alpha Score (0-100) |
 | **Technical Indicator Overlays** | RSI(14) sub-chart + SMA20/SMA50 line overlays on TradingView candlestick, togglable per ticker |
-| **Fundamentals Panel** | PE, PB, ROE, Dividend Yield, Market Cap, 52-week H/L from Groww API — wired live |
+| **Fundamentals Panel** | PE, PB, ROE, Dividend Yield, Market Cap, 52-week H/L from Groww API - wired live |
 | **Stock Screener** | Filter Nifty 50 universe by sector, signal direction, and alpha score using DuckDB `v_stock_screener` view |
 | **Portfolio Manager** | Add/remove NSE holdings, track real-time P&L, ₹ totals, horizontal bar chart by ticker |
 | **Watchlist** | Persistent (localStorage) watchlist of up to 20 NSE tickers with live sentiment scores |
-| **Corporate Filings** | BSE announcements (dividends, results, board meetings) per ticker — 7/30/90-day view |
+| **Corporate Filings** | BSE announcements (dividends, results, board meetings) per ticker - 7/30/90-day view |
 | **Anomaly Detection** | Online ML (River HalfSpaceTrees) flags price/volume anomalies fed from 3mo NSE OHLCV |
-| **Global Market Intelligence** | Crypto (BTC/ETH/SOL/XRP) + Currencies (INR/USD, DXY) + US Sector ETFs — India-impact annotated |
+| **Global Market Intelligence** | Crypto (BTC/ETH/SOL/XRP) + Currencies (INR/USD, DXY) + US Sector ETFs - India-impact annotated |
 | **Threat-aware News** | Articles sorted by threat level (critical/warning/info) with sentiment distribution donut chart |
-| **Market ChatGPT Next Gen** | NLQ agent with Text2SQL pipeline — grounded answers from real data, portfolio-aware, source-cited |
+| **Market ChatGPT Next Gen** | NLQ agent with Text2SQL pipeline - grounded answers from real data, portfolio-aware, source-cited |
 
 ---
 
@@ -104,8 +104,8 @@ AlphaStream India is a real-time investment intelligence terminal that combines 
 
 ```bash
 # Clone
-git clone https://github.com/YOUR_REPO/AlphaStream-India.git
-cd AlphaStream-India
+git clone https://github.com/wildcraft958/AlphaStream_India.git
+cd AlphaStream_India
 
 # Backend
 cd backend
@@ -117,23 +117,29 @@ uv sync
 cd ../frontend
 npm install
 
-# Start
-cd ..
-bash start_demo.sh
+# Run (backend cold start ~75s, then ready)
+cd ../backend
+.venv/bin/python -m uvicorn src.api.app:app --host 0.0.0.0 --port 8000
+# In another terminal:
+cd frontend && npm run dev
 ```
 
 ### Environment Variables
 
 ```env
-# Required
-OPENROUTER_API_KEY=sk-or-...
-NEWS_API_KEY=...
+# Required - GCP / Vertex AI (all LLM calls go through Gemini)
 GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
 GCP_PROJECT_ID=your-project
 
-# Optional (Indian market data)
+# News APIs
+NEWS_API_KEY=...
+
+# Optional - Indian market data (enables fundamentals panel)
 GROWW_API_TOKEN=...
 GROWW_TOTP_SECRET=...
+
+# Optional - enable Pathway streaming (adds 45s to startup)
+ENABLE_PATHWAY=true
 ```
 
 ---
@@ -196,7 +202,7 @@ GROWW_TOTP_SECRET=...
 
 ## Team
 
-Built for ET AI Hackathon 2026 — Problem Statement 6
+Built for ET AI Hackathon 2026 - Problem Statement 6
 
 ---
 
