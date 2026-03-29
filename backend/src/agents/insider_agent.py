@@ -37,8 +37,7 @@ class InsiderAgent:
     
     def __init__(self, model: str | None = None):
         self.insider_connector = get_insider_connector()
-        self.llm = get_llm(temperature=0.0)
-        
+        self._llm = None
         self.parser = PydanticOutputParser(pydantic_object=InsiderAnalysis)
         
         self.prompt = PromptTemplate(
@@ -65,8 +64,20 @@ Values are in ₹ Lakhs.
             partial_variables={"format_instructions": self.parser.get_format_instructions()},
         )
         
-        self.chain = self.prompt | self.llm | self.parser
-    
+        self._chain = None
+
+    @property
+    def llm(self):
+        if self._llm is None:
+            self._llm = get_llm(temperature=0.0)
+        return self._llm
+
+    @property
+    def chain(self):
+        if self._chain is None:
+            self._chain = self.prompt | self.llm | self.parser
+        return self._chain
+
     def analyze(self, ticker: str, days: int = 1) -> dict[str, Any]:
         """
         Analyze insider trading activity for a ticker.

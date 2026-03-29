@@ -28,7 +28,7 @@ class FilingAgent:
     """Analyzes BSE/NSE corporate filings using LLM."""
 
     def __init__(self):
-        self.llm = get_llm(temperature=0.0)
+        self._llm = None
         self.parser = PydanticOutputParser(pydantic_object=FilingAnalysis)
         self.prompt = PromptTemplate(
             template="""You are an Indian market financial analyst specializing in BSE/NSE corporate filings.
@@ -48,7 +48,19 @@ Market impact: significant_positive, mild_positive, neutral, mild_negative, sign
             input_variables=["company", "ticker", "filing_text"],
             partial_variables={"format_instructions": self.parser.get_format_instructions()},
         )
-        self.chain = self.prompt | self.llm | self.parser
+        self._chain = None
+
+    @property
+    def llm(self):
+        if self._llm is None:
+            self._llm = get_llm(temperature=0.0)
+        return self._llm
+
+    @property
+    def chain(self):
+        if self._chain is None:
+            self._chain = self.prompt | self.llm | self.parser
+        return self._chain
 
     def analyze(self, filing_text: str, ticker: str = "", company: str = "") -> dict[str, Any]:
         """Classify a corporate filing."""

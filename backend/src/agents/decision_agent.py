@@ -30,8 +30,7 @@ class DecisionAgent:
     """
 
     def __init__(self, model: str | None = None):
-        self.llm = get_llm(temperature=0.1)
-        
+        self._llm = None
         self.parser = PydanticOutputParser(pydantic_object=DecisionOutput)
         
         self.prompt = PromptTemplate(
@@ -63,7 +62,19 @@ Make a definitive recommendation (BUY, SELL, or HOLD).
             partial_variables={"format_instructions": self.parser.get_format_instructions()},
         )
 
-        self.chain = self.prompt | self.llm | self.parser
+        self._chain = None
+
+    @property
+    def llm(self):
+        if self._llm is None:
+            self._llm = get_llm(temperature=0.1)
+        return self._llm
+
+    @property
+    def chain(self):
+        if self._chain is None:
+            self._chain = self.prompt | self.llm | self.parser
+        return self._chain
 
     def decide(
         self,

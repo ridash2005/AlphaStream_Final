@@ -91,12 +91,19 @@ async def get_news(ticker: str = Query(""), limit: int = Query(20, le=50)):
     con = duckdb.connect(get_db_path(), read_only=True)
     try:
         if ticker:
-            return con.execute("""
-                SELECT * FROM v_recent_news
+            rows = con.execute("""
+                SELECT id, title, source, tickers::VARCHAR AS tickers, sentiment, published_at, summary
+                FROM v_recent_news
                 WHERE ? = ANY(tickers)
                 ORDER BY published_at DESC LIMIT ?
-            """, [ticker.upper(), limit]).fetchdf().to_dict(orient="records")
-        return con.execute("SELECT * FROM v_recent_news LIMIT ?", [limit]).fetchdf().to_dict(orient="records")
+            """, [ticker.upper(), limit]).fetchdf()
+        else:
+            rows = con.execute(
+                "SELECT id, title, source, tickers::VARCHAR AS tickers, sentiment, published_at, summary FROM v_recent_news LIMIT ?",
+                [limit],
+            ).fetchdf()
+        rows["published_at"] = rows["published_at"].astype(str)
+        return rows.to_dict(orient="records")
     except Exception:
         return []
     finally:

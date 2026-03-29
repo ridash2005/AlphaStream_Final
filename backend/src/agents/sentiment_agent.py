@@ -29,11 +29,11 @@ class SentimentAgent:
     """
 
     def __init__(self, model: str | None = None):
-        self.llm = get_llm(temperature=0.0)
-        
+        self._llm = None
+
         # Initialize Output Parser
         self.parser = PydanticOutputParser(pydantic_object=SentimentOutput)
-        
+
         # Initialize Prompt
         self.prompt = PromptTemplate(
             template="""Analyze the sentiment of the following financial news articles about stocks.
@@ -56,9 +56,19 @@ Return ONLY the JSON object.
             input_variables=["articles"],
             partial_variables={"format_instructions": self.parser.get_format_instructions()},
         )
-        
-        # Create Chain
-        self.chain = self.prompt | self.llm | self.parser
+        self._chain = None
+
+    @property
+    def llm(self):
+        if self._llm is None:
+            self._llm = get_llm(temperature=0.0)
+        return self._llm
+
+    @property
+    def chain(self):
+        if self._chain is None:
+            self._chain = self.prompt | self.llm | self.parser
+        return self._chain
 
     def analyze(self, articles: list[dict[str, Any]]) -> dict[str, Any]:
         """

@@ -5,8 +5,6 @@ Provides REST API endpoints for trading recommendations.
 """
 
 import os
-# Force CPU usage to avoid CUDA driver issues
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 import asyncio
 import json
@@ -150,39 +148,39 @@ async def lifespan(app: FastAPI):
     rag_pipeline.ingest_articles(initial_articles)
     logger.info("Seeded RAG with initial articles. Live news will supersede these.")
     
-    # Start Pathway Adaptive RAG Server (USP) as a subprocess
-    logger.info("Starting Pathway Adaptive RAG Server (port 8001)...")
+    # Start Pathway Adaptive RAG Server (optional - skipped if Pathway unavailable)
     rag_server_process = None
-    try:
-        # Launch server in background
-        rag_server_process = subprocess.Popen(
-            [sys.executable, "src/pipeline/adaptive_rag_server.py"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            cwd="."  # Run from backend root
-        )
-        logger.info(f"Adaptive RAG Server started with PID: {rag_server_process.pid}")
-        
-        # Wait for Adaptive RAG server to be ready
-        import httpx
-        adaptive_rag_url = os.environ.get("ADAPTIVE_RAG_URL", "http://localhost:8001")
-        max_wait = int(os.environ.get("RAG_STARTUP_TIMEOUT", "45"))
-        wait_interval = 2
-        for i in range(max_wait // wait_interval):
-            try:
-                with httpx.Client(timeout=3.0) as client:
-                    resp = client.get(f"{adaptive_rag_url}/")
-                    if resp.status_code in [200, 404, 405]:  # Server is responding
-                        logger.info(f"✅ Adaptive RAG Server ready after {(i+1) * wait_interval}s")
-                        break
-            except Exception:
-                pass
-            time.sleep(wait_interval)
-            logger.info(f"⏳ Waiting for Adaptive RAG Server... ({(i+1) * wait_interval}s)")
-        else:
-            logger.warning("⚠️ Adaptive RAG Server may not be fully ready, continuing anyway")
-    except Exception as e:
-        logger.error(f"Failed to start Adaptive RAG Server: {e}")
+    if os.environ.get("ENABLE_PATHWAY", "false").lower() == "true":
+        logger.info("Starting Pathway Adaptive RAG Server (port 8001)...")
+        try:
+            rag_server_process = subprocess.Popen(
+                [sys.executable, "src/pipeline/adaptive_rag_server.py"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd="."
+            )
+            logger.info(f"Adaptive RAG Server started with PID: {rag_server_process.pid}")
+
+            import httpx
+            adaptive_rag_url = os.environ.get("ADAPTIVE_RAG_URL", "http://localhost:8001")
+            max_wait = int(os.environ.get("RAG_STARTUP_TIMEOUT", "45"))
+            wait_interval = 2
+            for i in range(max_wait // wait_interval):
+                try:
+                    with httpx.Client(timeout=3.0) as client:
+                        resp = client.get(f"{adaptive_rag_url}/")
+                        if resp.status_code in [200, 404, 405]:
+                            logger.info(f"Adaptive RAG Server ready after {(i+1) * wait_interval}s")
+                            break
+                except Exception:
+                    pass
+                time.sleep(wait_interval)
+            else:
+                logger.warning("Adaptive RAG Server may not be fully ready, continuing anyway")
+        except Exception as e:
+            logger.error(f"Failed to start Adaptive RAG Server: {e}")
+    else:
+        logger.info("Pathway Adaptive RAG Server skipped (set ENABLE_PATHWAY=true to enable)")
 
     # Initialize Unified RAG Service (Adaptive RAG primary, manual fallback)
     unified_rag = UnifiedRAGService(
@@ -371,34 +369,34 @@ async def lifespan(app: FastAPI):
                     loop
                 )
 
-    # --- Pathway Integration ---
-    from src.connectors.news_connector import create_news_table
-    import threading
-    import pathway as pw
-
-    # 1. Create the streaming table
-    news_table = create_news_table(refresh_interval=60)
-    
-    # 2. Subscribe to updates
-    # Note: subscribe receives (key, row, time, is_addition). We only care about new additions.
-    def pathway_callback(key, row, time, is_addition):
-        if row and is_addition:
-             # row is a dict matching the schema
-             on_new_article(row)
-
-    # Use pw.io.subscribe to hook the table to our callback
-    pw.io.subscribe(news_table, pathway_callback)
-
-    # 3. Run Pathway in a background thread
-    def _run_pathway():
+    # --- Pathway Integration (optional) ---
+    if os.environ.get("ENABLE_PATHWAY", "false").lower() == "true":
         try:
-            pw.run()
-        except Exception as e:
-            logger.error(f"Pathway engine crashed: {e}", exc_info=True)
+            from src.connectors.news_connector import create_news_table
+            import threading
+            import pathway as pw
 
-    logger.info("Starting Pathway engine in background thread...")
-    pw_thread = threading.Thread(target=_run_pathway, daemon=True)
-    pw_thread.start()
+            news_table = create_news_table(refresh_interval=60)
+
+            def pathway_callback(key, row, time, is_addition):
+                if row and is_addition:
+                    on_new_article(row)
+
+            pw.io.subscribe(news_table, pathway_callback)
+
+            def _run_pathway():
+                try:
+                    pw.run()
+                except Exception as e:
+                    logger.error(f"Pathway engine crashed: {e}", exc_info=True)
+
+            logger.info("Starting Pathway engine in background thread...")
+            pw_thread = threading.Thread(target=_run_pathway, daemon=True)
+            pw_thread.start()
+        except Exception as e:
+            logger.warning(f"Pathway engine failed to start: {e}")
+    else:
+        logger.info("Pathway streaming skipped (set ENABLE_PATHWAY=true to enable)")
 
     logger.info(f"System initialized with {rag_pipeline.document_count} document chunks")
 
