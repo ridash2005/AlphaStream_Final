@@ -437,11 +437,49 @@ async def lifespan(app: FastAPI):
 
 
 
+class _SafeJSONResponse(json.JSONEncoder):
+    """JSON encoder that converts NaN/Infinity to null instead of crashing."""
+    def default(self, o):
+        return super().default(o)
+
+    def encode(self, o):
+        return super().encode(o)
+
+    def iterencode(self, o, _one_shot=False):
+        # Walk the object and replace non-finite floats before encoding
+        return super().iterencode(_sanitize(o), _one_shot)
+
+
+def _sanitize(obj):
+    """Recursively replace NaN/inf floats with None in dicts/lists."""
+    if isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    if isinstance(obj, dict):
+        return {k: _sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_sanitize(v) for v in obj]
+    return obj
+
+
+from fastapi.responses import JSONResponse as _OrigJSONResponse
+
+class SafeJSONResponse(_OrigJSONResponse):
+    def render(self, content) -> bytes:
+        return json.dumps(
+            _sanitize(content),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode("utf-8")
+
+
 app = FastAPI(
     title="AlphaStream India",
     description="AI-powered investment intelligence for the Indian investor — signals, NLQ, backtesting",
     version="2.0.0",
     lifespan=lifespan,
+    default_response_class=SafeJSONResponse,
 )
 
 # CORS middleware — allow_credentials must be False when allow_origins=["*"]

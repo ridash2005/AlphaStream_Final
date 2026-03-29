@@ -41,6 +41,8 @@ DIRECTION_THRESHOLDS = {
 
 def _normalize_score(raw: float, min_val: float = -1.0, max_val: float = 1.0) -> float:
     """Normalize a raw score to 0-100 range."""
+    if max_val == min_val:
+        return 50.0
     clamped = max(min_val, min(max_val, raw))
     return ((clamped - min_val) / (max_val - min_val)) * 100
 

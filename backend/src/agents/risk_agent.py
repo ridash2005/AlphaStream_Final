@@ -108,7 +108,11 @@ class RiskAgent:
             
             # Standard deviation of log returns = volatility
             volatility = log_returns.std()
-            
+
+            if np.isnan(volatility) or np.isinf(volatility) or volatility == 0:
+                logger.warning(f"Invalid volatility for {ticker}, using default")
+                return 0.02
+
             logger.info(f"Calculated volatility for {ticker}: {volatility:.4f} (daily)")
             return float(volatility)
             

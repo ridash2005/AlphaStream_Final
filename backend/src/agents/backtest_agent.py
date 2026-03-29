@@ -79,7 +79,7 @@ class BacktestAgent:
                     "avg_return": round(np.mean(returns), 2),
                     "max_return": round(max(returns), 2),
                     "max_drawdown": round(min(returns), 2),
-                    "sharpe": round(np.mean(returns) / (np.std(returns) + 1e-8), 2),
+                    "sharpe": round(float(np.mean(returns) / (np.std(returns) + 1e-8)) if len(returns) > 1 else 0.0, 2),
                     "samples": len(returns),
                 }
 

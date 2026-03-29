@@ -243,7 +243,7 @@ class PatternAgent:
         s20 = float(sma20.iloc[-1])
         s50 = float(sma50.iloc[-1])
 
-        if price < s20 < s50:
+        if price < s20 < s50 and s50 != 0:
             pct_below = (s50 - price) / s50 * 100
             return {
                 "pattern": "downtrend",
@@ -252,7 +252,7 @@ class PatternAgent:
                 "explanation": f"Price ₹{price:.0f} below SMA20 (₹{s20:.0f}) and SMA50 (₹{s50:.0f}) — {pct_below:.1f}% below SMA50, bearish trend",
                 "ticker": ticker,
             }
-        if price > s20 > s50:
+        if price > s20 > s50 and s50 != 0:
             pct_above = (price - s50) / s50 * 100
             return {
                 "pattern": "uptrend",
