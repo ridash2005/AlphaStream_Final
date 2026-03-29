@@ -128,7 +128,7 @@ AlphaStream implements the **"Live AI" paradigm** - a system that:
 | Streaming Engine | Pathway (pw.io, pw.xpacks.llm, Adaptive RAG) | Incremental processing, auto-updating indexes |
 | Analytics Layer | DuckDB (fact_articles, fact_signals, v_stock_screener, dim_stocks) | Pre-aggregated views for screener + NLQ |
 | Reasoning | 13 specialized AI agents | Multi-perspective market analysis |
-| NLQ Agent | LangGraph 8-node pipeline (Guardrail, Route, Text2SQL, Narrate) | Natural language queries grounded in real data |
+| NLQ Agent | LangGraph 7-node pipeline (Guardrail, Enrich, Route, Analytics, Text2SQL, Narrate, Output Guardrail) | Natural language queries grounded in real data |
 | Presentation | FastAPI + WebSocket + SSE, React 19 (5-tab Bloomberg terminal) | Real-time delivery to users |
 
 ---
@@ -427,7 +427,8 @@ class NewsAggregator:
 - Python 3.11+
 - Node.js 18+
 - uv package manager
-- API Keys: OPENROUTER_API_KEY, NEWS_API_KEY (optional: FINNHUB, ALPHAVANTAGE, MEDIASTACK)
+- API Keys: NEWS_API_KEY (required), FRED_API_KEY (optional), FINNHUB / ALPHAVANTAGE / MEDIASTACK (optional fallbacks)
+- Google Cloud credentials: GOOGLE_APPLICATION_CREDENTIALS, GCP_PROJECT_ID, GCP_REGION (for Vertex AI / Gemini LLM)
 
 ### Installation
 
@@ -607,11 +608,13 @@ AlphaStream_India/
 ### Environment Variables
 
 ```bash
-# Required
-OPENROUTER_API_KEY=sk-or-...
-NEWS_API_KEY=...
+# Required — Google Vertex AI (Gemini LLM)
 GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
 GCP_PROJECT_ID=your-project
+GCP_REGION=us-central1
+
+# Required — News
+NEWS_API_KEY=...
 
 # Indian market data
 GROWW_API_TOKEN=...

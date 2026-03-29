@@ -10,7 +10,7 @@
 |---|---|---|
 | GitHub Repository | ✅ Complete | See `README.md` + commit history |
 | 3-Minute Pitch Video | ⚠️ Recording needed | Script: `docs/VIDEO_DISCUSSION_SCRIPT.md` |
-| Architecture Document | ✅ Complete | `docs/architecture.md` |
+| Architecture Document | ✅ Complete | `docs/ARCHITECTURE.md` |
 | Impact Model | ✅ Complete | `docs/impact_model.md` |
 
 ---
@@ -55,7 +55,7 @@ The script is structured as a complete 3-minute walkthrough:
 
 ## 3. Architecture Document
 
-**Document:** [`docs/architecture.md`](docs/architecture.md)
+**Document:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
 Covers all four required dimensions:
 
@@ -104,6 +104,6 @@ All assumptions explicitly stated. Back-of-envelope math in the document.
 - **13 AI agents** — each specializes in one analytical dimension
 - **<2 seconds** — news article to updated recommendation (Pathway streaming)
 - **60+ REST endpoints** — production-grade API
-- **8-node LangGraph pipeline** — NLQ with Text2SQL (not hallucination)
+- **7-node LangGraph pipeline** — NLQ with Text2SQL (not hallucination)
 - **5-year backtest** — all signals validated with win rates
 - **14 Cr+ target users** — every Indian demat account holder

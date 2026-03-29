@@ -29,7 +29,7 @@ graph LR
 
     subgraph "Global Data Sources"
         G1[WorldMonitor]
-        G2[CNN Fear&Greed]
+        G2[Fear&Greed — CNN / alternative.me fallback]
         G3[yfinance Indices]
     end
 
