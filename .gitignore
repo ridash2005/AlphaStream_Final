@@ -62,3 +62,7 @@ PLAN.md
 # JSON outputs (agrowise leftovers)
 *.json
 agrowise-*.json
+
+# WorldMonitor — external global market intelligence server (clone separately)
+# See: https://github.com/koala73/worldmonitor
+worldmonitor/
