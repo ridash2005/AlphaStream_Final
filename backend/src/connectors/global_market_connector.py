@@ -297,47 +297,72 @@ class GlobalMarketConnector:
             return stale or {"value": None, "change": 0, "status": "UNKNOWN"}
 
     def get_fear_greed(self) -> dict:
-        """CNN Fear & Greed Index (0-100 + label)."""
+        """Fear & Greed Index (0-100 + label).
+
+        Tries CNN first; falls back to alternative.me (free, no key required)
+        if CNN returns 4xx/5xx or times out.
+        """
         cached = self._get_cached("fear_greed", SLOW_TTL)
         if cached:
             return cached
 
-        try:
-            with httpx.Client(timeout=10.0) as client:
+        def _score_to_label(score: float) -> str:
+            if score <= 25:
+                return "Extreme Fear"
+            if score <= 45:
+                return "Fear"
+            if score <= 55:
+                return "Neutral"
+            if score <= 75:
+                return "Greed"
+            return "Extreme Greed"
+
+        with httpx.Client(timeout=10.0) as client:
+            # ── Source 1: CNN Fear & Greed ────────────────────────────────
+            try:
                 resp = client.get(
                     "https://production.dataviz.cnn.io/index/fearandgreed/graphdata",
-                    headers={"User-Agent": "Mozilla/5.0"},
+                    headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"},
                 )
                 resp.raise_for_status()
-                data = resp.json()
+                fg = resp.json().get("fear_and_greed", {})
+                score = float(fg.get("score", 0))
+                if score > 0:
+                    result = {
+                        "score": round(score, 1),
+                        "label": _score_to_label(score),
+                        "previous": round(float(fg.get("previous_close", score)), 1),
+                        "timestamp": fg.get("timestamp", ""),
+                        "source": "CNN",
+                    }
+                    self._set_cache("fear_greed", result)
+                    return result
+            except Exception as e:
+                logger.debug(f"CNN Fear & Greed unavailable ({e}), trying alternative.me")
 
-            fg = data.get("fear_and_greed", {})
-            score = fg.get("score", 50)
-            previous = fg.get("previous_close", score)
+            # ── Source 2: alternative.me (free, no key) ───────────────────
+            try:
+                resp = client.get("https://api.alternative.me/fng/?limit=2", timeout=8.0)
+                resp.raise_for_status()
+                entries = resp.json().get("data", [])
+                if entries:
+                    cur = entries[0]
+                    prev = entries[1] if len(entries) > 1 else cur
+                    score = float(cur["value"])
+                    result = {
+                        "score": round(score, 1),
+                        "label": cur.get("value_classification", _score_to_label(score)),
+                        "previous": round(float(prev["value"]), 1),
+                        "timestamp": cur.get("timestamp", ""),
+                        "source": "alternative.me",
+                    }
+                    self._set_cache("fear_greed", result)
+                    return result
+            except Exception as e:
+                logger.warning(f"alternative.me Fear & Greed also failed: {e}")
 
-            if score <= 25:
-                label = "Extreme Fear"
-            elif score <= 45:
-                label = "Fear"
-            elif score <= 55:
-                label = "Neutral"
-            elif score <= 75:
-                label = "Greed"
-            else:
-                label = "Extreme Greed"
-
-            result = {
-                "score": round(score, 1),
-                "label": label,
-                "previous": round(previous, 1),
-                "timestamp": fg.get("timestamp", ""),
-            }
-            self._set_cache("fear_greed", result)
-            return result
-        except Exception as e:
-            logger.warning(f"Fear & Greed fetch failed: {e}")
-            stale = self._get_stale("fear_greed")
-            return stale or {"score": 50, "label": "Neutral", "previous": 50, "timestamp": ""}
+        stale = self._get_stale("fear_greed")
+        return stale or {"score": 50, "label": "Neutral", "previous": 50, "timestamp": "", "source": "fallback"}
 
     def get_decision_context(self) -> dict:
         """Combined context blob for the Decision Agent prompt."""
