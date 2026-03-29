@@ -33,6 +33,7 @@ export function ChartView() {
   const [patterns, setPatterns] = useState<Pattern[]>([]);
   const [backtest, setBacktest] = useState<BacktestResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showIndicators, setShowIndicators] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>(null);
@@ -40,6 +41,7 @@ export function ChartView() {
   const rsiChartRef = useRef<any>(null);
 
   const loadChart = async () => {
+    setError(null);
     setLoading(true);
     try {
       const [data, pats] = await Promise.all([
@@ -143,13 +145,14 @@ export function ChartView() {
       }
     } catch (e) {
       console.error('Chart load failed:', e);
+      setError('Failed to load chart data. The backend may be unavailable.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => { loadChart(); }, [ticker, period, showIndicators]);
-  useEffect(() => { setTicker(currentTicker || 'RELIANCE'); }, [currentTicker]);
+  useEffect(() => { setError(null); setTicker(currentTicker || 'RELIANCE'); }, [currentTicker]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -206,9 +209,23 @@ export function ChartView() {
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         )}
-        <div ref={chartContainerRef} className="w-full" style={{ height: loading ? 0 : 480 }} />
-        {showIndicators && (
-          <div ref={rsiContainerRef} className="w-full border-t border-border/20" style={{ height: showIndicators ? 110 : 0 }} />
+        {!loading && error ? (
+          <div className="flex flex-col items-center justify-center h-[480px] text-slate-400 gap-2">
+            <span className="text-sm">{error}</span>
+            <button
+              onClick={() => loadChart()}
+              className="text-xs text-cyan-400 hover:text-cyan-300 underline"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <>
+            <div ref={chartContainerRef} className="w-full" style={{ height: loading ? 0 : 480 }} />
+            {showIndicators && (
+              <div ref={rsiContainerRef} className="w-full border-t border-border/20" style={{ height: showIndicators ? 110 : 0 }} />
+            )}
+          </>
         )}
       </Card>
 

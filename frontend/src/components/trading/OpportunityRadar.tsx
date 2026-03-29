@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Minus, RefreshCw, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ interface Signal {
 }
 
 function DirectionBadge({ direction }: { direction: string }) {
-  const config: Record<string, { color: string; icon: JSX.Element; label: string }> = {
+  const config: Record<string, { color: string; icon: React.ReactElement; label: string }> = {
     STRONG_BUY:  { color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', icon: <TrendingUp className="h-3 w-3" />, label: 'Strong Buy' },
     BUY:         { color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: <TrendingUp className="h-3 w-3" />, label: 'Buy' },
     HOLD:        { color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: <Minus className="h-3 w-3" />, label: 'Hold' },
@@ -71,19 +71,20 @@ function SignalCard({ signal }: { signal: Signal }) {
   );
 }
 
-// Group signals by sector theme
+// Group signals by direction theme
 function groupByTheme(signals: Signal[]): Record<string, Signal[]> {
   const groups: Record<string, Signal[]> = {};
   for (const s of signals) {
-    // Extract sector from top_signals evidence if available
-    const sector = (s as any).sector || 'Other';
-    if (!groups[sector]) groups[sector] = [];
-    groups[sector].push(s);
+    const dir = s.direction ?? 'NEUTRAL';
+    const key = dir.includes('BUY') ? 'Bullish'
+               : dir.includes('SELL') ? 'Bearish'
+               : 'Neutral';
+    (groups[key] ??= []).push(s);
   }
   return groups;
 }
 
-function ThemeBadge({ sector, signals }: { sector: string; signals: Signal[] }) {
+function ThemeBadge({ group, signals }: { group: string; signals: Signal[] }) {
   const bullish = signals.filter(s => ['BUY', 'STRONG_BUY'].includes(s.direction)).length;
   const bearish = signals.filter(s => ['SELL', 'STRONG_SELL'].includes(s.direction)).length;
   const color = bullish > bearish ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
@@ -91,7 +92,7 @@ function ThemeBadge({ sector, signals }: { sector: string; signals: Signal[] }) 
     : 'text-amber-400 bg-amber-500/10 border-amber-500/20';
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${color}`}>
-      {sector}: {bullish}B {bearish}S
+      {group}: {bullish}B {bearish}S
     </span>
   );
 }
@@ -99,13 +100,16 @@ function ThemeBadge({ sector, signals }: { sector: string; signals: Signal[] }) 
 export function OpportunityRadar() {
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchRadar = async () => {
+    setError(null);
     setLoading(true);
     try {
       const data = await apiService.getRadar(15);
       setSignals(Array.isArray(data) ? data : []);
     } catch (e) {
+      setError('Failed to load signals. Retrying...');
       console.error('Radar fetch failed:', e);
     } finally {
       setLoading(false);
@@ -131,11 +135,15 @@ export function OpportunityRadar() {
         </Button>
       </div>
 
-      {/* Sector themes */}
+      {error && (
+        <p className="text-xs text-amber-400 px-4 pb-1">{error}</p>
+      )}
+
+      {/* Direction themes */}
       {Object.keys(themes).length > 1 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
-          {Object.entries(themes).map(([sector, sigs]) => (
-            <ThemeBadge key={sector} sector={sector} signals={sigs} />
+          {Object.entries(themes).map(([group, sigs]) => (
+            <ThemeBadge key={group} group={group} signals={sigs} />
           ))}
         </div>
       )}

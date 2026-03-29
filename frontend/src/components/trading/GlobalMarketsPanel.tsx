@@ -56,7 +56,7 @@ function CryptoCard({ q, usdInr }: { q: Quote; usdInr: number }) {
           {pos ? '+' : ''}{q.change?.toFixed(2)}%
         </span>
       </div>
-      <div className="text-sm font-mono font-bold">${q.price?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: q.price > 100 ? 0 : 4 })}</div>
+      <div className="text-sm font-mono font-bold">${Number.isFinite(q.price) ? q.price.toLocaleString('en-US', q.price >= 100 ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '—'}</div>
       {inrPrice && <div className="text-[10px] text-muted-foreground">{inrPrice}</div>}
       <MiniSparkline data={q.sparkline} positive={pos} />
     </div>
