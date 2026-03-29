@@ -97,13 +97,16 @@ class BacktestAgent:
         except ImportError:
             return []
 
+        if len(df) < 50:
+            return []
+
         instances = []
         close = df["Close"]
 
         if pattern == "rsi_divergence":
             rsi = ta_lib.momentum.RSIIndicator(close=close, window=14).rsi()
             # Scan for RSI oversold bounces (< 30 then rising)
-            for i in range(30, len(df) - 1):
+            for i in range(44, len(df) - 1):
                 if rsi.iloc[i] < 30 and rsi.iloc[i] > rsi.iloc[i - 1]:
                     instances.append(i)
 

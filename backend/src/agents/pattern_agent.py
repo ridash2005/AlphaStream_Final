@@ -190,7 +190,11 @@ class PatternAgent:
 
         ratio = today_vol / avg_vol
         if ratio >= 2.0:
-            price_change = (df["Close"].iloc[-1] - df["Close"].iloc[-2]) / df["Close"].iloc[-2] * 100
+            prev_close = df["Close"].iloc[-2]
+            if prev_close == 0 or pd.isna(prev_close):
+                price_change = 0.0
+            else:
+                price_change = (df["Close"].iloc[-1] - prev_close) / prev_close * 100
             direction = "bullish" if price_change > 0 else "bearish"
             return {
                 "pattern": "volume_breakout",

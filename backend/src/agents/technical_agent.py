@@ -53,6 +53,9 @@ class TechnicalAgent:
         if hist.empty:
             return self._neutral_response("No price data available")
 
+        if len(hist) < 2:
+            return self._neutral_response("Insufficient data")
+
         # Calculate indicators
         rsi = self._calculate_rsi(hist["Close"])
         sma_20 = self._calculate_sma(hist["Close"], 20)
