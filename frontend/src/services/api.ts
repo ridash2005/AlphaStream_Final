@@ -188,12 +188,7 @@ export const apiService = {
         return response.data;
     },
 
-    async getGlobalContext() {
-        const response = await api.get('/api/global/context');
-        return response.data;
-    },
-
-    // ── Fundamentals endpoints ────────────────────
+    // -- Fundamentals endpoints ────────────────────
 
     async getFundamentals(ticker: string) {
         const response = await api.get(`/api/fundamentals/${ticker}`);
@@ -225,6 +220,20 @@ export const apiService = {
                 limit: params?.limit || 20,
             },
         });
+        return response.data;
+    },
+
+    // -- Insider activity --
+
+    async getInsiderActivity(ticker: string) {
+        const response = await api.get(`/insider/${ticker}`);
+        return response.data;
+    },
+
+    // -- Report generation --
+
+    async generateReport(ticker: string) {
+        const response = await api.post(`/report/${ticker}`);
         return response.data;
     },
 };

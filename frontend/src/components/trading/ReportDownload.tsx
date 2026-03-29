@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/appStore';
 import { FileText, Download, Loader2, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import api from '@/services/api';
+import { apiService } from '@/services/api';
 
 interface ReportResult {
     report_path: string;
@@ -28,8 +28,7 @@ export function ReportDownload() {
         setResult(null);
 
         try {
-            const response = await api.post(`/report/${currentTicker}`);
-            const data = response.data;
+            const data = await apiService.generateReport(currentTicker);
 
             if (data.error) {
                 throw new Error(data.error);

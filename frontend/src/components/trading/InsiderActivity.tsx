@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/store/appStore';
 import { Users, TrendingUp, TrendingDown, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import api from '@/services/api';
+import { apiService } from '@/services/api';
 
 interface InsiderData {
     ticker: string;
@@ -30,8 +30,7 @@ export function InsiderActivity() {
         setError(null);
 
         try {
-            const response = await api.get(`/insider/${currentTicker}`);
-            const result = response.data;
+            const result = await apiService.getInsiderActivity(currentTicker);
             setData(result);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unknown error');
