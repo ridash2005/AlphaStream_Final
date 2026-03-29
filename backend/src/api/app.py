@@ -76,8 +76,8 @@ class ConnectionManager:
             for connection in ticker_conns:
                 try:
                     await connection.send_json(message)
-                except Exception as e:
-                    logger.debug(f"WebSocket broadcast error (client disconnected?): {e}")
+                except Exception:
+                    pass
 
 class MarketState:
     """Tracks global market sentiment for heatmap."""
@@ -613,7 +613,7 @@ async def generate_recommendation_logic(ticker: str, update_callback: Callable[[
     if flow_agent:
         try:
             await send_update("Flow Agent", "Analyzing FII/DII institutional flows...")
-            flow_data = flow_agent.analyze(days=30)
+            flow_data = await asyncio.get_running_loop().run_in_executor(None, lambda: flow_agent.analyze(days=30))
         except Exception as e:
             logger.warning(f"Flow agent failed: {e}")
 
@@ -642,7 +642,8 @@ async def generate_recommendation_logic(ticker: str, update_callback: Callable[[
         geo_risk = geo.get_india_risk()
         global_ctx["india_geo_risk"] = geo_risk.get("score", 20)
         global_ctx["india_geo_level"] = geo_risk.get("level", "MODERATE")
-        global_ctx["geo_hotspots"] = [h["name"] for h in geo_risk.get("hotspot_alerts", [])]
+        if geo_risk.get("hotspot_alerts"):
+            global_ctx["geo_hotspots"] = [h["name"] for h in geo_risk["hotspot_alerts"]]
     except Exception as e:
         logger.debug(f"Geo risk fetch failed: {e}")
 

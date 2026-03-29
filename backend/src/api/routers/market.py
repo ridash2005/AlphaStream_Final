@@ -55,7 +55,8 @@ async def get_flows(days: int = Query(30, le=90)):
     from src.agents.flow_agent import FlowAgent
 
     fa = FlowAgent()
-    return fa.analyze(days=days)
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, lambda: fa.analyze(days=days))
 
 
 @router.post("/portfolio")
@@ -64,8 +65,9 @@ async def set_portfolio(body: PortfolioInput):
     from src.pipeline.portfolio_manager import PortfolioManager
 
     pm = PortfolioManager()
-    pm.set_holdings(body.holdings)
-    return pm.get_portfolio_value()
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, lambda: pm.set_holdings(body.holdings))
+    return await loop.run_in_executor(None, pm.get_portfolio_value)
 
 
 @router.get("/portfolio/summary")
@@ -73,7 +75,8 @@ async def get_portfolio_summary():
     """Get portfolio summary with live P&L."""
     from src.pipeline.portfolio_manager import PortfolioManager
     pm = PortfolioManager()
-    return pm.get_portfolio_value()
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, pm.get_portfolio_value)
 
 
 @router.get("/portfolio/import-groww")
@@ -114,7 +117,8 @@ async def get_filings(ticker: str, days: int = Query(30, le=90)):
     from src.connectors.bse_connector import get_bse_connector
 
     bse = get_bse_connector()
-    return bse.get_announcements(days=days)
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, lambda: bse.get_announcements(days=days))
 
 
 @router.get("/news")
@@ -138,8 +142,7 @@ async def get_news(ticker: str = Query(""), limit: int = Query(20, le=50)):
             ).fetchdf()
         rows["published_at"] = rows["published_at"].astype(str)
         return rows.to_dict(orient="records")
-    except Exception as e:
-        logger.warning(f"News query failed: {e}")
+    except Exception:
         return []
     finally:
         con.close()
@@ -167,8 +170,7 @@ async def get_popular_tickers():
         con.close()
         tickers = [r[0] for r in rows]
         return {"tickers": tickers if tickers else ["RELIANCE", "TCS", "INFY", "HDFCBANK", "SBIN"]}
-    except Exception as e:
-        logger.warning(f"Popular tickers query failed: {e}")
+    except Exception:
         return {"tickers": ["RELIANCE", "TCS", "INFY", "HDFCBANK", "SBIN"]}
 
 
@@ -252,7 +254,7 @@ async def get_anomalies(ticker: str, period: str = Query("3mo", description="OHL
             logger.debug(f"NSE OHLCV failed for {ticker}: {e}")
             # Try yfinance fallback
             import yfinance as yf
-            hist = yf.Ticker(f"{ticker}.NS").history(period=period)
+            hist = await asyncio.to_thread(lambda: yf.Ticker(f"{ticker}.NS").history(period=period))
             df = hist
 
         if df is None or (hasattr(df, 'empty') and df.empty):
