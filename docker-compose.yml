@@ -14,7 +14,9 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - CUDA_VISIBLE_DEVICES=""
+      - ENABLE_PATHWAY=false
     volumes:
+      - ./backend/data:/app/data
       - ./backend/reports:/app/reports
     restart: unless-stopped
     healthcheck:

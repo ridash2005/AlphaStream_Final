@@ -1,15 +1,21 @@
 """Configuration management for AlphaStream India."""
 
+import logging
+import os
 from functools import lru_cache
+
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
-from pydantic import Field
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # GCP / Vertex AI
-    gcp_project_id: str = Field(default="", alias="GCP_PROJECT_ID")
+    # Required when GOOGLE_APPLICATION_CREDENTIALS is set
+    gcp_project_id: str = Field(default="", alias="GCP_PROJECT_ID")  # e.g. my-gcp-project-123
     gcp_region: str = Field(default="us-central1", alias="GCP_REGION")
     vertex_model: str = Field(default="gemini-2.0-flash", alias="VERTEX_MODEL")
 
@@ -56,6 +62,15 @@ class Settings(BaseSettings):
 
     # DuckDB (NLQ analytics database)
     duckdb_path: str = Field(default="market_analytics.duckdb", alias="DUCKDB_PATH")
+
+    @model_validator(mode="after")
+    def warn_missing_gcp_project(self) -> "Settings":
+        if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") and not self.gcp_project_id:
+            logger.warning(
+                "GOOGLE_APPLICATION_CREDENTIALS is set but GCP_PROJECT_ID is empty. "
+                "Vertex AI calls will fail. Set GCP_PROJECT_ID in your .env file."
+            )
+        return self
 
     class Config:
         env_file = ".env"

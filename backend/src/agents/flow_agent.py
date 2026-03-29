@@ -21,7 +21,9 @@ class FlowAgent:
         """Analyze FII/DII flow patterns and return signal."""
         flows = self.connector.get_daily_flows(days)
         if not flows:
-            return self._neutral("No FII/DII flow data available")
+            result = self._neutral("No FII/DII flow data available")
+            result["flows"] = []
+            return result
 
         # Detect streaks
         fii_streak = self.connector.detect_streak(flows, entity="fii", threshold_days=5)
@@ -71,6 +73,7 @@ class FlowAgent:
             "dii_streak": dii_streak,
             "divergence": divergence,
             "observations": observations,
+            "flows": flows,
         }
 
     def _neutral(self, reason: str) -> dict[str, Any]:

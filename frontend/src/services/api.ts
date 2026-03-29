@@ -236,6 +236,34 @@ export const apiService = {
         const response = await api.post(`/report/${ticker}`);
         return response.data;
     },
+
+    // -- News --
+
+    async getNews(ticker?: string, limit = 20) {
+        const response = await api.get('/api/news', { params: { ticker, limit } });
+        return response.data;
+    },
+
+    // -- Tickers (full list with sector filter) --
+
+    async getTickers(sector?: string) {
+        const response = await api.get('/api/tickers', { params: { sector } });
+        return response.data;
+    },
+
+    // -- Bulk deals --
+
+    async getBulkDeals(days = 7) {
+        const response = await api.get('/api/bulk-deals', { params: { days } });
+        return response.data;
+    },
+
+    // -- Global refresh --
+
+    async refreshGlobalData() {
+        const response = await api.post('/api/global/refresh');
+        return response.data;
+    },
 };
 
 export default api;

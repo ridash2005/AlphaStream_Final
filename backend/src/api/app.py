@@ -114,6 +114,10 @@ unified_rag: UnifiedRAGService | None = None
 
 # Track last article ingestion time - for forcing manual RAG on fresh content
 last_ingestion_time: float = 0.0
+_ingestion_lock = threading.Lock()
+
+# Adaptive RAG subprocess handle - set during startup, checked during shutdown
+_rag_server_process: subprocess.Popen | None = None
 
 ws_manager = ConnectionManager()
 market_state = MarketState()
@@ -122,7 +126,7 @@ market_state = MarketState()
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown."""
     global rag_pipeline, sentiment_agent, technical_agent, risk_agent, decision_agent
-    global flow_agent, insider_agent, chart_agent, report_agent, unified_rag
+    global flow_agent, insider_agent, chart_agent, report_agent, unified_rag, _rag_server_process
     
     logger.info("Initializing AlphaStream Live AI...")
 
@@ -160,17 +164,16 @@ async def lifespan(app: FastAPI):
     logger.info("Seeded RAG with initial articles. Live news will supersede these.")
     
     # Start Pathway Adaptive RAG Server (optional - skipped if Pathway unavailable)
-    rag_server_process = None
     if os.environ.get("ENABLE_PATHWAY", "false").lower() == "true":
         logger.info("Starting Pathway Adaptive RAG Server (port 8001)...")
         try:
-            rag_server_process = subprocess.Popen(
+            _rag_server_process = subprocess.Popen(
                 [sys.executable, "src/pipeline/adaptive_rag_server.py"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 cwd="."
             )
-            logger.info(f"Adaptive RAG Server started with PID: {rag_server_process.pid}")
+            logger.info(f"Adaptive RAG Server started with PID: {_rag_server_process.pid}")
 
             import httpx
             adaptive_rag_url = os.environ.get("ADAPTIVE_RAG_URL", "http://localhost:8001")
@@ -391,7 +394,10 @@ async def lifespan(app: FastAPI):
 
             def pathway_callback(key, row, time, is_addition):
                 if row and is_addition:
-                    on_new_article(row)
+                    try:
+                        on_new_article(row)
+                    except Exception as e:
+                        logger.error(f"Pathway callback error: {e}", exc_info=True)
 
             pw.io.subscribe(news_table, pathway_callback)
 
@@ -417,14 +423,14 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down AlphaStream...")
     
     # Terminate Adaptive RAG server if running
-    if 'rag_server_process' in locals() and rag_server_process:
-        logger.info(f"Terminating Adaptive RAG Server (PID: {rag_server_process.pid})...")
-        rag_server_process.terminate()
+    if _rag_server_process is not None:
+        logger.info(f"Terminating Adaptive RAG Server (PID: {_rag_server_process.pid})...")
+        _rag_server_process.terminate()
         try:
-            rag_server_process.wait(timeout=5)
+            _rag_server_process.wait(timeout=5)
         except subprocess.TimeoutExpired:
             logger.warning("Adaptive RAG Server did not terminate gracefully, killing...")
-            rag_server_process.kill()
+            _rag_server_process.kill()
             
     logger.info("Shutdown complete.")
     # pw.run is infinite, daemon thread will be killed on exit
@@ -551,7 +557,9 @@ async def generate_recommendation_logic(ticker: str, update_callback: Callable[[
     
     # Check if there was a recent ingestion (within 30 seconds)
     # If so, force manual RAG to ensure fresh content is included
-    force_manual = (time.time() - last_ingestion_time) < 30.0
+    with _ingestion_lock:
+        ingestion_time_snapshot = last_ingestion_time
+    force_manual = (time.time() - ingestion_time_snapshot) < 30.0
     
     if force_manual:
         logger.info("📰 Recent article ingested - using manual RAG for fresh content")
@@ -812,7 +820,8 @@ async def ingest_article(article: dict[str, Any]) -> dict[str, Any]:
         logger.warning(f"Failed to write article to disk: {e}")
     
     # Track last ingestion time - forces manual RAG for 30 seconds
-    last_ingestion_time = time.time()
+    with _ingestion_lock:
+        last_ingestion_time = time.time()
     
     return {
         "status": "success",
