@@ -51,8 +51,8 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
-            <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-              <Zap className="h-7 w-7 text-purple-400" />
+            <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+              <Zap className="h-7 w-7 text-primary" />
             </div>
             <span className="text-2xl font-bold text-white">AlphaStream India</span>
           </div>
@@ -69,7 +69,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="judge@etmedia.com"
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-colors"
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
                 required
               />
             </div>
@@ -81,7 +81,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="hackathon2026"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-colors pr-12"
+                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors pr-12"
                   required
                 />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
@@ -99,7 +99,7 @@ export default function LoginPage() {
             )}
 
             <button type="submit" disabled={loading}
-              className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 font-semibold transition-all disabled:opacity-50 text-white">
+              className="w-full py-3 rounded-xl bg-primary hover:bg-primary/90 font-semibold transition-all disabled:opacity-50 text-white">
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
@@ -110,12 +110,12 @@ export default function LoginPage() {
             <div className="space-y-2">
               {TEST_USERS.map((user) => (
                 <button key={user.email} onClick={() => quickLogin(user)}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-purple-500/20 hover:bg-white/[0.04] transition-all text-left">
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-primary/20 hover:bg-white/[0.04] transition-all text-left">
                   <div>
                     <p className="text-sm font-medium text-white">{user.name}</p>
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                     {user.role}
                   </span>
                 </button>

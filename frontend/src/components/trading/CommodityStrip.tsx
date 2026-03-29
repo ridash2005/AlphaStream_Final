@@ -62,7 +62,7 @@ export function CommodityStrip() {
                   <div className="text-xs font-mono text-foreground">
                     {item.price != null
                       ? item.price.toLocaleString(undefined, { maximumFractionDigits: 2 })
-                      : '—'}
+                      : 'N/A'}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">

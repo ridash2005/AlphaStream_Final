@@ -74,7 +74,7 @@ export function CorporateFilings() {
 
                             const date = dateStr ? new Date(dateStr).toLocaleDateString('en-IN', {
                                 timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short'
-                            }) : '—';
+                            }) : 'N/A';
 
                             return (
                                 <div key={i} className="flex items-start gap-2 text-xs group">

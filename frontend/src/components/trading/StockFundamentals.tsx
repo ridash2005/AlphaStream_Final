@@ -19,7 +19,7 @@ interface Fundamentals {
 }
 
 const formatMktCap = (cr: number | null) => {
-  if (!cr) return '—';
+  if (!cr) return 'N/A';
   if (cr >= 100000) return `₹${(cr / 100000).toFixed(1)}L Cr`;
   if (cr >= 1000) return `₹${(cr / 1000).toFixed(1)}K Cr`;
   return `₹${cr.toFixed(0)} Cr`;
@@ -39,10 +39,10 @@ export function StockFundamentals() {
   }, [currentTicker]);
 
   const metrics = data ? [
-    { label: 'P/E Ratio', value: data.pe_ratio != null ? `${data.pe_ratio.toFixed(1)}x` : '—' },
-    { label: 'P/B Ratio', value: data.pb_ratio != null ? `${data.pb_ratio.toFixed(2)}x` : '—' },
-    { label: 'ROE', value: data.roe != null ? `${data.roe.toFixed(1)}%` : '—' },
-    { label: 'Div. Yield', value: data.dividend_yield != null ? `${data.dividend_yield.toFixed(2)}%` : '—' },
+    { label: 'P/E Ratio', value: data.pe_ratio != null ? `${data.pe_ratio.toFixed(1)}x` : 'N/A' },
+    { label: 'P/B Ratio', value: data.pb_ratio != null ? `${data.pb_ratio.toFixed(2)}x` : 'N/A' },
+    { label: 'ROE', value: data.roe != null ? `${data.roe.toFixed(1)}%` : 'N/A' },
+    { label: 'Div. Yield', value: data.dividend_yield != null ? `${data.dividend_yield.toFixed(2)}%` : 'N/A' },
     { label: 'Mkt Cap', value: formatMktCap(data.market_cap_cr), colSpan: true },
   ] : [];
 

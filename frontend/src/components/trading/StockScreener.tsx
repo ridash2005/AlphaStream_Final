@@ -18,7 +18,7 @@ interface Stock {
 }
 
 const formatMktCap = (cr?: number) => {
-  if (!cr) return '—';
+  if (!cr) return 'N/A';
   if (cr >= 100000) return `₹${(cr / 100000).toFixed(1)}L Cr`;
   if (cr >= 1000) return `₹${(cr / 1000).toFixed(1)}K Cr`;
   return `₹${cr.toFixed(0)} Cr`;
@@ -179,7 +179,7 @@ export function StockScreener() {
                   >
                     <td className="py-1.5 font-mono font-semibold text-primary">{s.ticker}</td>
                     <td className="py-1.5 text-muted-foreground hidden sm:table-cell truncate max-w-[100px]">
-                      {s.sector || '—'}
+                      {s.sector || 'N/A'}
                     </td>
                     <td className="py-1.5 text-right text-muted-foreground">
                       {formatMktCap(s.market_cap_cr)}
@@ -195,11 +195,11 @@ export function StockScreener() {
                             : 'bg-secondary/50 text-muted-foreground'
                         )}
                       >
-                        {s.latest_signal_dir || s.latest_signal_type || '—'}
+                        {s.latest_signal_dir || s.latest_signal_type || 'N/A'}
                       </span>
                     </td>
                     <td className="py-1.5 text-right font-mono text-foreground">
-                      {s.latest_alpha_score != null ? s.latest_alpha_score.toFixed(1) : '—'}
+                      {s.latest_alpha_score != null ? s.latest_alpha_score.toFixed(1) : 'N/A'}
                     </td>
                   </tr>
                 ))}

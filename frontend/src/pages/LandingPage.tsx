@@ -25,7 +25,7 @@ const FEATURES = [
   {
     icon: <Globe className="h-6 w-6" />,
     title: 'Real-Time Streaming',
-    desc: 'Pathway streaming engine ingests news from 6+ Indian sources in <2 seconds',
+    desc: 'Pathway streaming engine ingests news from 6+ Indian sources in under 2 seconds',
   },
   {
     icon: <Zap className="h-6 w-6" />,
@@ -50,8 +50,8 @@ export default function LandingPage() {
       <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-[#050510]/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
-              <Zap className="h-5 w-5 text-purple-400" />
+            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+              <Zap className="h-5 w-5 text-primary" />
             </div>
             <span className="text-lg font-bold">AlphaStream India</span>
           </div>
@@ -63,7 +63,7 @@ export default function LandingPage() {
               Sign In
             </button>
             <button onClick={() => navigate('/login')}
-              className="text-sm px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 transition-colors font-medium">
+              className="text-sm px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 transition-colors font-medium">
               Get Started <ChevronRight className="inline h-4 w-4" />
             </button>
           </div>
@@ -73,14 +73,14 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-medium mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             ET AI Hackathon 2026 - Problem Statement 6
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6">
             AI-Powered Investment
             <br />
-            <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400 bg-clip-text text-transparent">
               Intelligence for India
             </span>
           </h1>
@@ -91,7 +91,7 @@ export default function LandingPage() {
           </p>
           <div className="flex items-center justify-center gap-4">
             <button onClick={() => navigate('/login')}
-              className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 font-semibold text-base transition-all hover:shadow-[0_0_30px_rgba(168,85,247,0.4)] flex items-center gap-2">
+              className="px-6 py-3 rounded-xl bg-primary hover:bg-primary/90 font-semibold text-base transition-all hover:shadow-[0_0_30px_rgba(99,102,241,0.4)] flex items-center gap-2">
               Launch Dashboard <ArrowRight className="h-5 w-5" />
             </button>
             <button onClick={() => window.open('mailto:team@alphastream.in', '_blank')}
@@ -107,7 +107,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
           {STATS.map((s, i) => (
             <div key={i} className="text-center">
-              <p className="text-3xl font-extrabold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              <p className="text-3xl font-extrabold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
                 {s.value}
               </p>
               <p className="text-sm text-gray-500 mt-1">{s.label}</p>
@@ -125,8 +125,8 @@ export default function LandingPage() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {FEATURES.map((f, i) => (
-              <div key={i} className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-purple-500/20 hover:bg-white/[0.04] transition-all group">
-                <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 w-fit mb-4 text-purple-400 group-hover:text-purple-300 transition-colors">
+              <div key={i} className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-primary/20 hover:bg-white/[0.04] transition-all group">
+                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 w-fit mb-4 text-primary group-hover:text-primary/80 transition-colors">
                   {f.icon}
                 </div>
                 <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
@@ -147,12 +147,12 @@ export default function LandingPage() {
               {
                 label: 'Data Sources',
                 desc: 'NSE · BSE · FII/DII · Groww · ET Markets RSS · WorldMonitor · FRED',
-                color: 'border-purple-500/30 bg-purple-500/5',
-                dot: 'bg-purple-400',
+                color: 'border-primary/30 bg-primary/5',
+                dot: 'bg-primary',
               },
               {
                 label: 'Pathway Streaming Engine',
-                desc: 'Real-time news ingestion → Chunking → Embedding → Adaptive RAG  (<2s latency)',
+                desc: 'Real-time news ingestion, Chunking, Embedding, Adaptive RAG (under 2s latency)',
                 color: 'border-blue-500/30 bg-blue-500/5',
                 dot: 'bg-blue-400',
               },
@@ -164,7 +164,7 @@ export default function LandingPage() {
               },
               {
                 label: 'NLQ Agent (LangGraph 8-node)',
-                desc: 'Guardrail → Web Enrich → Route → Text2SQL → Narrate · Portfolio-aware · Source-cited',
+                desc: 'Guardrail, Web Enrich, Route, Text2SQL, Narrate · Portfolio-aware · Source-cited',
                 color: 'border-emerald-500/30 bg-emerald-500/5',
                 dot: 'bg-emerald-400',
               },
@@ -177,8 +177,8 @@ export default function LandingPage() {
               {
                 label: 'Bloomberg Terminal (5 tabs)',
                 desc: 'Overview · Signals · Global Intel · Company · Portfolio - React + WebSocket + SSE',
-                color: 'border-pink-500/30 bg-pink-500/5',
-                dot: 'bg-pink-400',
+                color: 'border-indigo-500/30 bg-indigo-500/5',
+                dot: 'bg-indigo-400',
               },
             ].map((layer, i, arr) => (
               <div key={i} className="flex flex-col items-center">
@@ -206,7 +206,7 @@ export default function LandingPage() {
             Free access for hackathon judges. Sign in with the test account to explore the full platform.
           </p>
           <button onClick={() => navigate('/login')}
-            className="px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-semibold text-lg transition-all hover:shadow-[0_0_40px_rgba(168,85,247,0.4)]">
+            className="px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-500 font-semibold text-lg transition-all hover:shadow-[0_0_40px_rgba(99,102,241,0.4)]">
             Get Started Free
           </button>
         </div>

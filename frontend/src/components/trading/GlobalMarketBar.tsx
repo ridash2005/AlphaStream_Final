@@ -93,7 +93,7 @@ export function GlobalMarketBar() {
               <div key={`${item.symbol}-${i}`} className="inline-flex items-center gap-1.5 px-3 border-r border-border/20">
                 <span className="text-[10px] text-muted-foreground">{item.display}</span>
                 <span className="text-xs font-mono text-foreground">
-                  {item.price != null ? item.price.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '—'}
+                  {item.price != null ? item.price.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'N/A'}
                 </span>
                 <span className={cn(
                   "text-[10px] font-mono",
