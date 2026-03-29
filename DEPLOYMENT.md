@@ -77,7 +77,7 @@ uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
 curl http://localhost:8000/health
 ```
 
-Expected response: `{"status":"ok", ...}`
+Expected response: `{"status":"healthy", ...}`
 
 ## Frontend Setup
 

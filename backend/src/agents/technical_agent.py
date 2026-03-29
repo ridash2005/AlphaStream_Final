@@ -127,9 +127,11 @@ class TechnicalAgent:
         delta = series.diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
-        
-        rs = gain / loss
-        return 100 - (100 / (1 + rs))
+
+        rs = gain / loss.replace(0, float('nan'))
+        rsi = 100 - (100 / (1 + rs))
+        # Fill NaN with 50 (neutral) — occurs when loss is zero or insufficient data
+        return rsi.fillna(50.0)
 
     def _calculate_sma(self, series: Any, window: int) -> Any:
         """Calculate SMA."""

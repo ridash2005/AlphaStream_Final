@@ -68,8 +68,9 @@ class BacktestAgent:
                 if idx + horizon_days < len(df):
                     entry_price = df["Close"].iloc[idx]
                     exit_price = df["Close"].iloc[idx + horizon_days]
-                    ret = (exit_price - entry_price) / entry_price * 100
-                    returns.append(float(ret))
+                    if entry_price != 0:
+                        ret = (exit_price - entry_price) / entry_price * 100
+                        returns.append(float(ret))
 
             if returns:
                 wins = [r for r in returns if r > 0]

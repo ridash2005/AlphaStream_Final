@@ -195,7 +195,7 @@ class SparseRetriever:
 
         self.corpus_size = len(self.documents)
         self._calculate_idf()
-        self.avg_doc_len = sum(sum(freqs.values()) for freqs in self.doc_freqs) / self.corpus_size
+        self.avg_doc_len = sum(sum(freqs.values()) for freqs in self.doc_freqs) / self.corpus_size if self.corpus_size > 0 else 1.0
 
     def search(self, query: str, k: int = 5) -> List[Dict[str, Any]]:
         """Search using BM25 scoring."""

@@ -1,4 +1,4 @@
-# AlphaStream India — Hackathon Submission Package
+# AlphaStream India — Hackathon Submission
 
 **ET AI Hackathon 2026 — Problem Statement 6: AI for the Indian Investor**
 
@@ -6,12 +6,11 @@
 
 ## Submission Checklist
 
-| Requirement | Status | Document |
+| Requirement | Status | Location |
 |---|---|---|
-| GitHub Repository | ✅ Complete | See `README.md` + commit history |
-| 3-Minute Pitch Video | ⚠️ Recording needed | Script: `docs/VIDEO_DISCUSSION_SCRIPT.md` |
-| Architecture Document | ✅ Complete | `docs/ARCHITECTURE.md` |
-| Impact Model | ✅ Complete | `docs/impact_model.md` |
+| GitHub Repository | Done | `README.md` + commit history |
+| Architecture Document | Done | `docs/ARCHITECTURE.md` |
+| Impact Model | Done | `docs/impact_model.md` |
 
 ---
 
@@ -20,58 +19,40 @@
 **Repository:** https://github.com/wildcraft958/AlphaStream_India
 
 **What judges will find:**
-- Full source code: 13 AI agents, 60+ REST endpoints, React 19 frontend with 35 components
+- Full source code: 13 AI agents, 60+ REST endpoints, React 19 frontend with 30+ components
 - `README.md` — project overview, quick-start setup, full API reference
 - `backend/` — Python FastAPI backend (agents, connectors, pipeline, NLQ)
 - `frontend/` — React 19 + TypeScript + Tailwind Bloomberg-style terminal
-- `worldmonitor/` — global market intelligence server
+- `worldmonitor/` — global market intelligence module
 - `docker-compose.yml` — one-command deployment
 - `backend/.env.example` — environment variable reference
-- Commit history: 12+ meaningful commits showing incremental build from data layer → agents → frontend → polish
 
-**Setup:** 3 commands — `uv sync` → `uvicorn src.api.app:app --port 8000` → `npm run dev`
-
----
-
-## 2. 3-Minute Pitch Video
-
-**Script:** [`docs/VIDEO_DISCUSSION_SCRIPT.md`](docs/VIDEO_DISCUSSION_SCRIPT.md)
-
-The script is structured as a complete 3-minute walkthrough:
-
-| Timestamp | Section | What to show |
-|---|---|---|
-| 0:00 – 0:30 | Problem + Solution | Hook: 14 Cr demat accounts, WhatsApp tips problem |
-| 0:30 – 1:00 | Architecture | `docs/system_architecture.png` — 5-layer diagram |
-| 1:00 – 2:15 | Live Demo | Dashboard: Overview → Signals → Global Intel → NLQ chat |
-| 2:15 – 2:45 | Technical Highlights | Pathway features, India-first design |
-| 2:45 – 3:00 | Conclusion | Impact metrics, closing statement |
-
-**Pre-recording checklist:** See end of `docs/VIDEO_DISCUSSION_SCRIPT.md`
-
-**To record:** Start backend + frontend, open http://localhost:5173, follow the script. Recommended tool: OBS Studio (free) or Loom.
+**Setup:** 3 commands — `uv sync` -> `./start.sh` -> `npm run dev`
 
 ---
 
-## 3. Architecture Document
+## 2. Architecture Document
 
 **Document:** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
-Covers all four required dimensions:
+Covers:
 
-- **Agent roles** — Table of all 13 agents with input/output specification
-- **Communication pattern** — NLQ LangGraph routing + WebSocket ticker pipeline
-- **Tool integrations** — MCP servers, DuckDB, Pathway, yfinance, NSE/BSE APIs, Groww
-- **Error handling logic** — 7 failure scenarios with recovery strategies
+- **System overview** — 5-layer architecture (data sources, Pathway streaming, 13-agent reasoning, DuckDB analytics, React terminal)
+- **Pathway integration** — Adaptive RAG with geometric retrieval, 12+ Pathway features used
+- **Agent specifications** — All 13 agents with input/output/technology
+- **NLQ pipeline** — LangGraph 7-node graph with Text2SQL, guardrails, and SSE streaming
+- **Data flow** — Mermaid diagram showing end-to-end pipeline
+- **API layer** — 60+ REST endpoints, WebSocket, SSE
+- **Performance** — <2s data-to-update latency, ~7s full recommendation
 
-Supporting visuals (in `docs/`):
+Supporting diagrams (in `docs/`):
 - `system_architecture.png` — full 5-layer system diagram
 - `multi_agent_system.png` — agent coordination and fusion
 - `herd_of_knowledge.png` — parallel multi-source news aggregation
 
 ---
 
-## 4. Impact Model
+## 3. Impact Model
 
 **Document:** [`docs/impact_model.md`](docs/impact_model.md)
 
@@ -79,27 +60,16 @@ Quantified estimates with stated assumptions:
 
 | Impact Area | Estimate | Method |
 |---|---|---|
-| Time saved per user | ₹2.19L/year | 1.75 hrs/day × ₹500/hr × 250 days |
-| Alpha generated per user | ₹54,000/year | 2-3 signals/month × 60% accuracy × ₹3,000 |
+| Time saved per user | INR 2.19L/year | 1.75 hrs/day x INR 500/hr x 250 days |
+| Alpha generated per user | INR 54,000/year | 2-3 signals/month x 60% accuracy x INR 3,000 |
 | Risk reduction | 15% behavioral loss reduction | Signal-based early warning |
-| ET Markets revenue (Year 1) | ₹53.7 Cr/year | 3 Cr users × 0.3% conversion × ₹999/month |
+| ET Markets revenue (Year 1) | INR 59.9 Cr/year | 50K premium users x INR 999/month x 12 |
 
 All assumptions explicitly stated. Back-of-envelope math in the document.
 
 ---
 
-## Diagrams Index
-
-| File | Description |
-|---|---|
-| `docs/system_architecture.png` | Full 5-layer architecture |
-| `docs/multi_agent_system.png` | 13-agent coordination |
-| `docs/herd_of_knowledge.png` | Parallel news aggregation |
-| `docs/ARCHITECTURE.md` | Technical deep-dive with Mermaid diagrams |
-
----
-
-## Key Numbers for Judges
+## Key Numbers
 
 - **13 AI agents** — each specializes in one analytical dimension
 - **<2 seconds** — news article to updated recommendation (Pathway streaming)

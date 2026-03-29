@@ -60,7 +60,7 @@ AlphaStream India is a real-time investment intelligence terminal that combines 
 └──────────────┬──────────────────────────────────────────────────────┘
                │
 ┌──────────────▼──────────────────────────────────────────────────────┐
-│  NLQ Agent (LangGraph 8-node)                                        │
+│  NLQ Agent (LangGraph 7-node)                                        │
 │  Guardrail → Enrich (web search) → Route → Text2SQL → Narrate        │
 │  MCP Servers: market_data · signals · portfolio · search             │
 └──────────────┬──────────────────────────────────────────────────────┘
