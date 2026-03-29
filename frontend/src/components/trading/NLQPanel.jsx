@@ -389,7 +389,9 @@ function DynamicBarChart({ spec }) {
 // Render a compact table for chart_spec.type === 'table'
 function DynamicTable({ spec }) {
   const { data } = spec
-  if (!data || data.length === 0) return <p className="text-xs text-muted-foreground">No data returned.</p>
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return <p className="text-xs text-muted-foreground text-center py-4">No data.</p>
+  }
   const cols = Object.keys(data[0]).slice(0, 5)
   return (
     <div className="overflow-x-auto">
@@ -506,7 +508,8 @@ function DynamicDonut({ spec }) {
 // Render a line chart for chart_spec.type === 'line'
 function DynamicLine({ spec }) {
   const { x, y, data } = spec
-  const yKey = y[0]
+  const yKey = Array.isArray(y) && y.length > 0 ? y[0] : null
+  if (!yKey || !Array.isArray(data) || data.length === 0) return <p className="text-xs text-muted-foreground text-center py-4">No chart data.</p>
   const values = data.map((r) => Number(r[yKey] ?? 0))
   const maxVal = Math.max(...values, 1)
   const minVal = Math.min(...values, 0)
@@ -906,6 +909,15 @@ export default function NLQPanel({ className = '' }) {
   useEffect(() => {
     if (!nlqOpen) setExpanded(false)
   }, [nlqOpen])
+
+  useEffect(() => {
+    return () => {
+      if (activeSourceRef.current) {
+        activeSourceRef.current.close()
+        activeSourceRef.current = null
+      }
+    }
+  }, [])
 
   const sendMessage = useCallback(
     (text) => {
