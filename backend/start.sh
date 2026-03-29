@@ -53,7 +53,7 @@ else
 fi
 
 # ── Kill any stale process on port 8000 ──────────────────────────────────────
-STALE_PID=$(lsof -ti:8000 2>/dev/null)
+STALE_PID=$(lsof -ti:8000 2>/dev/null || true)
 if [ -n "$STALE_PID" ]; then
     echo -e "${YELLOW}  Port 8000 in use (PID $STALE_PID) — killing stale process...${NC}"
     kill "$STALE_PID" 2>/dev/null
