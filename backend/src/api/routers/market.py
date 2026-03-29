@@ -35,7 +35,8 @@ async def get_patterns(ticker: str):
     from src.agents.pattern_agent import PatternAgent
 
     pa = PatternAgent()
-    return pa.detect_all(ticker, period="6mo")
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, lambda: pa.detect_all(ticker, period="6mo"))
 
 
 @router.get("/backtest/{ticker}/{pattern}")
@@ -44,7 +45,8 @@ async def get_backtest(ticker: str, pattern: str, years: int = Query(3, le=10)):
     from src.agents.backtest_agent import BacktestAgent
 
     ba = BacktestAgent()
-    return ba.backtest_signal(ticker, pattern, lookback_years=years)
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, lambda: ba.backtest_signal(ticker, pattern, lookback_years=years))
 
 
 @router.get("/flows")
@@ -179,7 +181,8 @@ async def get_ohlcv(ticker: str, period: str = Query("6mo"), indicators: bool = 
     from src.connectors.nse_connector import get_nse_connector
 
     nse = get_nse_connector()
-    df = nse.get_historical_data(ticker, period=period)
+    loop = asyncio.get_event_loop()
+    df = await loop.run_in_executor(None, lambda: nse.get_historical_data(ticker, period=period))
     if df.empty:
         return []
 
