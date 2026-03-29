@@ -25,25 +25,23 @@ async def get_insights(
     import duckdb
     from src.data.market_schema import get_db_path
 
-    con = duckdb.connect(get_db_path(), read_only=True)
     try:
-        sql = "SELECT * FROM insights WHERE dismissed = false"
-        params = []
-        if type:
-            sql += " AND type = ?"
-            params.append(type)
-        if severity:
-            sql += " AND severity = ?"
-            params.append(severity)
-        if unread_only:
-            sql += " AND read = false"
-        sql += " ORDER BY created_at DESC LIMIT ?"
-        params.append(limit)
-        return con.execute(sql, params).fetchdf().to_dict(orient="records")
+        with duckdb.connect(get_db_path(), read_only=True) as con:
+            sql = "SELECT * FROM insights WHERE dismissed = false"
+            params = []
+            if type:
+                sql += " AND type = ?"
+                params.append(type)
+            if severity:
+                sql += " AND severity = ?"
+                params.append(severity)
+            if unread_only:
+                sql += " AND read = false"
+            sql += " ORDER BY created_at DESC LIMIT ?"
+            params.append(limit)
+            return con.execute(sql, params).fetchdf().to_dict(orient="records")
     except Exception:
         return []
-    finally:
-        con.close()
 
 
 @router.get("/insights/count")
@@ -52,16 +50,14 @@ async def get_insights_count():
     import duckdb
     from src.data.market_schema import get_db_path
 
-    con = duckdb.connect(get_db_path(), read_only=True)
     try:
-        count = con.execute(
-            "SELECT count(*) FROM insights WHERE read = false AND dismissed = false"
-        ).fetchone()[0]
+        with duckdb.connect(get_db_path(), read_only=True) as con:
+            count = con.execute(
+                "SELECT count(*) FROM insights WHERE read = false AND dismissed = false"
+            ).fetchone()[0]
         return {"unread": count}
     except Exception:
         return {"unread": 0}
-    finally:
-        con.close()
 
 
 @router.post("/insights/mark-read")
@@ -70,15 +66,12 @@ async def mark_read(body: MarkReadRequest):
     import duckdb
     from src.data.market_schema import get_db_path
 
-    con = duckdb.connect(get_db_path())
-    try:
+    with duckdb.connect(get_db_path()) as con:
         if body.id:
             con.execute("UPDATE insights SET read = true WHERE id = ?", [body.id])
         else:
             con.execute("UPDATE insights SET read = true")
-        return {"status": "ok"}
-    finally:
-        con.close()
+    return {"status": "ok"}
 
 
 @router.post("/insights/dismiss/{insight_id}")
@@ -87,12 +80,9 @@ async def dismiss_insight(insight_id: str):
     import duckdb
     from src.data.market_schema import get_db_path
 
-    con = duckdb.connect(get_db_path())
-    try:
+    with duckdb.connect(get_db_path()) as con:
         con.execute("UPDATE insights SET dismissed = true WHERE id = ?", [insight_id])
-        return {"status": "ok"}
-    finally:
-        con.close()
+    return {"status": "ok"}
 
 
 @router.post("/insights/generate")

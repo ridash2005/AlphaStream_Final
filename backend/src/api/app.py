@@ -76,8 +76,8 @@ class ConnectionManager:
             for connection in ticker_conns:
                 try:
                     await connection.send_json(message)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"WebSocket broadcast error (client disconnected?): {e}")
 
 class MarketState:
     """Tracks global market sentiment for heatmap."""
@@ -642,8 +642,7 @@ async def generate_recommendation_logic(ticker: str, update_callback: Callable[[
         geo_risk = geo.get_india_risk()
         global_ctx["india_geo_risk"] = geo_risk.get("score", 20)
         global_ctx["india_geo_level"] = geo_risk.get("level", "MODERATE")
-        if geo_risk.get("hotspot_alerts"):
-            global_ctx["geo_hotspots"] = [h["name"] for h in geo_risk["hotspot_alerts"]]
+        global_ctx["geo_hotspots"] = [h["name"] for h in geo_risk.get("hotspot_alerts", [])]
     except Exception as e:
         logger.debug(f"Geo risk fetch failed: {e}")
 

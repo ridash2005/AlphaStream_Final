@@ -138,7 +138,8 @@ async def get_news(ticker: str = Query(""), limit: int = Query(20, le=50)):
             ).fetchdf()
         rows["published_at"] = rows["published_at"].astype(str)
         return rows.to_dict(orient="records")
-    except Exception:
+    except Exception as e:
+        logger.warning(f"News query failed: {e}")
         return []
     finally:
         con.close()
@@ -166,7 +167,8 @@ async def get_popular_tickers():
         con.close()
         tickers = [r[0] for r in rows]
         return {"tickers": tickers if tickers else ["RELIANCE", "TCS", "INFY", "HDFCBANK", "SBIN"]}
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Popular tickers query failed: {e}")
         return {"tickers": ["RELIANCE", "TCS", "INFY", "HDFCBANK", "SBIN"]}
 
 
