@@ -209,42 +209,42 @@ export function ChartView() {
 
       {/* Chart — full width */}
       <Card className="glass-card p-4 w-full">
-        {loading && (
-          <div className="flex items-center justify-center h-[480px]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        )}
-        {!loading && error && (
-          <div className="flex flex-col items-center justify-center h-[480px] text-slate-400 gap-2">
-            <span className="text-sm">{error}</span>
-            <button
-              onClick={() => loadChart()}
-              className="text-xs text-cyan-400 hover:text-cyan-300 underline"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-        {!loading && !error && (
-          <>
-            {/* chartContainerRef stays mounted so lightweight-charts can attach;
-                the "no data" overlay sits on top when ohlcv is empty */}
-            <div className="relative">
-              <div ref={chartContainerRef} className="w-full" style={{ height: 480 }} />
-              {/* Overlay shown when ohlcv was empty */}
-              {noData && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground gap-2">
-                  <BarChart2 className="h-10 w-10 opacity-20" />
-                  <p className="text-sm">No OHLCV data for <span className="font-mono font-semibold">{ticker}</span></p>
-                  <p className="text-xs opacity-60">The symbol may be delisted or the backend data feed is unavailable.</p>
-                  <button onClick={() => loadChart()} className="text-xs text-cyan-400 hover:text-cyan-300 underline mt-1">Retry</button>
-                </div>
-              )}
+        {/* chartContainerRef MUST stay mounted at all times so lightweight-charts
+            can attach to the DOM node. Loading/error/noData are rendered as
+            absolute overlays on top rather than replacing the container. */}
+        <div className="relative" style={{ height: 480 }}>
+          <div ref={chartContainerRef} className="w-full h-full" />
+
+          {/* Loading overlay */}
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-            {showIndicators && (
-              <div ref={rsiContainerRef} className="w-full border-t border-border/20" style={{ height: 110 }} />
-            )}
-          </>
+          )}
+
+          {/* Error overlay */}
+          {!loading && error && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2 z-10">
+              <span className="text-sm">{error}</span>
+              <button onClick={() => loadChart()} className="text-xs text-cyan-400 hover:text-cyan-300 underline">
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* No-data overlay */}
+          {!loading && !error && noData && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground gap-2 z-10">
+              <BarChart2 className="h-10 w-10 opacity-20" />
+              <p className="text-sm">No OHLCV data for <span className="font-mono font-semibold">{ticker}</span></p>
+              <p className="text-xs opacity-60">The symbol may be delisted or the backend data feed is unavailable.</p>
+              <button onClick={() => loadChart()} className="text-xs text-cyan-400 hover:text-cyan-300 underline mt-1">Retry</button>
+            </div>
+          )}
+        </div>
+
+        {showIndicators && (
+          <div ref={rsiContainerRef} className="w-full border-t border-border/20" style={{ height: 110 }} />
         )}
       </Card>
 
