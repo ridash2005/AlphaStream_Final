@@ -126,7 +126,18 @@ async def lifespan(app: FastAPI):
     
     logger.info("Initializing AlphaStream Live AI...")
 
-    # Initialize core agents
+    # Pre-warm heavy imports (PydanticOutputParser, jsonpatch) in background
+    # so they don't block the first API request
+    import threading
+    def _prewarm_imports():
+        try:
+            from langchain_core.output_parsers import PydanticOutputParser  # noqa: F401
+            logger.info("Pre-warmed langchain imports")
+        except Exception:
+            pass
+    threading.Thread(target=_prewarm_imports, daemon=True).start()
+
+    # Initialize core agents (LLM is lazy - loaded on first actual request)
     rag_pipeline = RAGPipeline()
     sentiment_agent = SentimentAgent()
     technical_agent = TechnicalAgent()
