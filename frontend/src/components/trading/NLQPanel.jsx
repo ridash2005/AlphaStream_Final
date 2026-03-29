@@ -611,51 +611,47 @@ function DynamicScatter({ spec }) {
 
 // Static fallback - shown before any query is made
 function StaticFallback() {
+  const examples = [
+    { icon: '📊', text: 'Top 10 Nifty 50 stocks by alpha score' },
+    { icon: '💹', text: 'Show FII/DII net flow for last 30 days' },
+    { icon: '🔍', text: 'RELIANCE RSI, trend and support levels' },
+    { icon: '📈', text: 'Bullish breakout signals in Banking sector' },
+    { icon: '🏦', text: 'Insider buying activity last 90 days' },
+    { icon: '⚠️',  text: 'Stocks with unusual volume anomalies today' },
+  ]
   return (
-    <div className="flex-1 flex flex-col gap-3 min-h-0">
-      <div className="bg-card border border-border rounded-xl p-4 flex-1">
-        <p className="text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-wider">PCR by Workspace</p>
-        {[
-          { name: 'WS-DIGITAL-NEWS',  pcr: 92, color: '#4caf50' },
-          { name: 'WS-ENTERTAINMENT', pcr: 82, color: '#4caf50' },
-          { name: 'WS-TECH-ANALYSIS', pcr: 68, color: '#ff9800' },
-          { name: 'WS-LIFESTYLE',     pcr: 52, color: '#ff9800' },
-          { name: 'WS-SPORTS-LIVE',   pcr: 38, color: '#e63946' },
-        ].map((ws) => (
-          <div key={ws.name} className="mb-3 last:mb-0">
-            <div className="flex justify-between mb-1.5">
-              <span className="text-[11px] text-[#a0a0a0] font-medium">{ws.name.replace('WS-', '')}</span>
-              <span className="text-[11px] font-bold tabular-nums" style={{ color: ws.color }}>{ws.pcr}%</span>
+    <div className="flex-1 flex flex-col gap-4 min-h-0 justify-center">
+      <div className="bg-card border border-border rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-base">🇮🇳</span>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ask about Indian Markets</p>
+        </div>
+        <div className="grid grid-cols-1 gap-2">
+          {examples.map((ex) => (
+            <div key={ex.text} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-background border border-[#1f1f1f] hover:border-primary/30 transition-colors cursor-default">
+              <span className="text-sm leading-none mt-0.5 shrink-0">{ex.icon}</span>
+              <span className="text-[11px] text-[#a0a0a0] leading-snug">{ex.text}</span>
             </div>
-            <div className="h-2 bg-[#0a0a0a] rounded-full overflow-hidden">
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: ws.color, opacity: 0.85 }}
-                initial={{ width: 0 }}
-                animate={{ width: `${ws.pcr}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-              />
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
       <div className="bg-card border border-border rounded-xl p-4">
-        <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Pipeline Summary</p>
+        <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Capabilities</p>
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
           {[
-            { label: 'Uploaded',  value: '4,179', color: '#64b5f6' },
-            { label: 'Processed', value: '4,179', color: '#81c784' },
-            { label: 'Published', value: '3,188', color: '#ce93d8' },
+            { label: 'NSE/BSE',   desc: 'Live & historical data',   color: '#64b5f6' },
+            { label: 'AI Signals', desc: 'Alpha scores & patterns',  color: '#81c784' },
+            { label: 'Flows',     desc: 'FII/DII & insider trades',  color: '#ce93d8' },
           ].map((s) => (
             <div key={s.label} className="text-center p-3 rounded-xl bg-background border border-[#1f1f1f]">
-              <p className="text-base font-black tabular-nums" style={{ color: s.color }}>{s.value}</p>
-              <p className="text-[9px] text-muted-foreground uppercase tracking-wider mt-0.5">{s.label}</p>
+              <p className="text-[11px] font-bold tabular-nums" style={{ color: s.color }}>{s.label}</p>
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider mt-1 leading-tight">{s.desc}</p>
             </div>
           ))}
         </div>
         <div className="mt-3 flex items-center gap-1.5">
           <TrendingUp size={11} className="text-[#4caf50]" />
-          <p className="text-[10px] text-[#a0a0a0]">Overall PCR: <span className="text-white font-bold">69.8%</span></p>
+          <p className="text-[10px] text-[#a0a0a0]">Type a question below to get AI-powered market analysis</p>
         </div>
       </div>
     </div>
