@@ -1,70 +1,141 @@
-# AlphaStream India - Architecture Document
+# AlphaStream India — Submission Architecture
 
-## System Overview
+## Data-Flow Diagram
 
-AlphaStream India is an AI-powered investment intelligence platform for Indian retail investors. It ingests data from 6+ Indian market sources in real-time, processes it through 11 specialized AI agents, and delivers actionable signals via a Bloomberg-style React dashboard with natural language query capabilities.
+```mermaid
+graph TD
+    subgraph "Data Sources"
+        DS1[NewsAPI / Finnhub / RSS]
+        DS2[yfinance]
+        DS3[NSE / BSE / NSDL APIs]
+    end
+
+    subgraph "Ingestion & Streaming"
+        PC[Pathway Connector\nConnectorSubject]
+        DK[DuckDB\nmarket_analytics.duckdb]
+        VDB[ChromaDB\nVector Index]
+    end
+
+    subgraph "Agent Layer"
+        SA[SentimentAgent]
+        TA[TechnicalAgent]
+        RA[RiskAgent]
+        IA[InsiderAgent]
+        AA[AnomalyAgent\nonline River ML]
+        SGA[SearchAgent\nDuckDuckGo]
+        DA[DecisionAgent\norchestrator]
+    end
+
+    subgraph "NLQ Flow"
+        NR[NLQ Router]
+        T2S[Text2SQL\nLLM → DuckDB]
+        PRE[Pre-defined SQL\nNifty200 / Bulk Deals]
+        NAR[Narrate\nLLM summary + citations]
+    end
+
+    subgraph "API & Frontend"
+        API[FastAPI :8000\nREST + WebSocket + SSE]
+        RAG[Adaptive RAG Server :8001\nPathway]
+        FE[React Frontend\nstatic build]
+    end
+
+    DS1 --> PC
+    PC --> VDB
+    PC --> DK
+    DS2 --> DK
+    DS3 --> IA
+
+    VDB --> SA
+    DK --> TA
+    DK --> RA
+    DK --> AA
+    SA & TA & RA & IA & AA --> DA
+
+    FE -- NLQ query --> API
+    API --> NR
+    NR --> T2S --> DK
+    NR --> PRE --> DK
+    DK --> NAR
+    SGA -.->|context enrichment| NAR
+    NAR -- SSE stream --> FE
+
+    DA --> API
+    RAG --> API
+    API --> FE
+```
+
+---
 
 ## Agent Roles
 
-| Agent | Role | Input | Output |
-|---|---|---|---|
-| **SentimentAgent** | Analyze market sentiment from news | Retrieved articles | sentiment_score (-1 to +1), label |
-| **TechnicalAgent** | Calculate RSI, SMA, trend signals | yfinance .NS data | signal (BUY/HOLD/SELL), indicators |
-| **RiskAgent** | Assess volatility, position sizing | Historical prices | risk_level, stop_loss, position_size |
-| **DecisionAgent** | Synthesize final recommendation | All agent outputs | recommendation, confidence, reasoning |
-| **PatternAgent** | Detect chart patterns | 6mo OHLCV data | patterns with confidence + explanation |
-| **BacktestAgent** | Validate signals historically | 5yr OHLCV data | win_rate, avg_return per horizon |
-| **FilingAgent** | Classify BSE/NSE filings | Announcement text | materiality, sentiment, key_facts |
-| **FlowAgent** | Analyze FII/DII flow patterns | NSDL/NSE flow data | streak detection, divergence |
-| **InsiderAgent** | Analyze SAST/PIT trades | NSE insider data | insider_score, key_transactions |
-| **ChartAgent** | Generate price charts | yfinance data | PNG chart with annotations |
-| **ReportAgent** | Generate PDF reports | All agent outputs | Comprehensive PDF report |
+| Agent | Role | Inputs | Outputs |
+|-------|------|--------|---------|
+| SentimentAgent | Scores news sentiment -1 to +1 | Retrieved article chunks | sentiment_score, label, key_factors |
+| TechnicalAgent | Computes RSI, MACD, SMA signals | yfinance OHLCV | technical_score, key_signals |
+| RiskAgent | Volatility & position-sizing | Technical data, price history | risk_score, stop_loss |
+| PatternAgent | Detects 7 chart patterns | 6mo OHLCV data | patterns with confidence + explanation |
+| BacktestAgent | Validates signals historically (5yr) | Pattern + historical OHLCV | win_rate, avg_return, sharpe |
+| FilingAgent | Classifies BSE/NSE filings | Announcement text | materiality, sentiment, key_facts |
+| FlowAgent | FII/DII institutional streak detection | NSDL flow data | flow_signal, streak_days, divergence |
+| InsiderAgent | Parses NSE SAST/PIT insider trades | NSE EDGAR data | insider_score, transactions |
+| AnomalyAgent | Online anomaly detection (River) | Price ticks, volume, sentiment | anomaly_flags, drift_alerts |
+| SearchAgent | Web context enrichment | NLQ query | title, url, snippet per result |
+| ChartAgent | Generates annotated price charts | yfinance OHLCV | PNG chart path |
+| ReportAgent | Generates comprehensive PDF reports | All agent outputs | PDF report path |
+| DecisionAgent | Final BUY/HOLD/SELL orchestrator | All agent outputs | recommendation, confidence, reasoning |
 
-## Communication Pattern
+---
+
+## Agent Communication
+
+Agents are stateless Python classes invoked sequentially inside `generate_recommendation_logic()`. No message broker is used — the orchestrator calls each agent in order and passes results forward:
 
 ```
-User Query → NLQ Router (LangGraph)
-                ├→ SIGNAL/INSIDER/FLOW → Pre-defined SQL → DuckDB → Narrate
-                └→ AD_HOC → Text2SQL Pipeline:
-                     Schema Link → Query Plan → SQL Generate → Guardrails → Execute → Narrate
-
-User Ticker → WebSocket Stream
-                → Sentiment → Technical → Risk → Decision → Stream Updates
+SentimentAgent ─┐
+TechnicalAgent ─┼─► DecisionAgent ─► RecommendationResponse
+RiskAgent      ─┤
+InsiderAgent   ─┤
+AnomalyAgent   ─┘
 ```
 
-Agents communicate via **shared state** (LangGraph AgentState). The NLQ agent uses **Command routing** to direct queries to the appropriate processing path. The ticker-based pipeline uses **sequential orchestration** with WebSocket progress callbacks.
+The NLQ path is separate: `NLQ Router → Text2SQL or Pre-defined SQL → DuckDB → Narrate → SSE`. `SearchAgent` is called as optional enrichment when the local DuckDB result set has fewer than 5 rows.
+
+Real-time updates flow over WebSocket (`/ws/stream/{ticker}`). Pathway runs in a background daemon thread and fires `on_new_article` callbacks that trigger recommendation refreshes via `asyncio.run_coroutine_threadsafe`.
+
+---
 
 ## Tool Integrations
 
-| Tool | Purpose | Transport |
-|---|---|---|
-| **market_data_server** (MCP) | Stock quotes, signals, sector heatmap | stdio |
-| **signal_server** (MCP) | Threshold alerts, FII streak detection | stdio |
-| **portfolio_server** (MCP) | Holdings P&L, portfolio signals | stdio |
-| **DuckDB** | Analytics queries (Text2SQL target) | Direct connection |
-| **Pathway** | Real-time news streaming + Adaptive RAG | Background thread |
-| **yfinance** | Historical OHLCV data | HTTP |
-| **NSE/BSE API** | Insider trades, filings, FII/DII | HTTP + cookies |
-| **Groww API** | Stock search, fundamentals | JWT + TOTP |
+| Tool | Purpose |
+|------|---------|
+| Pathway `pw.io.python.ConnectorSubject` | Multi-source streaming news ingestion |
+| Pathway `pw.io.subscribe` | Article-arrival callbacks to RAG pipeline |
+| Adaptive RAG Server (port 8001) | Pathway-powered vector search with incremental indexing |
+| DuckDB | Structured market data store (prices, signals, filings, FII/DII) |
+| ChromaDB | Dense vector index for semantic article retrieval |
+| FastMCP servers | 4 MCP tool servers: market_data, signals, portfolio, search |
+| yfinance | OHLCV price data (.NS suffix for NSE tickers) |
+| NSE / BSE APIs | Insider trades, corporate filings, FII/DII flows |
+| Groww API | Live fundamentals (PE, PB, ROE) via JWT + TOTP |
+| River | Incremental online ML (HalfSpaceTrees) for AnomalyAgent |
 
-## Error Handling
+---
 
-| Failure | Recovery |
-|---|---|
-| **Pathway server down** | UnifiedRAGService falls back to Manual RAG pipeline |
-| **NSE API blocked** | yfinance .NS suffix as fallback for price data |
-| **LLM timeout** | Heuristic fallback in DecisionAgent, PatternAgent returns empty |
-| **Text2SQL generates bad SQL** | Correction loop: classify error → LLM fix → retry (max 2) |
-| **DuckDB query timeout** | Hard 30s timeout, 5000 row cap, error returned to user |
-| **MCP server crash** | Agent degrades gracefully - direct DuckDB queries |
-| **Guardrail blocks DDL/DML** | Regex hard-stop, query rejected before execution |
+## Error-Handling Logic
 
-## Data Flow
+| Failure | Handling |
+|---------|---------|
+| Pathway unavailable | Skipped at startup; news ingestion falls back to polling connector |
+| Adaptive RAG server (port 8001) not ready | `UnifiedRAGService` falls back to manual ChromaDB RAG |
+| LLM timeout in any agent | Agent returns safe default (HOLD / score 0.0); exception logged, not re-raised |
+| Text2SQL generates bad SQL | Correction loop: classify error → LLM fix → retry (max 2) |
+| DuckDB query timeout | Hard 30s limit, 5000-row cap; error returned to user as plain text |
+| NSE API blocked | yfinance `.NS` suffix as fallback for price data |
+| MCP server crash | Agent degrades gracefully — direct DuckDB queries used instead |
+| WebSocket disconnect | `ConnectionManager.disconnect()` removes client; server continues uninterrupted |
 
-1. **Ingestion**: Pathway streams news from ET Markets, MoneyControl, LiveMint RSS every 30s
-2. **Storage**: Articles → `data/articles/` (filesystem) for Pathway Adaptive RAG
-3. **Analytics DB**: DuckDB with Nifty 50 prices (5yr), signals, insider trades, FII/DII flows
-4. **Query**: NLQ Text2SQL generates SELECT queries against DuckDB views
-5. **Signals**: PatternAgent + BacktestAgent detect patterns and validate historically
-6. **Fusion**: Alpha Score combines all signals with configurable weights
-7. **Delivery**: SSE streaming for NLQ, WebSocket for ticker updates, REST for snapshots
+---
+
+## Deployment Architecture
+
+FastAPI serves the REST, WebSocket, and SSE API on port 8000 (`uvicorn src.api.app:app`). Pathway runs as an optional background daemon thread inside the same process — if the `pathway` package is absent the server still starts. The Adaptive RAG server is launched as an optional subprocess on port 8001 and is auto-terminated on shutdown. The React frontend is built to static files (`npm run build`) and served separately or behind a reverse proxy.

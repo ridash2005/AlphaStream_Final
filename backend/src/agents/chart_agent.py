@@ -126,7 +126,8 @@ class ChartAgent:
                             color = '#00ff88' if 'buy' in str(event.get('transaction_type', '')).lower() else '#ff4444'
                             ax.scatter([event_date], [price_at_event], color=color, s=100, 
                                       marker='^' if color == '#00ff88' else 'v', zorder=5)
-                    except:
+                    except Exception as e:
+                        logger.debug(f"insider event marker skipped: {e}")
                         continue
             
             # Styling

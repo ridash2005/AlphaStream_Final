@@ -96,35 +96,68 @@ AlphaStream India is a real-time investment intelligence terminal that combines 
 ## Quick Start
 
 ### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- GCP service account (for Vertex AI)
 
-### Setup
+- **Python 3.11+** — backend runtime
+- **Node.js 18+** — frontend build tooling
+- **Google Cloud account** with Vertex AI enabled (for Gemini LLM)
+- **API keys needed:** `NEWS_API_KEY` from [newsapi.org](https://newsapi.org/) (required), `GROWW_API_TOKEN` (optional)
+- **Hardware:** 4 GB+ RAM recommended
 
+### Step-by-Step Setup
+
+**Step 1: Clone & configure**
 ```bash
-# Clone
 git clone https://github.com/wildcraft958/AlphaStream_India.git
 cd AlphaStream_India
-
-# Backend
-cd backend
-cp .env.example .env  # Add your API keys
-uv sync
-.venv/bin/python -m src.data.market_schema  # Initialize DuckDB with Nifty 50 data
-
-# Frontend
-cd ../frontend
-npm install
-
-# Run (backend cold start ~75s, then ready)
-cd ../backend
-.venv/bin/python -m uvicorn src.api.app:app --host 0.0.0.0 --port 8000
-# In another terminal:
-cd frontend && npm run dev
 ```
 
+**Step 2: Backend setup**
+```bash
+cd backend
+uv sync
+cp .env.example .env
+# Edit .env — set GOOGLE_APPLICATION_CREDENTIALS, GCP_PROJECT_ID, and NEWS_API_KEY at minimum
+```
+
+**Step 3: Initialize database & start backend**
+```bash
+# Initialize DuckDB with Nifty 50 data
+.venv/bin/python -m src.data.market_schema
+
+# Start backend (cold start ~75s, then ready)
+.venv/bin/python -m uvicorn src.api.app:app --host 0.0.0.0 --port 8000
+```
+
+**Step 4: Frontend setup**
+```bash
+cd ../frontend
+npm install
+```
+
+**Step 5: Start frontend**
+```bash
+npm run dev
+```
+
+**Step 6: Open the dashboard**
+
+Navigate to **http://localhost:5173**
+
+### Minimal Mode (No API Keys)
+
+If you don't have API keys yet, AlphaStream still runs using cached/mock data. Set in `backend/.env`:
+
+```env
+ENABLE_PATHWAY=false
+NEWS_API_KEY=
+GCP_PROJECT_ID=
+```
+
+The UI loads with cached article data and pre-computed recommendations — sufficient to evaluate the dashboard, agent outputs, and PDF report generation.
+
 ### Environment Variables
+
+See `backend/.env.example` for the full reference. Key variables:
 
 ```env
 # Required - GCP / Vertex AI (all LLM calls go through Gemini)
@@ -139,8 +172,18 @@ GROWW_API_TOKEN=...
 GROWW_TOTP_SECRET=...
 
 # Optional - enable Pathway streaming (adds 45s to startup)
-ENABLE_PATHWAY=true
+ENABLE_PATHWAY=false
 ```
+
+### Troubleshooting
+
+**`ImportError: No module named 'pathway'`** — Set `ENABLE_PATHWAY=false` in `backend/.env`. The system runs without Pathway using a synchronous fallback.
+
+**Port 8000 already in use** — Run `uvicorn src.api.app:app --port 8001` then set `VITE_API_URL=http://localhost:8001` in `frontend/.env`.
+
+**Frontend loads blank** — Check `VITE_API_URL` in `frontend/.env` points to the running backend (default: `http://localhost:8000`).
+
+**DuckDB error on startup** — Run `.venv/bin/python -m src.data.market_schema` from the `backend/` directory to initialise the database.
 
 ---
 
