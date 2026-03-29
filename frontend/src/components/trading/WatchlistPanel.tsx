@@ -45,7 +45,7 @@ export function WatchlistPanel() {
             <button onClick={() => setSortMode('alpha')}
               className={cn("text-[10px] px-2 py-0.5 rounded transition-colors",
                 sortMode === 'alpha' ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground")}>
-              A–Z
+              A-Z
             </button>
             <button onClick={() => setSortMode('score')}
               className={cn("text-[10px] px-2 py-0.5 rounded transition-colors",

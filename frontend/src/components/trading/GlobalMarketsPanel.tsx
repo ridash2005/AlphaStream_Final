@@ -41,7 +41,7 @@ const INDIA_IMPACT: Record<string, string> = {
   'XLE': 'Impacts Indian oil import costs',
   'XLK': 'IT sector bellwether for TCS/Infy',
   'XLF': 'Global banking sentiment',
-  'SMH': 'Chip supply chain — impacts Indian tech',
+  'SMH': 'Chip supply chain - impacts Indian tech',
 };
 
 // Crypto India rupee equivalent note
@@ -178,7 +178,7 @@ export function GlobalMarketsPanel() {
                 <Tooltip
                   formatter={(v: number, _name: string, props: { payload?: { symbol?: string } }) => {
                     const note = INDIA_IMPACT[props.payload?.symbol ?? ''] || '';
-                    return [`${v.toFixed(2)}%${note ? ` — ${note}` : ''}`, 'Change'];
+                    return [`${v.toFixed(2)}%${note ? ` - ${note}` : ''}`, 'Change'];
                   }}
                   contentStyle={{ background: '#0a0a1a', border: '1px solid #333', fontSize: 11 }}
                 />

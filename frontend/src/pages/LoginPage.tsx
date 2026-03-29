@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Zap, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useAppStore } from '@/store/appStore';
 
 const TEST_USERS = JSON.parse(
@@ -39,7 +39,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050510] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#050510] flex items-center justify-center px-4 relative">
+      <button
+        onClick={() => navigate('/')}
+        className="absolute top-4 left-4 flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Home
+      </button>
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">

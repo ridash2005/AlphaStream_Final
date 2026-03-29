@@ -30,18 +30,21 @@ import { apiService } from '@/services/api'
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const QUICK_PROMPTS = [
-  'What signals fired today?',
-  'Show insider buying in IT sector',
-  'What are FIIs doing this week?',
-  'Top stocks by alpha score',
-]
-
 const CONTEXT_PROMPTS = {
-  dashboard:       ['Show bullish signals', 'Sector heatmap', 'FII/DII divergence'],
-  radar:           ['Compare top opportunities', 'Which sectors are strongest?', 'Backtest top signal'],
-  charts:          ['What patterns do you see?', 'RSI divergence stocks', 'Volume breakout today'],
-  default:         ['What signals fired today?', 'Insider buying activity', 'FII flow analysis'],
+  overview: ['RELIANCE recommendation', 'RSI divergence stocks', 'My anomaly alerts'],
+  signals: ['Top alpha stocks today', 'Which sectors are strongest?', 'Insider buying activity'],
+  global: ['Fear and Greed interpretation', 'FII/DII flow analysis', 'INR impact today'],
+  company: ['Material filings this week', 'What is critical news?', 'Sector news summary'],
+  portfolio: ['How is my portfolio doing?', 'Worst performer today', 'Rebalancing suggestions'],
+  default: ['What signals fired today?', 'Insider buying activity', 'FII flow analysis'],
+}
+
+const TAB_LABELS = {
+  overview: 'Overview',
+  signals: 'Signals',
+  global: 'Global Intel',
+  company: 'Company',
+  portfolio: 'Portfolio',
 }
 
 const THOUGHT_STEPS = ['Router', 'Interpret', 'Execute', 'Narrate']
@@ -51,13 +54,13 @@ const THOUGHT_STEPS = ['Router', 'Interpret', 'Execute', 'Narrate']
 // ---------------------------------------------------------------------------
 function TypingIndicator() {
   return (
-    <div className="flex items-center gap-1 px-4 py-3 bg-[#1e1e1e] rounded-2xl rounded-bl-sm w-fit">
+    <div className="flex items-center gap-1 px-4 py-3 bg-secondary rounded-2xl rounded-bl-sm w-fit">
       {[0, 1, 2].map((i) => (
         <motion.span
           key={i}
           animate={{ y: [0, -4, 0] }}
           transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
-          className="block w-1.5 h-1.5 rounded-full bg-[#888]"
+          className="block w-1.5 h-1.5 rounded-full bg-muted-foreground"
         />
       ))}
     </div>
@@ -70,10 +73,10 @@ function TypingIndicator() {
 function ThoughtProcess({ steps }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="mt-2 border border-[#2a2a2a] rounded-lg overflow-hidden">
+    <div className="mt-2 border border-border rounded-lg overflow-hidden">
       <button
         onClick={() => setOpen((p) => !p)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-medium text-[#555] hover:text-[#a0a0a0] hover:bg-[#1a1a1a] transition-colors text-left"
+        className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-medium text-muted-foreground hover:text-[#a0a0a0] hover:bg-card transition-colors text-left"
       >
         {open ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
         <Zap size={11} />
@@ -88,10 +91,10 @@ function ThoughtProcess({ steps }) {
             transition={{ duration: 0.18 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-3 font-mono text-[10px] text-[#555] space-y-1 border-t border-[#252525] pt-2">
+            <div className="px-3 pb-3 font-mono text-[10px] text-muted-foreground space-y-1 border-t border-border pt-2">
               {steps.map((step, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <span className="text-[#e63946]">-&gt;</span>
+                  <span className="text-primary">-&gt;</span>
                   <span>
                     <span className="text-[#a0a0a0]">{THOUGHT_STEPS[i] ?? `Step ${i + 1}`}:</span>{' '}
                     {step}
@@ -119,9 +122,9 @@ function LiveThoughtDisplay({ steps }) {
           transition={{ duration: 1, repeat: Infinity }}
           className="block w-1.5 h-1.5 rounded-full bg-[#4caf50]"
         />
-        <span className="text-[10px] font-medium text-[#4caf50]">Running agent…</span>
+        <span className="text-[10px] font-medium text-[#4caf50]">Running agent...</span>
       </div>
-      <div className="px-3 py-2 font-mono text-[10px] text-[#555] space-y-1 max-h-28 overflow-y-auto">
+      <div className="px-3 py-2 font-mono text-[10px] text-muted-foreground space-y-1 max-h-28 overflow-y-auto">
         {steps.map((step, i) => (
           <motion.div
             key={i}
@@ -130,7 +133,7 @@ function LiveThoughtDisplay({ steps }) {
             transition={{ duration: 0.15 }}
             className="flex items-start gap-2"
           >
-            <span className="text-[#4caf50] flex-shrink-0">▶</span>
+            <span className="text-[#4caf50] flex-shrink-0">&#9658;</span>
             <span>
               <span className="text-[#a0a0a0]">[{step.node}]</span>{' '}
               <span className="text-[#666]">{step.action}</span>
@@ -148,7 +151,7 @@ function LiveThoughtDisplay({ steps }) {
 // ---------------------------------------------------------------------------
 function FilterChip({ label }) {
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#e63946]/15 text-[#e63946] border border-[#e63946]/25">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/15 text-primary border border-primary/25">
       {label}
     </span>
   )
@@ -171,7 +174,8 @@ function extractVisibleText() {
 // ---------------------------------------------------------------------------
 function ContextBanner({ pageContext, chartContext, onClearChart }) {
   if (!pageContext && !chartContext) return null
-  const page = pageContext?.page || 'dashboard'
+  const page = pageContext?.page || 'overview'
+  const displayName = TAB_LABELS[page] || pageContext?.page || 'Dashboard'
   const filterCount = Object.values(pageContext?.filters || {}).filter(
     (v) => v && (Array.isArray(v) ? v.length > 0 : true)
   ).length
@@ -179,13 +183,13 @@ function ContextBanner({ pageContext, chartContext, onClearChart }) {
     <div className="px-4 py-2 bg-[#0d130d] border-b border-[#1a2a1a] flex items-center gap-2 text-[11px]">
       <span className="text-[#4caf50]">&#x1f4cd;</span>
       <span className="text-[#a0a0a0]">
-        Viewing: <span className="text-white font-medium capitalize">{page.replace(/_/g, ' ')}</span>
+        Viewing: <span className="text-white font-medium">{displayName}</span>
         {filterCount > 0 && <span className="text-[#666]"> &middot; {filterCount} filter{filterCount > 1 ? 's' : ''} active</span>}
       </span>
       {chartContext && (
         <span className="ml-auto flex items-center gap-1">
           <span className="text-[#64b5f6]">&#x1f4ca; Chart attached</span>
-          <button onClick={onClearChart} className="text-[#555] hover:text-[#aaa] ml-1">&times;</button>
+          <button onClick={onClearChart} className="text-muted-foreground hover:text-[#aaa] ml-1">&times;</button>
         </span>
       )}
     </div>
@@ -248,8 +252,8 @@ function ChartDropZone({ onDrop }) {
       className={[
         'mx-4 my-2 rounded-xl border-2 border-dashed transition-all text-center py-3',
         dragging
-          ? 'border-[#e63946] bg-[#e63946]/5 text-[#e63946]'
-          : 'border-[#2a2a2a] text-[#444] hover:border-[#555]',
+          ? 'border-primary bg-primary/5 text-primary'
+          : 'border-border text-muted-foreground/50 hover:border-muted-foreground',
       ].join(' ')}
     >
       <p className="text-[11px] font-medium">
@@ -268,17 +272,17 @@ function MessageBubble({ msg, onSendMessage }) {
   if (isBot) {
     return (
       <div className="flex items-start gap-2.5">
-        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#e63946]/15 border border-[#e63946]/30 flex items-center justify-center">
-          <Bot size={13} className="text-[#e63946]" />
+        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center">
+          <Bot size={13} className="text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="bg-[#1e1e1e] border border-[#2a2a2a] rounded-2xl rounded-tl-sm px-4 py-3">
+          <div className="bg-secondary border border-border rounded-2xl rounded-tl-sm px-4 py-3">
             <div className="text-sm text-[#e8e8e8] leading-relaxed prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-headings:my-2 prose-strong:text-white">
               <Markdown>{msg.text}</Markdown>
             </div>
             {msg.filters && msg.filters.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-[#2a2a2a]">
-                <span className="text-[10px] text-[#555] mr-1">Filters:</span>
+              <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-border">
+                <span className="text-[10px] text-muted-foreground mr-1">Filters:</span>
                 {msg.filters.map((f, i) => <FilterChip key={i} label={f} />)}
               </div>
             )}
@@ -294,7 +298,7 @@ function MessageBubble({ msg, onSendMessage }) {
               ))}
             </div>
           )}
-          {msg.ts && <p className="text-[10px] text-[#333] mt-1 ml-1">{msg.ts}</p>}
+          {msg.ts && <p className="text-[10px] text-muted-foreground/40 mt-1 ml-1">{msg.ts}</p>}
         </div>
       </div>
     )
@@ -303,12 +307,12 @@ function MessageBubble({ msg, onSendMessage }) {
   return (
     <div className="flex items-end justify-end gap-2.5">
       <div className="max-w-[75%]">
-        <div className="bg-[#e63946] rounded-2xl rounded-br-sm px-4 py-3">
+        <div className="bg-primary rounded-2xl rounded-br-sm px-4 py-3">
           <p className="text-sm text-white leading-relaxed">{msg.text}</p>
         </div>
-        {msg.ts && <p className="text-[10px] text-[#333] mt-1 mr-1 text-right">{msg.ts}</p>}
+        {msg.ts && <p className="text-[10px] text-muted-foreground/40 mt-1 mr-1 text-right">{msg.ts}</p>}
       </div>
-      <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#222] border border-[#333] flex items-center justify-center">
+      <div className="flex-shrink-0 w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center">
         <User size={13} className="text-[#a0a0a0]" />
       </div>
     </div>
@@ -342,7 +346,7 @@ function DynamicBarChart({ spec }) {
               <span className="text-[#a0a0a0] font-medium truncate max-w-[60%]">{label}</span>
               <span className="font-bold tabular-nums" style={{ color }}>{displayVal}</span>
             </div>
-            <div className="h-1.5 bg-[#0a0a0a] rounded-full overflow-hidden">
+            <div className="h-1.5 bg-background rounded-full overflow-hidden">
               <motion.div
                 className="h-full rounded-full"
                 style={{ background: color, opacity: 0.85 }}
@@ -361,7 +365,7 @@ function DynamicBarChart({ spec }) {
 // Render a compact table for chart_spec.type === 'table'
 function DynamicTable({ spec }) {
   const { data } = spec
-  if (!data || data.length === 0) return <p className="text-xs text-[#555]">No data returned.</p>
+  if (!data || data.length === 0) return <p className="text-xs text-muted-foreground">No data returned.</p>
   const cols = Object.keys(data[0]).slice(0, 5)
   return (
     <div className="overflow-x-auto">
@@ -369,7 +373,7 @@ function DynamicTable({ spec }) {
         <thead>
           <tr className="border-b border-[#1f1f1f]">
             {cols.map((c) => (
-              <th key={c} className="text-left pb-2 pr-3 text-[#555] uppercase tracking-wide font-semibold">
+              <th key={c} className="text-left pb-2 pr-3 text-muted-foreground uppercase tracking-wide font-semibold">
                 {c.replace(/_/g, ' ')}
               </th>
             ))}
@@ -377,7 +381,7 @@ function DynamicTable({ spec }) {
         </thead>
         <tbody>
           {data.slice(0, 10).map((row, i) => (
-            <tr key={i} className="border-b border-[#111] hover:bg-[#111]">
+            <tr key={i} className="border-b border-[#111] hover:bg-card">
               {cols.map((c) => (
                 <td key={c} className="py-2 pr-3 text-[#a0a0a0] tabular-nums">
                   {String(row[c] ?? '-')}
@@ -404,7 +408,7 @@ function DynamicNumber({ spec }) {
   ).slice(0, 4)
   return (
     <div className="flex flex-col items-center justify-center py-6 gap-2">
-      <p className="text-[10px] text-[#555] uppercase tracking-wider font-semibold">{label || 'Result'}</p>
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{label || 'Result'}</p>
       <motion.p
         className="text-4xl font-black tabular-nums text-white"
         initial={{ opacity: 0, scale: 0.8 }}
@@ -416,7 +420,7 @@ function DynamicNumber({ spec }) {
       {extras.length > 0 && (
         <div className="flex flex-wrap gap-3 mt-2 justify-center">
           {extras.map(([k, v]) => (
-            <div key={k} className="text-center px-3 py-1.5 rounded-lg bg-[#0d0d0d] border border-[#1f1f1f]">
+            <div key={k} className="text-center px-3 py-1.5 rounded-lg bg-background border border-[#1f1f1f]">
               <p className="text-xs font-bold tabular-nums text-[#a0a0a0]">
                 {typeof v === 'number' ? (Number.isInteger(v) ? v.toLocaleString() : v.toFixed(2)) : String(v)}
               </p>
@@ -451,9 +455,9 @@ function DynamicDonut({ spec }) {
             }).join(', ')})`,
           }}
         />
-        <div className="absolute inset-3 rounded-full bg-[#111] flex items-center justify-center flex-col">
+        <div className="absolute inset-3 rounded-full bg-card flex items-center justify-center flex-col">
           <p className="text-lg font-black text-white tabular-nums">{total.toLocaleString()}</p>
-          <p className="text-[9px] text-[#555] uppercase">Total</p>
+          <p className="text-[9px] text-muted-foreground uppercase">Total</p>
         </div>
       </div>
       {/* Legend */}
@@ -503,7 +507,7 @@ function DynamicLine({ spec }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-semibold text-[#888] uppercase tracking-wider">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           {String(yKey).replace(/_/g, ' ')} over time
         </p>
         <span className="text-[9px] text-[#333]">{data.length} points</span>
@@ -521,7 +525,7 @@ function DynamicLine({ spec }) {
           <circle key={i} cx={p.x} cy={p.y} r="2.5" fill="#e63946" opacity={i === points.length - 1 ? 1 : 0.5} />
         ))}
         {xLabels.map(({ i, label }) => (
-          <text key={i} x={points[i]?.x ?? 0} y={H - 4} textAnchor="middle" fill="#555" fontSize="8">{label}</text>
+          <text key={i} x={points[i]?.x ?? 0} y={H - 4} textAnchor="middle" fill="var(--muted-foreground)" fontSize="8">{label}</text>
         ))}
       </svg>
     </div>
@@ -545,7 +549,7 @@ function DynamicScatter({ spec }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-semibold text-[#888] uppercase tracking-wider">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           {String(xKey).replace(/_/g, ' ')} vs {String(yKey).replace(/_/g, ' ')}
         </p>
         <span className="text-[9px] text-[#333]">{data.length} points</span>
@@ -571,8 +575,8 @@ function DynamicScatter({ spec }) {
           )
         })}
         {/* Axis labels */}
-        <text x={W / 2} y={H - 2} textAnchor="middle" fill="#555" fontSize="8">{xKey.replace(/_/g, ' ')}</text>
-        <text x={4} y={H / 2} textAnchor="middle" fill="#555" fontSize="8" transform={`rotate(-90, 8, ${H / 2})`}>{yKey.replace(/_/g, ' ')}</text>
+        <text x={W / 2} y={H - 2} textAnchor="middle" fill="var(--muted-foreground)" fontSize="8">{xKey.replace(/_/g, ' ')}</text>
+        <text x={4} y={H / 2} textAnchor="middle" fill="var(--muted-foreground)" fontSize="8" transform={`rotate(-90, 8, ${H / 2})`}>{yKey.replace(/_/g, ' ')}</text>
       </svg>
     </div>
   )
@@ -582,8 +586,8 @@ function DynamicScatter({ spec }) {
 function StaticFallback() {
   return (
     <div className="flex-1 flex flex-col gap-3 min-h-0">
-      <div className="bg-[#111] border border-[#222] rounded-xl p-4 flex-1">
-        <p className="text-xs font-semibold text-[#888] mb-4 uppercase tracking-wider">PCR by Workspace</p>
+      <div className="bg-card border border-border rounded-xl p-4 flex-1">
+        <p className="text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-wider">PCR by Workspace</p>
         {[
           { name: 'WS-DIGITAL-NEWS',  pcr: 92, color: '#4caf50' },
           { name: 'WS-ENTERTAINMENT', pcr: 82, color: '#4caf50' },
@@ -608,17 +612,17 @@ function StaticFallback() {
           </div>
         ))}
       </div>
-      <div className="bg-[#111] border border-[#222] rounded-xl p-4">
-        <p className="text-xs font-semibold text-[#888] mb-3 uppercase tracking-wider">Pipeline Summary</p>
+      <div className="bg-card border border-border rounded-xl p-4">
+        <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Pipeline Summary</p>
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
           {[
             { label: 'Uploaded',  value: '4,179', color: '#64b5f6' },
             { label: 'Processed', value: '4,179', color: '#81c784' },
             { label: 'Published', value: '3,188', color: '#ce93d8' },
           ].map((s) => (
-            <div key={s.label} className="text-center p-3 rounded-xl bg-[#0d0d0d] border border-[#1f1f1f]">
+            <div key={s.label} className="text-center p-3 rounded-xl bg-background border border-[#1f1f1f]">
               <p className="text-base font-black tabular-nums" style={{ color: s.color }}>{s.value}</p>
-              <p className="text-[9px] text-[#555] uppercase tracking-wider mt-0.5">{s.label}</p>
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider mt-0.5">{s.label}</p>
             </div>
           ))}
         </div>
@@ -637,11 +641,11 @@ function ChartPreviewArea({ chartData, chartCtx }) {
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className="flex items-center gap-2">
-        <BarChart2 size={15} className="text-[#e63946]" />
+        <BarChart2 size={15} className="text-primary" />
         <span className="text-sm font-semibold text-white">Visual Analysis</span>
         {hasData && chartData.sql && (
           <span className="text-[9px] text-[#333] ml-auto font-mono truncate max-w-[160px]" title={chartData.sql}>
-            {chartData.sql.trim().slice(0, 60)}…
+            {chartData.sql.trim().slice(0, 60)}...
           </span>
         )}
         {hasCtx && (
@@ -656,7 +660,7 @@ function ChartPreviewArea({ chartData, chartCtx }) {
         <div className="flex-1 flex flex-col gap-3 min-h-0 overflow-y-auto">
           {/* Answer summary */}
           {chartData.answer && (
-            <div className="bg-[#111] border border-[#1e2a1e] rounded-xl p-4">
+            <div className="bg-card border border-[#1e2a1e] rounded-xl p-4">
               <p className="text-[10px] font-semibold text-[#4caf50] mb-1.5 uppercase tracking-wider">AI Insight</p>
               <div className="text-xs text-[#a0a0a0] leading-relaxed prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-white">
                 <Markdown>{chartData.answer}</Markdown>
@@ -664,14 +668,14 @@ function ChartPreviewArea({ chartData, chartCtx }) {
             </div>
           )}
 
-          {/* Chart — renders based on chart_spec.type */}
-          <div className="bg-[#111] border border-[#222] rounded-xl p-4 flex-1">
+          {/* Chart - renders based on chart_spec.type */}
+          <div className="bg-card border border-border rounded-xl p-4 flex-1">
             {chartData.chart_spec.type === 'number' && (
               <DynamicNumber spec={chartData.chart_spec} />
             )}
             {chartData.chart_spec.type === 'donut' && (
               <>
-                <p className="text-xs font-semibold text-[#888] mb-3 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
                   {String(chartData.chart_spec.y ?? '').replace(/_/g, ' ')} by {String(chartData.chart_spec.x ?? '').replace(/_/g, ' ')}
                 </p>
                 <DynamicDonut spec={chartData.chart_spec} />
@@ -686,7 +690,7 @@ function ChartPreviewArea({ chartData, chartCtx }) {
             {chartData.chart_spec.type === 'bar' && (
               <>
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-semibold text-[#888] uppercase tracking-wider">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {String(chartData.chart_spec.y?.[0] ?? '').replace(/_/g, ' ')} by {String(chartData.chart_spec.x ?? '').replace(/_/g, ' ')}
                   </p>
                   <span className="text-[9px] text-[#333]">{chartData.chart_spec.data?.length ?? 0} rows</span>
@@ -696,7 +700,7 @@ function ChartPreviewArea({ chartData, chartCtx }) {
             )}
             {chartData.chart_spec.type === 'table' && (
               <>
-                <p className="text-xs font-semibold text-[#888] mb-3 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
                   Query Results ({chartData.chart_spec.data?.length ?? 0} rows)
                 </p>
                 <DynamicTable spec={chartData.chart_spec} />
@@ -708,7 +712,7 @@ function ChartPreviewArea({ chartData, chartCtx }) {
         <div className="flex-1 flex flex-col gap-3 min-h-0 overflow-y-auto">
           {/* Dropped chart title */}
           {chartCtx.title && (
-            <div className="bg-[#111] border border-[#1e2a1e] rounded-xl p-4">
+            <div className="bg-card border border-[#1e2a1e] rounded-xl p-4">
               <p className="text-[10px] font-semibold text-[#64b5f6] mb-1.5 uppercase tracking-wider">Attached Chart</p>
               <p className="text-xs text-[#a0a0a0] leading-relaxed">{chartCtx.title}</p>
             </div>
@@ -716,15 +720,15 @@ function ChartPreviewArea({ chartData, chartCtx }) {
 
           {/* Dropped chart image */}
           {chartCtx.image_base64 && (
-            <div className="rounded-xl overflow-hidden border border-[#222]">
-              <img src={chartCtx.image_base64} alt={chartCtx.title || 'Dropped chart'} className="max-h-60 w-full object-contain bg-[#111]" />
+            <div className="rounded-xl overflow-hidden border border-border">
+              <img src={chartCtx.image_base64} alt={chartCtx.title || 'Dropped chart'} className="max-h-60 w-full object-contain bg-card" />
             </div>
           )}
 
           {/* Dropped chart data as table */}
           {chartCtx.data && Array.isArray(chartCtx.data) && chartCtx.data.length > 0 && (
-            <div className="bg-[#111] border border-[#222] rounded-xl p-4 flex-1">
-              <p className="text-xs font-semibold text-[#888] mb-3 uppercase tracking-wider">
+            <div className="bg-card border border-border rounded-xl p-4 flex-1">
+              <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
                 Attached Data ({chartCtx.data.length} rows)
               </p>
               <DynamicTable spec={{ data: chartCtx.data }} />
@@ -774,14 +778,14 @@ function ChatInput({ input, setInput, loading, onSend, inputRef }) {
   }
 
   return (
-    <div className="flex-shrink-0 px-4 pb-4 pt-3 border-t border-[#222]">
-      <div className="flex items-end gap-2 bg-[#111] border border-[#2a2a2a] rounded-2xl px-4 py-3 focus-within:border-[#e63946]/50 transition-colors">
+    <div className="flex-shrink-0 px-4 pb-4 pt-3 border-t border-border">
+      <div className="flex items-end gap-2 bg-card border border-border rounded-2xl px-4 py-3 focus-within:border-primary/50 transition-colors">
         <textarea
           ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask about KPIs, workspaces, trends, videos…"
+          placeholder="Ask about KPIs, workspaces, trends, videos..."
           rows={1}
           disabled={loading}
           className="flex-1 bg-transparent text-sm text-white placeholder-[#444] resize-none outline-none focus:outline-none focus:ring-0 leading-relaxed min-h-[22px] max-h-28 overflow-y-auto disabled:opacity-50"
@@ -793,14 +797,14 @@ function ChatInput({ input, setInput, loading, onSend, inputRef }) {
           className={[
             'flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all',
             input.trim() && !loading
-              ? 'bg-[#e63946] text-white hover:bg-[#c62828] shadow-[0_0_12px_rgba(230,57,70,0.35)]'
-              : 'bg-[#1f1f1f] text-[#333] cursor-not-allowed',
+              ? 'bg-primary text-white hover:bg-primary/80 shadow-[0_0_12px_var(--primary)]/35'
+              : 'bg-secondary text-muted-foreground/30 cursor-not-allowed',
           ].join(' ')}
         >
           <ArrowRight size={14} />
         </button>
       </div>
-      <p className="text-[10px] text-[#2a2a2a] mt-1.5 text-center">
+      <p className="text-[10px] text-muted-foreground/30 mt-1.5 text-center">
         Enter to send · Shift+Enter for new line
       </p>
     </div>
@@ -825,6 +829,7 @@ export default function NLQPanel({ className = '' }) {
   const nlqOpen    = useAppStore((s) => s.nlqOpen ?? false)
   const setNlqOpen = useAppStore((s) => s.setNlqOpen)
   const currentTicker = useAppStore((s) => s.currentTicker)
+  const activeTab = useAppStore((s) => s.activeTab ?? 'overview')
 
   // Stable session ID - wires multi-turn history in the backend agent
   const sessionId = useRef(getSessionId())
@@ -854,13 +859,13 @@ export default function NLQPanel({ className = '' }) {
   const inputRef                   = useRef(null)
   const activeSourceRef            = useRef(null)  // current EventSource / abort handle
 
-  // ── Auto page context capture on panel open ──────────────────────────────
+  // Auto page context capture on panel open
   const [currentPageCtx, setCurrentPageCtx] = useState(null)
   useEffect(() => {
     if (nlqOpen) {
-      setCurrentPageCtx({ page: 'dashboard', ticker: currentTicker })
+      setCurrentPageCtx({ page: activeTab || 'overview', ticker: currentTicker })
     }
-  }, [nlqOpen, currentTicker])
+  }, [nlqOpen, currentTicker, activeTab])
 
   function formatTime(d) {
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -974,7 +979,7 @@ export default function NLQPanel({ className = '' }) {
     setExpanded(false)
   }
 
-  // ── Compact panel (stage 1): floating bottom-right, NO backdrop ───────────
+  // Compact panel (stage 1): floating bottom-right, NO backdrop
   const CompactPanel = (
     <motion.div
       key="compact"
@@ -986,7 +991,7 @@ export default function NLQPanel({ className = '' }) {
         'fixed z-50',
         'bottom-20 right-4 left-4 sm:left-auto sm:right-8 sm:bottom-28',
         'w-auto sm:w-[420px]',
-        'bg-[#0f0f0f] border border-[#272727]',
+        'bg-background border border-border',
         'rounded-2xl flex flex-col overflow-hidden',
         'shadow-[0_24px_60px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.04)]',
         className,
@@ -994,27 +999,27 @@ export default function NLQPanel({ className = '' }) {
       style={{ height: 'min(520px, calc(100vh - 120px))' }}
     >
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-[#222]">
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#e63946]/10 border border-[#e63946]/30 flex items-center justify-center">
-            <Sparkles size={14} className="text-[#e63946]" />
+          <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center">
+            <Sparkles size={14} className="text-primary" />
           </div>
           <div>
             <p className="text-sm font-bold text-white leading-none">Ask AlphaStream</p>
-            <p className="text-[10px] text-[#555] mt-0.5 leading-none">Powered by Claude · Analytics</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5 leading-none">Powered by Claude · Analytics</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setExpanded(true)}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#555] hover:text-white hover:bg-[#1f1f1f] transition-colors"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-white hover:bg-secondary transition-colors"
             title="Expand for charts and full view"
           >
             <Maximize2 size={13} />
           </button>
           <button
             onClick={closePanel}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#555] hover:text-[#aaa] hover:bg-[#1f1f1f] transition-colors"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-[#aaa] hover:bg-secondary transition-colors"
           >
             <X size={13} />
           </button>
@@ -1025,24 +1030,24 @@ export default function NLQPanel({ className = '' }) {
       <ContextBanner pageContext={currentPageCtx} chartContext={chartCtx} onClearChart={() => setChartCtx(null)} />
 
       {/* Quick prompts - context-aware */}
-      <div className="flex-shrink-0 px-4 py-2.5 border-b border-[#1a1a1a] bg-[#0d0d0d]">
+      <div className="flex-shrink-0 px-4 py-2.5 border-b border-border/50 bg-background">
         <div className="flex flex-wrap gap-1.5">
           {(chartCtx
-            ? CONTEXT_PROMPTS.chart_dropped
-            : CONTEXT_PROMPTS.default || QUICK_PROMPTS
-          ).slice(0, 2).map((p) => (
+            ? (CONTEXT_PROMPTS.chart_dropped || CONTEXT_PROMPTS.default)
+            : (CONTEXT_PROMPTS[currentPageCtx?.page] || CONTEXT_PROMPTS.default)
+          ).slice(0, 3).map((p) => (
             <button
               key={p}
               onClick={() => sendMessage(p)}
               disabled={loading}
-              className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] hover:text-white hover:border-[#e63946]/40 hover:bg-[#e63946]/5 transition-colors disabled:opacity-40"
+              className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-card border border-border text-muted-foreground hover:text-white hover:border-primary/40 hover:bg-primary/5 transition-colors disabled:opacity-40"
             >
               {p}
             </button>
           ))}
           <button
             onClick={() => setExpanded(true)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-[#e63946]/10 border border-[#e63946]/25 text-[#e63946] hover:bg-[#e63946]/20 transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary/10 border border-primary/25 text-primary hover:bg-primary/20 transition-colors"
           >
             <Maximize2 size={10} />
             Charts
@@ -1060,8 +1065,8 @@ export default function NLQPanel({ className = '' }) {
         ))}
         {loading && (
           <div className="flex items-start gap-2.5">
-            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#e63946]/15 border border-[#e63946]/25 flex items-center justify-center">
-              <Bot size={13} className="text-[#e63946]" />
+            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center">
+              <Bot size={13} className="text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <TypingIndicator />
@@ -1083,7 +1088,7 @@ export default function NLQPanel({ className = '' }) {
     </motion.div>
   )
 
-  // ── Expanded modal (stage 2): large centered, WITH backdrop ──────────────
+  // Expanded modal (stage 2): large centered, WITH backdrop
   const ExpandedModal = (
     <>
       {/* Backdrop - only for expanded modal */}
@@ -1106,27 +1111,27 @@ export default function NLQPanel({ className = '' }) {
         onClick={(e) => e.target === e.currentTarget && setExpanded(false)}
       >
         <div
-          className="relative w-full max-w-[1300px] bg-[#0d0d0d] border border-[#2a2a2a] rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden"
+          className="relative w-full max-w-[1300px] bg-background border border-border rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden"
           style={{
             height: 'min(90vh, 860px)',
             boxShadow: '0 32px 100px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.05)',
           }}
         >
           {/* Modal header */}
-          <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-[#222]">
+          <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#e63946]/12 border border-[#e63946]/30 flex items-center justify-center">
-                <Sparkles size={17} className="text-[#e63946]" />
+              <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center">
+                <Sparkles size={17} className="text-primary" />
               </div>
               <div>
                 <h2 className="text-base font-bold text-white">Ask AlphaStream</h2>
-                <p className="text-[10px] text-[#555] uppercase tracking-wider">Full analytics view · Claude Sonnet</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Full analytics view · Claude Sonnet</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setExpanded(false)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-[#555] hover:text-white hover:bg-[#1f1f1f] transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-white hover:bg-secondary transition-colors"
                 title="Back to compact panel"
               >
                 <Minimize2 size={12} />
@@ -1134,7 +1139,7 @@ export default function NLQPanel({ className = '' }) {
               </button>
               <button
                 onClick={closePanel}
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-[#555] hover:text-[#aaa] hover:bg-[#1f1f1f] transition-colors"
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-[#aaa] hover:bg-secondary transition-colors"
               >
                 <X size={15} />
               </button>
@@ -1145,14 +1150,17 @@ export default function NLQPanel({ className = '' }) {
           <ContextBanner pageContext={currentPageCtx} chartContext={chartCtx} onClearChart={() => setChartCtx(null)} />
 
           {/* Quick prompts - context-aware */}
-          <div className="flex-shrink-0 flex items-center gap-2 px-6 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
-            <span className="text-[10px] text-[#555] uppercase tracking-wider flex-shrink-0">Try:</span>
-            {(chartCtx ? CONTEXT_PROMPTS.chart_dropped : CONTEXT_PROMPTS.default || QUICK_PROMPTS).map((p) => (
+          <div className="flex-shrink-0 flex items-center gap-2 px-6 py-3 border-b border-border/50 bg-[#0a0a0a]">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider flex-shrink-0">Try:</span>
+            {(chartCtx
+              ? (CONTEXT_PROMPTS.chart_dropped || CONTEXT_PROMPTS.default)
+              : (CONTEXT_PROMPTS[currentPageCtx?.page] || CONTEXT_PROMPTS.default)
+            ).slice(0, 3).map((p) => (
               <button
                 key={p}
                 onClick={() => sendMessage(p)}
                 disabled={loading}
-                className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-medium bg-[#1a1a1a] border border-[#2a2a2a] text-[#888] hover:text-white hover:border-[#e63946]/40 hover:bg-[#e63946]/5 transition-colors disabled:opacity-40"
+                className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-medium bg-card border border-border text-muted-foreground hover:text-white hover:border-primary/40 hover:bg-primary/5 transition-colors disabled:opacity-40"
               >
                 {p}
               </button>
@@ -1169,8 +1177,8 @@ export default function NLQPanel({ className = '' }) {
                 ))}
                 {loading && (
                   <div className="flex items-start gap-2.5">
-                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#e63946]/15 border border-[#e63946]/25 flex items-center justify-center">
-                      <Bot size={13} className="text-[#e63946]" />
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center">
+                      <Bot size={13} className="text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <TypingIndicator />
@@ -1189,7 +1197,7 @@ export default function NLQPanel({ className = '' }) {
               />
             </div>
 
-            {/* Charts / visual column — hidden on mobile */}
+            {/* Charts / visual column - hidden on mobile */}
             <div className="hidden md:flex flex-1 overflow-y-auto px-4 sm:px-6 py-5 bg-[#090909] flex-col">
               <ChartDropZone onDrop={(ctx) => { setChartCtx(ctx); setInput('Analyze this chart') }} />
               <ChartPreviewArea chartData={chartData} chartCtx={chartCtx} />

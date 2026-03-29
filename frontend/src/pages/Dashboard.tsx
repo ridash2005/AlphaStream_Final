@@ -39,7 +39,7 @@ import NLQPanel from '@/components/trading/NLQPanel';
 import NLQButton from '@/components/trading/NLQButton';
 
 export default function Dashboard() {
-  const { error, clearError, user, logout } = useAppStore();
+  const { error, clearError, user, logout, setActiveTab } = useAppStore();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -99,25 +99,25 @@ export default function Dashboard() {
       )}
 
       {/* 5-tab layout */}
-      <Tabs defaultValue="overview" className="flex flex-col flex-1 overflow-hidden">
-        <TabsList className="w-full justify-start rounded-none border-b border-border/30 bg-transparent h-9 px-4 gap-0 shrink-0">
-          <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium px-4 h-full gap-1.5">
+      <Tabs defaultValue="overview" onValueChange={setActiveTab} className="flex flex-col flex-1 overflow-hidden">
+        <TabsList className="w-full justify-start rounded-none border-b border-border/30 bg-secondary/20 h-10 px-2 gap-0.5 shrink-0">
+          <TabsTrigger value="overview" className="rounded-md border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/15 data-[state=active]:text-primary text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors text-xs font-medium px-3 h-8 gap-1.5 mx-0.5">
             <LayoutDashboard className="h-3.5 w-3.5" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="signals" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium px-4 h-full gap-1.5">
+          <TabsTrigger value="signals" className="rounded-md border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/15 data-[state=active]:text-primary text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors text-xs font-medium px-3 h-8 gap-1.5 mx-0.5">
             <Zap className="h-3.5 w-3.5" />
             Signals
           </TabsTrigger>
-          <TabsTrigger value="global" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium px-4 h-full gap-1.5">
+          <TabsTrigger value="global" className="rounded-md border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/15 data-[state=active]:text-primary text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors text-xs font-medium px-3 h-8 gap-1.5 mx-0.5">
             <Globe className="h-3.5 w-3.5" />
             Global Intel
           </TabsTrigger>
-          <TabsTrigger value="company" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium px-4 h-full gap-1.5">
+          <TabsTrigger value="company" className="rounded-md border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/15 data-[state=active]:text-primary text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors text-xs font-medium px-3 h-8 gap-1.5 mx-0.5">
             <Building2 className="h-3.5 w-3.5" />
             Company
           </TabsTrigger>
-          <TabsTrigger value="portfolio" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium px-4 h-full gap-1.5">
+          <TabsTrigger value="portfolio" className="rounded-md border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/15 data-[state=active]:text-primary text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors text-xs font-medium px-3 h-8 gap-1.5 mx-0.5">
             <Briefcase className="h-3.5 w-3.5" />
             Portfolio
           </TabsTrigger>

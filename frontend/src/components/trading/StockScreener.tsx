@@ -153,7 +153,7 @@ export function StockScreener() {
         )}
         {!loading && stocks.length === 0 && (
           <div className="text-xs text-muted-foreground text-center py-4">
-            No signals match filters — try reducing the alpha threshold
+            No signals match filters - try reducing the alpha threshold
           </div>
         )}
         {!loading && stocks.length > 0 && (

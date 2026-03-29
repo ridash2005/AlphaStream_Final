@@ -100,6 +100,10 @@ interface AppState {
     nlqOpen: boolean;
     nlqSessionId: string;
 
+    // Active tab
+    activeTab: string;
+    setActiveTab: (tab: string) => void;
+
     // Actions
     setUser: (user: UserProfile | null) => void;
     logout: () => void;
@@ -156,6 +160,7 @@ export const useAppStore = create<AppState>()(
     socket: null,
     nlqOpen: false,
     nlqSessionId: 'default',
+    activeTab: 'overview',
 
     // Global market (WorldMonitor)
     globalIndices: [],
@@ -302,6 +307,9 @@ export const useAppStore = create<AppState>()(
     // NLQ
     setNlqOpen: (open) => set({ nlqOpen: open }),
     setNlqSessionId: (id) => set({ nlqSessionId: id }),
+
+    // Active tab
+    setActiveTab: (tab) => set({ activeTab: tab }),
   }),
   {
     name: 'alphastream-store',
@@ -310,6 +318,7 @@ export const useAppStore = create<AppState>()(
       portfolio: state.portfolio,
       currentTicker: state.currentTicker,
       nlqSessionId: state.nlqSessionId,
+      activeTab: state.activeTab,
       recommendationHistory: state.recommendationHistory,
       watchlist: state.watchlist,
     }),

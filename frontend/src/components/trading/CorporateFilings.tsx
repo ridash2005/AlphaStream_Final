@@ -44,7 +44,7 @@ export function CorporateFilings() {
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium flex items-center gap-2">
                         <FileText className="h-4 w-4 text-primary" />
-                        Corporate Filings — {currentTicker}
+                        Corporate Filings: {currentTicker}
                     </CardTitle>
                     <div className="flex gap-1">
                         {DAYS_OPTIONS.map(d => (

@@ -51,7 +51,7 @@ export function StockFundamentals() {
       <CardHeader className="pb-1">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <BarChart2 className="h-4 w-4 text-primary" />
-          Fundamentals — {currentTicker}
+          Fundamentals: {currentTicker}
         </CardTitle>
       </CardHeader>
       <CardContent>

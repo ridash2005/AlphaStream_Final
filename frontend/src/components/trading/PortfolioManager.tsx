@@ -90,7 +90,7 @@ export function PortfolioManager() {
       <CardContent>
         <div className="flex items-center gap-1.5 mb-3 p-2 rounded bg-amber-500/10 border border-amber-500/20">
           <AlertCircle className="h-3 w-3 text-amber-400 shrink-0" />
-          <p className="text-[10px] text-amber-400">Portfolio is session-based — re-enter holdings after server restart</p>
+          <p className="text-[10px] text-amber-400">Portfolio is session-based - re-enter holdings after server restart</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

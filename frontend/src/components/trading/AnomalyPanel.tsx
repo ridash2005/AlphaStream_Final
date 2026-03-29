@@ -80,7 +80,7 @@ export function AnomalyPanel() {
         {!loading && !data?.error && count === 0 && (
           <div className="text-xs text-muted-foreground text-center py-4">
             <div className="text-emerald-400 text-sm font-mono mb-1">✓ Normal</div>
-            No anomalies detected — price action within normal bounds
+            No anomalies detected - price action within normal bounds
             {data?.fed_ticks ? (
               <div className="text-[10px] mt-1">Analysed {data.fed_ticks} ticks (3mo NSE data)</div>
             ) : null}

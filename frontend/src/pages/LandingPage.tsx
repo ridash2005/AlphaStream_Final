@@ -5,17 +5,17 @@ const FEATURES = [
   {
     icon: <TrendingUp className="h-6 w-6" />,
     title: 'Opportunity Radar',
-    desc: 'AI scans NSE/BSE filings, insider trades, FII/DII flows — surfaces signals with Alpha Score (0-100)',
+    desc: 'AI scans NSE/BSE filings, insider trades, FII/DII flows - surfaces signals with Alpha Score (0-100)',
   },
   {
     icon: <BarChart2 className="h-6 w-6" />,
     title: 'Chart Pattern Intelligence',
-    desc: 'RSI divergence, MACD crossover, Bollinger breakouts — with historical backtested success rates',
+    desc: 'RSI divergence, MACD crossover, Bollinger breakouts - with historical backtested success rates',
   },
   {
     icon: <MessageCircle className="h-6 w-6" />,
     title: 'Market ChatGPT Next Gen',
-    desc: 'Ask anything in plain English — grounded in real data via Text2SQL, not LLM hallucination',
+    desc: 'Ask anything in plain English - grounded in real data via Text2SQL, not LLM hallucination',
   },
   {
     icon: <Shield className="h-6 w-6" />,
@@ -30,7 +30,7 @@ const FEATURES = [
   {
     icon: <Zap className="h-6 w-6" />,
     title: 'Backtested Confidence',
-    desc: '"This pattern worked 78% of the time on THIS stock over 5 years" — Bloomberg-grade, free',
+    desc: '"This pattern worked 78% of the time on THIS stock over 5 years" - Bloomberg-grade, free',
   },
 ];
 
@@ -75,7 +75,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-medium mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-            ET AI Hackathon 2026 — Problem Statement 6
+            ET AI Hackathon 2026 - Problem Statement 6
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6">
             AI-Powered Investment
@@ -86,7 +86,7 @@ export default function LandingPage() {
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed">
             14 crore+ demat accounts. Most retail investors flying blind.
-            AlphaStream turns ET Markets data into actionable, backtested signals —
+            AlphaStream turns ET Markets data into actionable, backtested signals -
             powered by multi-agent AI, real-time streaming, and natural language queries.
           </p>
           <div className="flex items-center justify-center gap-4">
@@ -121,7 +121,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-4">Everything You Need to Beat the Market</h2>
           <p className="text-gray-400 text-center mb-12 max-w-2xl mx-auto">
-            Multi-agent signal detection, NLQ analytics, backtested patterns — the intelligence layer ET Markets deserves.
+            Multi-agent signal detection, NLQ analytics, backtested patterns - the intelligence layer ET Markets deserves.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {FEATURES.map((f, i) => (
@@ -170,13 +170,13 @@ export default function LandingPage() {
               },
               {
                 label: 'Fusion Engine',
-                desc: 'Alpha Score = weighted composite of all agent signals (0–100)',
+                desc: 'Alpha Score = weighted composite of all agent signals (0-100)',
                 color: 'border-amber-500/30 bg-amber-500/5',
                 dot: 'bg-amber-400',
               },
               {
                 label: 'Bloomberg Terminal (5 tabs)',
-                desc: 'Overview · Signals · Global Intel · Company · Portfolio — React + WebSocket + SSE',
+                desc: 'Overview · Signals · Global Intel · Company · Portfolio - React + WebSocket + SSE',
                 color: 'border-pink-500/30 bg-pink-500/5',
                 dot: 'bg-pink-400',
               },
