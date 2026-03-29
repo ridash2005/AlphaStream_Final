@@ -3,14 +3,16 @@ Central Data Refresh Service.
 
 On startup + every 30min:
 1. Cache 1yr price data
-2. Run pattern detection → write real signals
-3. Fetch live FII/DII → write flows
-4. Fetch live insider trades → write trades
-5. Fetch RSS articles → write to DuckDB
+2. Run pattern detection -> write real signals
+3. Fetch live FII/DII -> write flows
+4. Fetch live insider trades -> write trades
+5. Fetch RSS articles -> write to DuckDB
+6. Fetch bulk/block deals -> write deals + signals
 """
 import asyncio
 import logging
 import time
+import uuid
 from datetime import datetime
 
 from src.data.market_schema import get_connection, create_schema, create_views, load_dim_stocks
@@ -36,7 +38,7 @@ def run_full_refresh(load_prices: bool = True, run_signals: bool = True) -> dict
     if load_prices:
         results["prices"] = _refresh_prices()
 
-    # 2. Run pattern detection on all stocks → real signals
+    # 2. Run pattern detection on all stocks -> real signals
     if run_signals:
         results["signals"] = _refresh_signals()
 
@@ -55,7 +57,10 @@ def run_full_refresh(load_prices: bool = True, run_signals: bool = True) -> dict
     # 7. Refresh global market data (WorldMonitor-sourced)
     results["global_market"] = _refresh_global_market()
 
-    # 8. Regenerate views
+    # 8. Fetch bulk/block deals from NSE
+    results["bulk_block_deals"] = _refresh_bulk_block_deals()
+
+    # 9. Regenerate views
     con = get_connection()
     create_views(con)
     con.close()
@@ -194,6 +199,78 @@ def _refresh_groww_data() -> int:
         return refresh_dim_stocks()
     except Exception as e:
         logger.warning(f"Groww refresh failed: {e}")
+        return 0
+
+
+def _refresh_bulk_block_deals() -> int:
+    """Fetch bulk and block deals from NSE, ingest into fact_bulk_deals and generate signals."""
+    try:
+        from src.connectors.nse_connector import get_nse_connector
+        from src.data.market_schema import get_connection
+        from src.data.signal_writer import write_signal
+
+        nse = get_nse_connector()
+        bulk_deals = nse.get_bulk_deals(days=7)
+        block_deals = nse.get_block_deals(days=7)
+
+        con = get_connection()
+        count = 0
+
+        try:
+            for deal_type, deals in [("bulk", bulk_deals), ("block", block_deals)]:
+                for deal in deals:
+                    ticker = deal.get("symbol", deal.get("ticker", ""))
+                    trade_date = deal.get("date", deal.get("dealDate", ""))
+                    quantity = int(deal.get("quantity", deal.get("qty", 0)) or 0)
+                    price = float(deal.get("price", deal.get("avgPrice", 0)) or 0)
+                    value_cr = float(deal.get("value_cr", 0) or 0)
+                    if value_cr == 0 and quantity and price:
+                        value_cr = round((quantity * price) / 1e7, 2)
+                    client_name = deal.get("clientName", deal.get("client", ""))
+
+                    try:
+                        con.execute("""
+                            INSERT INTO fact_bulk_deals
+                                (id, trade_date, ticker, deal_type, quantity, price, value_cr, client_name)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        """, [
+                            str(uuid.uuid4())[:8],
+                            trade_date,
+                            ticker,
+                            deal_type,
+                            quantity,
+                            price,
+                            value_cr,
+                            client_name,
+                        ])
+                        count += 1
+                    except Exception as e:
+                        logger.debug(f"Bulk deal insert failed: {e}")
+                        continue
+
+                    # Generate signal for large deals (> 50 Cr)
+                    if value_cr > 50:
+                        alpha = min(value_cr / 10, 100)
+                        write_signal(
+                            ticker=ticker,
+                            signal_type=f"{deal_type}_deal",
+                            direction="bullish",
+                            confidence=70,
+                            alpha_score=alpha,
+                            evidence={
+                                "pattern": f"{deal_type}_deal",
+                                "detail": f"Large {deal_type} deal: {value_cr} Cr at Rs {price}",
+                                "client": client_name,
+                                "quantity": quantity,
+                            },
+                        )
+        finally:
+            con.close()
+
+        logger.info(f"Bulk/block deal refresh: {count} deals ingested")
+        return count
+    except Exception as e:
+        logger.warning(f"Bulk/block deal refresh failed: {e}")
         return 0
 
 

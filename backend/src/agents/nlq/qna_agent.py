@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import concurrent.futures
 import json
+import re
 import time
+from datetime import datetime
 from typing import Any, AsyncGenerator, Literal, Optional
 
 from langgraph.graph import StateGraph, START, END
@@ -32,6 +34,10 @@ logger = logging.getLogger(__name__)
 _SIMILARITY_THRESHOLD = 0.75
 _SQL_TIMEOUT_SECS = 30
 _MAX_RESULT_ROWS = 5_000
+
+_SOURCES_FALLBACK = ["AlphaStream Knowledge Base", "ET Markets RSS Feed"]
+_SOURCES_SIGNAL = ["AlphaStream Nifty 200 Scanner", "NSE Real-time Data"]
+_SOURCES_PORTFOLIO = ["User Portfolio Holdings", "NSE Live Prices (yfinance)"]
 
 _store = InMemoryStore()
 
@@ -494,8 +500,9 @@ def text2sql_node(state: AgentState) -> AgentState:
         except Exception:
             pass
 
+        sources = _text2sql_sources(final_sql)
         return {**state, "sql": final_sql, "result": result, "error": error,
-                "thought_steps": thought_steps,
+                "thought_steps": thought_steps, "sources": sources,
                 "web_search_results": web_context, "search_enriched": bool(web_context)}
 
     except ImportError:
@@ -508,8 +515,21 @@ def text2sql_node(state: AgentState) -> AgentState:
         sql = _simple_query_fallback(query)
         if sql:
             result, error = _execute_sql(sql)
-            return {**state, "sql": sql, "result": result, "error": error, "thought_steps": thought_steps}
-        return {**state, "error": "Text2SQL pipeline not yet available", "thought_steps": thought_steps}
+            sources = _text2sql_sources(sql)
+            return {**state, "sql": sql, "result": result, "error": error,
+                    "thought_steps": thought_steps, "sources": sources}
+        return {**state, "error": "Text2SQL pipeline not yet available",
+                "thought_steps": thought_steps,
+                "sources": list(_SOURCES_FALLBACK)}
+
+
+def _text2sql_sources(sql: str) -> list[str]:
+    """Extract table/view names from SQL and build source citations."""
+    tables = re.findall(r'FROM\s+(\w+)', sql, re.IGNORECASE)
+    sources = [f"DuckDB: {t}" for t in tables]
+    sources.append("AlphaStream Signal Database")
+    sources.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M IST')}")
+    return sources
 
 
 def _simple_query_fallback(query: str) -> Optional[str]:
@@ -555,24 +575,32 @@ def narrate_node(state: AgentState) -> AgentState:
     pre_narrative = state.get("_signal_definition")
     if pre_narrative and not result and not error:
         history.append({"query": query, "answer": pre_narrative, "sql": ""})
-        return {**state, "narrative": pre_narrative, "thought_steps": thought_steps, "history": history[-20:]}
+        return {**state, "narrative": pre_narrative, "thought_steps": thought_steps,
+                "history": history[-20:],
+                "sources": list(_SOURCES_SIGNAL)}
 
     # Pre-set narrative (greeting, off-topic, guardrail block)
     existing = state.get("narrative")
     intent = state.get("intent", "")
     if existing and (error or intent in ("off_topic", "greeting")) and not result:
         history.append({"query": query, "answer": existing, "sql": sql or ""})
-        return {**state, "narrative": existing, "thought_steps": thought_steps, "history": history[-20:]}
+        return {**state, "narrative": existing, "thought_steps": thought_steps,
+                "history": history[-20:],
+                "sources": [_SOURCES_FALLBACK[0]]}
 
     if error and not result:
         narrative = f"I couldn't find data for that query. {error}"
         history.append({"query": query, "answer": narrative, "sql": sql or ""})
-        return {**state, "narrative": narrative, "thought_steps": thought_steps, "history": history[-20:]}
+        return {**state, "narrative": narrative, "thought_steps": thought_steps,
+                "history": history[-20:],
+                "sources": list(_SOURCES_FALLBACK)}
 
     if not result:
         narrative = "No data found for that query. Try rephrasing or asking about a specific stock, signal, or metric."
         history.append({"query": query, "answer": narrative, "sql": sql or ""})
-        return {**state, "narrative": narrative, "thought_steps": thought_steps, "history": history[-20:]}
+        return {**state, "narrative": narrative, "thought_steps": thought_steps,
+                "history": history[-20:],
+                "sources": list(_SOURCES_FALLBACK)}
 
     # Generate narrative via LLM
     web_context = state.get("web_search_results")
@@ -592,6 +620,18 @@ def narrate_node(state: AgentState) -> AgentState:
     except Exception:
         pass
 
+    # Build sources if not already set by upstream node
+    sources = state.get("sources")
+    if not sources:
+        if intent == "portfolio_aware":
+            sources = list(_SOURCES_PORTFOLIO)
+        elif intent in ("signal_query", "signal_definition"):
+            sources = list(_SOURCES_SIGNAL)
+        elif sql:
+            sources = _text2sql_sources(sql)
+        else:
+            sources = list(_SOURCES_FALLBACK)
+
     return {
         **state,
         "narrative": narrative,
@@ -599,6 +639,7 @@ def narrate_node(state: AgentState) -> AgentState:
         "suggested_questions": suggested,
         "thought_steps": thought_steps,
         "history": history[-20:],
+        "sources": sources,
     }
 
 

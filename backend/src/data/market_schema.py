@@ -1,7 +1,7 @@
 """
 Financial market DuckDB schema for NLQ analytics.
 
-Creates tables, loads Nifty 50 historical data, and builds pre-aggregated views.
+Creates tables, loads Nifty 200 historical data, and builds pre-aggregated views.
 """
 
 import csv
@@ -131,6 +131,21 @@ def create_schema(con: duckdb.DuckDBPyConnection) -> None:
             sentiment    VARCHAR,
             key_facts    JSON,
             source_url   VARCHAR
+        )
+    """)
+
+    # Fact: bulk and block deals
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS fact_bulk_deals (
+            id VARCHAR DEFAULT gen_random_uuid()::VARCHAR,
+            trade_date DATE,
+            ticker VARCHAR,
+            deal_type VARCHAR,
+            quantity BIGINT,
+            price DECIMAL(12,2),
+            value_cr DECIMAL(12,2),
+            client_name VARCHAR,
+            created_at TIMESTAMP DEFAULT now()
         )
     """)
 
@@ -353,8 +368,198 @@ def load_dim_stocks(con: duckdb.DuckDBPyConnection) -> int:
     return len(rows)
 
 
+def _seed_nifty200_stocks(con: duckdb.DuckDBPyConnection) -> int:
+    """
+    Seed Nifty Next 50 + Nifty Midcap 100 stocks into dim_stocks.
+
+    Uses INSERT OR IGNORE so rows already loaded from CSV are untouched.
+    Covers roughly 150 additional tickers beyond Nifty 50.
+    """
+    # (ticker, company_name, sector, industry, isin, market_cap_cr, index_membership)
+    extra_stocks = [
+        # -- IT --
+        ("MPHASIS", "Mphasis Ltd", "Information Technology", "IT Services & Consulting", "INE356A01018", 48000, ["nifty_next50"]),
+        ("COFORGE", "Coforge Ltd", "Information Technology", "IT Services & Consulting", "INE591G01017", 36000, ["nifty_midcap100"]),
+        ("PERSISTENT", "Persistent Systems Ltd", "Information Technology", "IT Services & Consulting", "INE262H01013", 52000, ["nifty_midcap100"]),
+        ("LTTS", "L&T Technology Services Ltd", "Information Technology", "IT Services & Consulting", "INE010V01017", 42000, ["nifty_midcap100"]),
+        ("TATAELXSI", "Tata Elxsi Ltd", "Information Technology", "IT Services & Consulting", "INE670A01012", 34000, ["nifty_midcap100"]),
+        # -- Banking / NBFC --
+        ("BANKBARODA", "Bank of Baroda", "Financial Services", "Banks", "INE028A01039", 120000, ["nifty_next50"]),
+        ("PNB", "Punjab National Bank", "Financial Services", "Banks", "INE160A01022", 95000, ["nifty_next50"]),
+        ("CANBK", "Canara Bank", "Financial Services", "Banks", "INE476A01014", 90000, ["nifty_next50"]),
+        ("IDFCFIRSTB", "IDFC First Bank Ltd", "Financial Services", "Banks", "INE092T01019", 48000, ["nifty_midcap100"]),
+        ("AUBANK", "AU Small Finance Bank Ltd", "Financial Services", "Banks", "INE949L01017", 45000, ["nifty_midcap100"]),
+        ("BANDHANBNK", "Bandhan Bank Ltd", "Financial Services", "Banks", "INE545U01014", 30000, ["nifty_midcap100"]),
+        ("FEDERALBNK", "Federal Bank Ltd", "Financial Services", "Banks", "INE171A01029", 35000, ["nifty_midcap100"]),
+        ("CHOLAFIN", "Cholamandalam Investment and Finance Co Ltd", "Financial Services", "Consumer Finance", "INE121A01024", 85000, ["nifty_next50"]),
+        ("MUTHOOTFIN", "Muthoot Finance Ltd", "Financial Services", "Consumer Finance", "INE414G01012", 55000, ["nifty_midcap100"]),
+        ("MANAPPURAM", "Manappuram Finance Ltd", "Financial Services", "Consumer Finance", "INE522D01027", 18000, ["nifty_midcap100"]),
+        ("PFC", "Power Finance Corporation Ltd", "Financial Services", "Term Lending", "INE134E01011", 130000, ["nifty_next50"]),
+        ("RECLTD", "REC Ltd", "Financial Services", "Term Lending", "INE020B01018", 115000, ["nifty_next50"]),
+        ("LICHSGFIN", "LIC Housing Finance Ltd", "Financial Services", "Housing Finance", "INE115A01026", 35000, ["nifty_midcap100"]),
+        ("CANFINHOME", "Can Fin Homes Ltd", "Financial Services", "Housing Finance", "INE477A01020", 10000, ["nifty_midcap100"]),
+        # -- Auto --
+        ("ASHOKLEY", "Ashok Leyland Ltd", "Automobile", "Commercial Vehicles", "INE208A01029", 55000, ["nifty_next50"]),
+        ("TVSMOTOR", "TVS Motor Company Ltd", "Automobile", "Two Wheelers", "INE494B01023", 80000, ["nifty_next50"]),
+        ("MOTHERSON", "Samvardhana Motherson International Ltd", "Automobile", "Auto Components", "INE775A01035", 72000, ["nifty_next50"]),
+        ("BALKRISIND", "Balkrishna Industries Ltd", "Automobile", "Tyres", "INE787D01026", 45000, ["nifty_midcap100"]),
+        ("MRF", "MRF Ltd", "Automobile", "Tyres", "INE883A01011", 55000, ["nifty_midcap100"]),
+        ("BHARATFORG", "Bharat Forge Ltd", "Automobile", "Auto Components", "INE465A01025", 45000, ["nifty_midcap100"]),
+        ("EXIDEIND", "Exide Industries Ltd", "Automobile", "Auto Components", "INE302A01020", 25000, ["nifty_midcap100"]),
+        ("AMARAJABAT", "Amara Raja Energy & Mobility Ltd", "Automobile", "Auto Components", "INE885A01032", 18000, ["nifty_midcap100"]),
+        # -- Pharma / Healthcare --
+        ("AUROPHARMA", "Aurobindo Pharma Ltd", "Healthcare", "Pharmaceuticals", "INE406A01037", 60000, ["nifty_next50"]),
+        ("LUPIN", "Lupin Ltd", "Healthcare", "Pharmaceuticals", "INE326A01037", 70000, ["nifty_next50"]),
+        ("BIOCON", "Biocon Ltd", "Healthcare", "Biotechnology", "INE376G01013", 32000, ["nifty_midcap100"]),
+        ("TORNTPHARM", "Torrent Pharmaceuticals Ltd", "Healthcare", "Pharmaceuticals", "INE685A01028", 65000, ["nifty_midcap100"]),
+        ("ALKEM", "Alkem Laboratories Ltd", "Healthcare", "Pharmaceuticals", "INE540L01014", 50000, ["nifty_midcap100"]),
+        ("IPCALAB", "IPCA Laboratories Ltd", "Healthcare", "Pharmaceuticals", "INE571A01020", 28000, ["nifty_midcap100"]),
+        ("MAXHEALTH", "Max Healthcare Institute Ltd", "Healthcare", "Hospitals & Diagnostics", "INE027H01010", 70000, ["nifty_next50"]),
+        ("FORTIS", "Fortis Healthcare Ltd", "Healthcare", "Hospitals & Diagnostics", "INE061F01013", 28000, ["nifty_midcap100"]),
+        ("LALPATHLAB", "Dr Lal PathLabs Ltd", "Healthcare", "Diagnostics", "INE600L01024", 22000, ["nifty_midcap100"]),
+        ("METROPOLIS", "Metropolis Healthcare Ltd", "Healthcare", "Diagnostics", "INE112L01030", 14000, ["nifty_midcap100"]),
+        ("GLENMARK", "Glenmark Pharmaceuticals Ltd", "Healthcare", "Pharmaceuticals", "INE935A01035", 16000, ["nifty_midcap100"]),
+        ("NATCOPHARMA", "Natco Pharma Ltd", "Healthcare", "Pharmaceuticals", "INE987B01026", 18000, ["nifty_midcap100"]),
+        # -- FMCG --
+        ("DABUR", "Dabur India Ltd", "Fast Moving Consumer Goods", "FMCG", "INE016A01026", 88000, ["nifty_next50"]),
+        ("GODREJCP", "Godrej Consumer Products Ltd", "Fast Moving Consumer Goods", "FMCG", "INE102D01028", 95000, ["nifty_next50"]),
+        ("MARICO", "Marico Ltd", "Fast Moving Consumer Goods", "FMCG", "INE196A01026", 70000, ["nifty_next50"]),
+        ("COLPAL", "Colgate-Palmolive (India) Ltd", "Fast Moving Consumer Goods", "FMCG", "INE259A01022", 58000, ["nifty_midcap100"]),
+        ("VBL", "Varun Beverages Ltd", "Fast Moving Consumer Goods", "Beverages", "INE200M01013", 155000, ["nifty_next50"]),
+        ("UNITDSPR", "United Spirits Ltd", "Fast Moving Consumer Goods", "Alcoholic Beverages", "INE854D01024", 62000, ["nifty_midcap100"]),
+        ("EMAMILTD", "Emami Ltd", "Fast Moving Consumer Goods", "FMCG", "INE548C01032", 18000, ["nifty_midcap100"]),
+        ("JUBLFOOD", "Jubilant FoodWorks Ltd", "Fast Moving Consumer Goods", "Quick Service Restaurants", "INE797F01012", 35000, ["nifty_midcap100"]),
+        # -- Energy / Oil / Utilities --
+        ("GAIL", "GAIL (India) Ltd", "Energy", "Gas Transmission", "INE129A01019", 120000, ["nifty_next50"]),
+        ("PETRONET", "Petronet LNG Ltd", "Energy", "Gas Transmission", "INE347G01014", 45000, ["nifty_midcap100"]),
+        ("TATAPOWER", "Tata Power Company Ltd", "Utilities", "Power Generation", "INE245A01021", 110000, ["nifty_next50"]),
+        ("ADANIGREEN", "Adani Green Energy Ltd", "Utilities", "Renewable Energy", "INE364U01010", 160000, ["nifty_next50"]),
+        ("IOC", "Indian Oil Corporation Ltd", "Energy", "Petroleum Products", "INE242A01010", 180000, ["nifty_next50"]),
+        ("HINDPETRO", "Hindustan Petroleum Corporation Ltd", "Energy", "Petroleum Products", "INE094A01015", 60000, ["nifty_midcap100"]),
+        ("IGL", "Indraprastha Gas Ltd", "Energy", "City Gas Distribution", "INE203G01027", 28000, ["nifty_midcap100"]),
+        ("MGL", "Mahanagar Gas Ltd", "Energy", "City Gas Distribution", "INE002S01010", 14000, ["nifty_midcap100"]),
+        ("NHPC", "NHPC Ltd", "Utilities", "Power Generation", "INE848E01016", 70000, ["nifty_midcap100"]),
+        ("SJVN", "SJVN Ltd", "Utilities", "Power Generation", "INE002L01015", 45000, ["nifty_midcap100"]),
+        ("ADANIPOWER", "Adani Power Ltd", "Utilities", "Power Generation", "INE814H01011", 175000, ["nifty_midcap100"]),
+        ("TORNTPOWER", "Torrent Power Ltd", "Utilities", "Power Generation", "INE813H01021", 55000, ["nifty_midcap100"]),
+        ("CESC", "CESC Ltd", "Utilities", "Power Distribution", "INE486A01013", 14000, ["nifty_midcap100"]),
+        # -- Metals / Mining --
+        ("VEDL", "Vedanta Ltd", "Materials", "Mining & Metals", "INE205A01025", 160000, ["nifty_next50"]),
+        ("NMDC", "NMDC Ltd", "Materials", "Mining", "INE584A01023", 62000, ["nifty_midcap100"]),
+        ("JINDALSTEL", "Jindal Steel & Power Ltd", "Materials", "Iron & Steel", "INE749A01030", 78000, ["nifty_next50"]),
+        ("NATIONALUM", "National Aluminium Company Ltd", "Materials", "Aluminium", "INE139A01034", 28000, ["nifty_midcap100"]),
+        ("SAIL", "Steel Authority of India Ltd", "Materials", "Iron & Steel", "INE114A01011", 45000, ["nifty_midcap100"]),
+        ("JSWENERGY", "JSW Energy Ltd", "Utilities", "Power Generation", "INE121E01018", 72000, ["nifty_midcap100"]),
+        ("APLAPOLLO", "APL Apollo Tubes Ltd", "Materials", "Iron & Steel", "INE702C01019", 30000, ["nifty_midcap100"]),
+        # -- Telecom --
+        ("IDEA", "Vodafone Idea Ltd", "Communication Services", "Telecom Services", "INE669E01016", 55000, ["nifty_midcap100"]),
+        # -- Infrastructure / Construction / Real Estate --
+        ("DLF", "DLF Ltd", "Real Estate", "Real Estate Development", "INE271C01023", 130000, ["nifty_next50"]),
+        ("GODREJPROP", "Godrej Properties Ltd", "Real Estate", "Real Estate Development", "INE484J01027", 55000, ["nifty_midcap100"]),
+        ("OBEROIRLTY", "Oberoi Realty Ltd", "Real Estate", "Real Estate Development", "INE093I01010", 50000, ["nifty_midcap100"]),
+        ("PRESTIGE", "Prestige Estates Projects Ltd", "Real Estate", "Real Estate Development", "INE811K01011", 35000, ["nifty_midcap100"]),
+        ("PHOENIXLTD", "The Phoenix Mills Ltd", "Real Estate", "Real Estate Management", "INE211B01039", 38000, ["nifty_midcap100"]),
+        ("BRIGADE", "Brigade Enterprises Ltd", "Real Estate", "Real Estate Development", "INE791I01019", 15000, ["nifty_midcap100"]),
+        ("LODHA", "Macrotech Developers Ltd", "Real Estate", "Real Estate Development", "INE670K01029", 80000, ["nifty_next50"]),
+        ("IRCON", "Ircon International Ltd", "Industrials", "Construction & Engineering", "INE962Y01021", 18000, ["nifty_midcap100"]),
+        ("NCC", "NCC Ltd", "Industrials", "Construction & Engineering", "INE868B01028", 12000, ["nifty_midcap100"]),
+        ("KEC", "KEC International Ltd", "Industrials", "Capital Goods", "INE389H01022", 16000, ["nifty_midcap100"]),
+        # -- Chemicals --
+        ("PIDILITIND", "Pidilite Industries Ltd", "Materials", "Specialty Chemicals", "INE318A01026", 130000, ["nifty_next50"]),
+        ("SRF", "SRF Ltd", "Materials", "Specialty Chemicals", "INE647A01010", 65000, ["nifty_midcap100"]),
+        ("AARTI", "Aarti Industries Ltd", "Materials", "Specialty Chemicals", "INE769A01020", 20000, ["nifty_midcap100"]),
+        ("DEEPAKNTR", "Deepak Nitrite Ltd", "Materials", "Specialty Chemicals", "INE288B01029", 25000, ["nifty_midcap100"]),
+        ("CLEAN", "Clean Science and Technology Ltd", "Materials", "Specialty Chemicals", "INE209S01016", 14000, ["nifty_midcap100"]),
+        ("ATUL", "Atul Ltd", "Materials", "Specialty Chemicals", "INE100A01010", 18000, ["nifty_midcap100"]),
+        ("NAVINFLUOR", "Navin Fluorine International Ltd", "Materials", "Specialty Chemicals", "INE048G01026", 14000, ["nifty_midcap100"]),
+        ("FLUOROCHEM", "Gujarat Fluorochemicals Ltd", "Materials", "Specialty Chemicals", "INE386A01016", 20000, ["nifty_midcap100"]),
+        # -- Insurance --
+        ("ICICIPRULI", "ICICI Prudential Life Insurance Co Ltd", "Financial Services", "Life Insurance", "INE726G01019", 80000, ["nifty_next50"]),
+        ("STARHEALTH", "Star Health and Allied Insurance Co Ltd", "Financial Services", "General Insurance", "INE575P01011", 35000, ["nifty_midcap100"]),
+        ("NIACL", "New India Assurance Company Ltd", "Financial Services", "General Insurance", "INE470Y01017", 22000, ["nifty_midcap100"]),
+        ("ICICIGI", "ICICI Lombard General Insurance Co Ltd", "Financial Services", "General Insurance", "INE765G01017", 62000, ["nifty_midcap100"]),
+        # -- Consumer / Retail / New-age --
+        ("ZOMATO", "Zomato Ltd", "Consumer Services", "Internet & Catalogue Retail", "INE758T01015", 155000, ["nifty_next50"]),
+        ("PAYTM", "One97 Communications Ltd", "Information Technology", "Fintech", "INE982J01020", 28000, ["nifty_midcap100"]),
+        ("NYKAA", "FSN E-Commerce Ventures Ltd", "Consumer Services", "E-Commerce", "INE388Y01029", 25000, ["nifty_midcap100"]),
+        ("DMART", "Avenue Supermarts Ltd", "Consumer Services", "Retail", "INE192R01011", 270000, ["nifty_next50"]),
+        ("TRENT", "Trent Ltd", "Consumer Services", "Retail", "INE849A01020", 165000, ["nifty_next50"]),
+        ("PAGEIND", "Page Industries Ltd", "Consumer Durables", "Apparel", "INE761H01022", 42000, ["nifty_midcap100"]),
+        ("RELAXO", "Relaxo Footwears Ltd", "Consumer Durables", "Footwear", "INE131B01039", 15000, ["nifty_midcap100"]),
+        ("POLYCAB", "Polycab India Ltd", "Consumer Durables", "Electrical Equipment", "INE455K01017", 70000, ["nifty_next50"]),
+        ("CROMPTON", "Crompton Greaves Consumer Electricals Ltd", "Consumer Durables", "Electrical Equipment", "INE299U01018", 22000, ["nifty_midcap100"]),
+        ("VOLTAS", "Voltas Ltd", "Consumer Durables", "Consumer Electronics", "INE226A01021", 30000, ["nifty_midcap100"]),
+        ("BATAINDIA", "Bata India Ltd", "Consumer Durables", "Footwear", "INE176A01028", 22000, ["nifty_midcap100"]),
+        ("WHIRLPOOL", "Whirlpool of India Ltd", "Consumer Durables", "Consumer Electronics", "INE716A01013", 14000, ["nifty_midcap100"]),
+        # -- Defence / PSU --
+        ("HAL", "Hindustan Aeronautics Ltd", "Industrials", "Aerospace & Defence", "INE066F01020", 260000, ["nifty_next50"]),
+        ("BEL", "Bharat Electronics Ltd", "Industrials", "Aerospace & Defence", "INE263A01024", 145000, ["nifty_next50"]),
+        ("IRCTC", "Indian Railway Catering and Tourism Corporation Ltd", "Consumer Services", "Travel & Tourism", "INE335Y01020", 62000, ["nifty_midcap100"]),
+        ("CONCOR", "Container Corporation of India Ltd", "Industrials", "Logistics", "INE111A01025", 42000, ["nifty_midcap100"]),
+        ("IRFC", "Indian Railway Finance Corporation Ltd", "Financial Services", "Term Lending", "INE053F01010", 160000, ["nifty_midcap100"]),
+        ("HUDCO", "Housing & Urban Development Corporation Ltd", "Financial Services", "Housing Finance", "INE031A01017", 38000, ["nifty_midcap100"]),
+        ("BDL", "Bharat Dynamics Ltd", "Industrials", "Aerospace & Defence", "INE171Z01018", 32000, ["nifty_midcap100"]),
+        ("COCHINSHIP", "Cochin Shipyard Ltd", "Industrials", "Shipbuilding", "INE704P01017", 30000, ["nifty_midcap100"]),
+        # -- Cement --
+        ("AMBUJACEM", "Ambuja Cements Ltd", "Construction Materials", "Cement", "INE079A01024", 120000, ["nifty_next50"]),
+        ("ACC", "ACC Ltd", "Construction Materials", "Cement", "INE012A01025", 45000, ["nifty_midcap100"]),
+        ("SHREECEM", "Shree Cement Ltd", "Construction Materials", "Cement", "INE070A01015", 90000, ["nifty_next50"]),
+        ("RAMCOCEM", "The Ramco Cements Ltd", "Construction Materials", "Cement", "INE331A01037", 20000, ["nifty_midcap100"]),
+        ("DALMIACEM", "Dalmia Bharat Ltd", "Construction Materials", "Cement", "INE439L01019", 28000, ["nifty_midcap100"]),
+        ("JKCEMENT", "JK Cement Ltd", "Construction Materials", "Cement", "INE823G01014", 22000, ["nifty_midcap100"]),
+        ("STARCEMENT", "Star Cement Ltd", "Construction Materials", "Cement", "INE460H01021", 5000, ["nifty_midcap100"]),
+        # -- Capital Goods / Engineering --
+        ("SIEMENS", "Siemens Ltd", "Industrials", "Capital Goods", "INE003A01024", 175000, ["nifty_next50"]),
+        ("ABB", "ABB India Ltd", "Industrials", "Capital Goods", "INE117A01022", 130000, ["nifty_next50"]),
+        ("HAVELLS", "Havells India Ltd", "Consumer Durables", "Electrical Equipment", "INE176B01034", 95000, ["nifty_next50"]),
+        ("CUMMINSIND", "Cummins India Ltd", "Industrials", "Capital Goods", "INE298A01020", 68000, ["nifty_midcap100"]),
+        ("THERMAX", "Thermax Ltd", "Industrials", "Capital Goods", "INE152A01029", 30000, ["nifty_midcap100"]),
+        ("GRINFRA", "G R Infraprojects Ltd", "Industrials", "Construction & Engineering", "INE201P01038", 8000, ["nifty_midcap100"]),
+        ("KALYANKJIL", "Kalyan Jewellers India Ltd", "Consumer Durables", "Precious Metals & Jewellery", "INE303R01014", 38000, ["nifty_midcap100"]),
+        # -- Miscellaneous / Diversified --
+        ("PIIND", "PI Industries Ltd", "Materials", "Agrochemicals", "INE603J01030", 45000, ["nifty_midcap100"]),
+        ("UPL", "UPL Ltd", "Materials", "Agrochemicals", "INE628A01036", 35000, ["nifty_midcap100"]),
+        ("COROMANDEL", "Coromandel International Ltd", "Materials", "Fertilizers", "INE169A01031", 38000, ["nifty_midcap100"]),
+        ("DEEPAKFERT", "Deepak Fertilisers and Petrochemicals Corp Ltd", "Materials", "Fertilizers", "INE501A01019", 8000, ["nifty_midcap100"]),
+        ("MCDOWELL-N", "United Breweries Ltd", "Fast Moving Consumer Goods", "Alcoholic Beverages", "INE686F01025", 40000, ["nifty_midcap100"]),
+        ("INDIGO", "InterGlobe Aviation Ltd", "Consumer Services", "Airlines", "INE646L01027", 85000, ["nifty_next50"]),
+        ("HONAUT", "Honeywell Automation India Ltd", "Industrials", "Capital Goods", "INE671A01010", 40000, ["nifty_midcap100"]),
+        ("KAYNES", "Kaynes Technology India Ltd", "Information Technology", "Electronics", "INE918Z01010", 18000, ["nifty_midcap100"]),
+        ("SONACOMS", "Sona BLW Precision Forgings Ltd", "Automobile", "Auto Components", "INE073K01018", 32000, ["nifty_midcap100"]),
+        ("SUNTV", "Sun TV Network Ltd", "Communication Services", "Media & Entertainment", "INE424H01027", 25000, ["nifty_midcap100"]),
+        ("PVRINOX", "PVR INOX Ltd", "Consumer Services", "Media & Entertainment", "INE191H01014", 12000, ["nifty_midcap100"]),
+        ("CAMS", "Computer Age Management Services Ltd", "Financial Services", "Asset Management", "INE596I01012", 14000, ["nifty_midcap100"]),
+        ("CDSL", "Central Depository Services (India) Ltd", "Financial Services", "Capital Markets", "INE736A01011", 28000, ["nifty_midcap100"]),
+        ("ANGELONE", "Angel One Ltd", "Financial Services", "Capital Markets", "INE732I01013", 22000, ["nifty_midcap100"]),
+        ("BSE", "BSE Ltd", "Financial Services", "Capital Markets", "INE118H01025", 32000, ["nifty_midcap100"]),
+        ("MCX", "Multi Commodity Exchange of India Ltd", "Financial Services", "Capital Markets", "INE745G01035", 18000, ["nifty_midcap100"]),
+        ("MAZDOCK", "Mazagon Dock Shipbuilders Ltd", "Industrials", "Shipbuilding", "INE249Z01012", 55000, ["nifty_midcap100"]),
+        ("HINDCOPPER", "Hindustan Copper Ltd", "Materials", "Mining", "INE531E01026", 22000, ["nifty_midcap100"]),
+        ("ASTRAL", "Astral Ltd", "Industrials", "Building Products", "INE006I01046", 40000, ["nifty_midcap100"]),
+        ("SUPREMEIND", "Supreme Industries Ltd", "Industrials", "Building Products", "INE195A01028", 38000, ["nifty_midcap100"]),
+        ("SUNDARMFIN", "Sundaram Finance Ltd", "Financial Services", "Consumer Finance", "INE660A01013", 36000, ["nifty_midcap100"]),
+        ("SYNGENE", "Syngene International Ltd", "Healthcare", "Contract Research", "INE398R01022", 24000, ["nifty_midcap100"]),
+        ("TATACHEM", "Tata Chemicals Ltd", "Materials", "Commodity Chemicals", "INE092A01019", 25000, ["nifty_midcap100"]),
+        ("ABCAPITAL", "Aditya Birla Capital Ltd", "Financial Services", "Holding Companies", "INE674K01013", 38000, ["nifty_midcap100"]),
+        ("IIFL", "IIFL Finance Ltd", "Financial Services", "Consumer Finance", "INE530B01024", 14000, ["nifty_midcap100"]),
+        ("SUMICHEM", "Sumitomo Chemical India Ltd", "Materials", "Agrochemicals", "INE258G01013", 18000, ["nifty_midcap100"]),
+        ("INDUSTOWER", "Indus Towers Ltd", "Communication Services", "Telecom Infrastructure", "INE121J01017", 80000, ["nifty_next50"]),
+        ("DIXON", "Dixon Technologies (India) Ltd", "Consumer Durables", "Electronics Manufacturing", "INE935N01020", 52000, ["nifty_next50"]),
+        ("OFSS", "Oracle Financial Services Software Ltd", "Information Technology", "IT Services & Consulting", "INE881D01027", 55000, ["nifty_midcap100"]),
+        ("ESCORTS", "Escorts Kubota Ltd", "Automobile", "Farm Equipment", "INE042A01014", 30000, ["nifty_midcap100"]),
+        ("RVNL", "Rail Vikas Nigam Ltd", "Industrials", "Construction & Engineering", "INE415G01027", 55000, ["nifty_midcap100"]),
+    ]
+
+    con.executemany(
+        "INSERT OR IGNORE INTO dim_stocks VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [list(s) for s in extra_stocks],
+    )
+    logger.info(f"Seeded {len(extra_stocks)} Nifty 200 stocks (beyond Nifty 50)")
+    return len(extra_stocks)
+
+
 def load_historical_prices(con: duckdb.DuckDBPyConnection, period: str = "5y") -> int:
-    """Load historical OHLCV data for all Nifty 50 stocks via yfinance."""
+    """Load historical OHLCV data for all stocks in dim_stocks via yfinance."""
     try:
         import yfinance as yf
     except ImportError:
@@ -563,6 +768,7 @@ def init_database(load_prices: bool = True, price_period: str = "5y") -> dict:
     try:
         create_schema(con)
         stocks = load_dim_stocks(con)
+        stocks += _seed_nifty200_stocks(con)
         create_views(con)
 
         prices = 0

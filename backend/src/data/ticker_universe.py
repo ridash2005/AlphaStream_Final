@@ -105,4 +105,9 @@ def _get_tickers_from_csv() -> list[str]:
         with open(_CSV_PATH) as f:
             return [row["ticker"] for row in csv.DictReader(f)]
     except Exception:
-        return ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK"]
+        return [
+            "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
+            "HINDUNILVR", "ITC", "SBIN", "BHARTIARTL", "KOTAKBANK",
+            "LT", "AXISBANK", "WIPRO", "SUNPHARMA", "TATAMOTORS",
+            "MARUTI", "NTPC", "TATASTEEL", "BAJFINANCE", "TITAN",
+        ]

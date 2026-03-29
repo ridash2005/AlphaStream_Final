@@ -288,6 +288,27 @@ function MessageBubble({ msg, onSendMessage }) {
             )}
           </div>
           {msg.thoughts && msg.thoughts.length > 0 && <ThoughtProcess steps={msg.thoughts} />}
+          {msg.sources && msg.sources.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-border/30">
+              <div className="flex flex-wrap gap-1">
+                {msg.sources.map((src, i) => (
+                  <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] bg-primary/10 text-primary border border-primary/20">
+                    {src}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {msg.sql && (
+            <details className="mt-2 pt-2 border-t border-border/30">
+              <summary className="text-[10px] text-muted-foreground cursor-pointer hover:text-foreground">
+                View generated SQL
+              </summary>
+              <pre className="mt-1 p-2 rounded bg-background text-[9px] font-mono text-muted-foreground overflow-x-auto">
+                {msg.sql}
+              </pre>
+            </details>
+          )}
           {msg.suggested && msg.suggested.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {msg.suggested.map((q, i) => (
@@ -917,7 +938,7 @@ export default function NLQPanel({ className = '' }) {
           setMessages((prev) => [
             ...prev,
             { role: 'bot', text: answerText, thoughts, filters: [], ts: formatTime(new Date()),
-              suggested: event.suggested_questions || [] },
+              suggested: event.suggested_questions || [], sources: event.sources || [], sql: event.sql || null },
           ])
           if (event.chart_spec && event.chart_spec.type !== 'none') {
             setChartData({ chart_spec: event.chart_spec, sql: event.sql, answer: answerText })
@@ -959,7 +980,8 @@ export default function NLQPanel({ className = '' }) {
               : []
             setMessages((prev) => [
               ...prev,
-              { role: 'bot', text: answerText, thoughts, filters: [], ts: formatTime(new Date()) },
+              { role: 'bot', text: answerText, thoughts, filters: [], ts: formatTime(new Date()),
+                sources: d.sources || [], sql: d.sql || null },
             ])
           })
           .catch((err) => {

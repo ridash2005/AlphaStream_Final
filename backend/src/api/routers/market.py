@@ -1,5 +1,5 @@
 """
-Market API router — radar, patterns, backtest, flows, portfolio, filings, OHLCV.
+Market API router -- radar, patterns, backtest, flows, portfolio, filings, OHLCV.
 """
 import asyncio
 import json
@@ -345,8 +345,25 @@ async def get_fundamentals(ticker: str):
         logger.warning(f"Fundamentals fetch failed for {ticker}: {e}")
         return {
             "ticker": ticker,
-            "error": "Fundamentals data unavailable — configure GROWW_API_TOKEN in .env",
+            "error": "Fundamentals data unavailable -- configure GROWW_API_TOKEN in .env",
             "pe_ratio": None, "pb_ratio": None, "dividend_yield": None,
             "roe": None, "market_cap_cr": None, "year_high": None, "year_low": None,
             "current_price": None,
         }
+
+
+@router.get("/bulk-deals")
+async def get_bulk_deals(days: int = Query(7, le=30)):
+    """Recent bulk and block deals from NSE."""
+    import duckdb
+    from src.data.market_schema import get_db_path
+    try:
+        con = duckdb.connect(get_db_path(), read_only=True)
+        df = con.execute(
+            "SELECT * FROM fact_bulk_deals WHERE trade_date >= current_date - ? ORDER BY value_cr DESC LIMIT 50",
+            [days]
+        ).fetchdf()
+        con.close()
+        return {"deals": df.to_dict(orient="records"), "total": len(df)}
+    except Exception as e:
+        return {"deals": [], "total": 0, "error": str(e)}
