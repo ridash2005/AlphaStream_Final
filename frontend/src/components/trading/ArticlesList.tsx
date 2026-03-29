@@ -130,7 +130,7 @@ export function ArticlesList() {
                                     <span className="text-xs text-muted-foreground">{article.source}</span>
                                     <span className="text-xs text-muted-foreground">•</span>
                                     <span className="text-xs font-mono text-primary/70">
-                                        {(article.similarity * 100).toFixed(1)}% match
+                                        {((article.similarity ?? 0) * 100).toFixed(1)}% match
                                     </span>
                                     {article.published_at && (
                                         <>

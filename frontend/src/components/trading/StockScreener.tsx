@@ -41,7 +41,7 @@ export function StockScreener() {
       .getScreener({ sector: sectorFilter, direction: dirFilter, minAlpha, limit: 20 })
       .then((d) => {
         setStocks(d?.stocks || []);
-        if (d?.sectors?.length) setSectors(d.sectors);
+        setSectors(d?.sectors || []);
       })
       .catch(() => {
         setFetchError(true);

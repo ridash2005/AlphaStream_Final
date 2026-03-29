@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAppStore } from '@/store/appStore';
@@ -27,8 +27,10 @@ export function MarketHeatmap() {
         fetchInitialHeatmap();
     }, []);
 
-    // Sort by score
-    const sortedData = [...marketHeatmap].sort((a, b) => b.score - a.score);
+    const sortedData = useMemo(
+        () => [...marketHeatmap].sort((a, b) => Math.abs(b.score) - Math.abs(a.score)),
+        [marketHeatmap]
+    );
 
     return (
         <Card className="glass-card h-full">

@@ -69,7 +69,9 @@ export const apiService = {
         const url = `${API_BASE_URL}/api/nlq/stream?question=${encodeURIComponent(question)}&session_id=${sessionId}`;
         const source = new EventSource(url);
         source.onmessage = (e) => {
-            try { onEvent(JSON.parse(e.data)); } catch {}
+            try { onEvent(JSON.parse(e.data)); } catch (err) {
+              console.warn('SSE event parse error:', err)
+            }
         };
         source.onerror = () => { source.close(); };
         return source;
