@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/services/api';
 import { useAppStore } from '@/store/appStore';
@@ -30,12 +30,14 @@ export function AnomalyPanel() {
   const { currentTicker } = useAppStore();
   const [data, setData] = useState<AnomalyData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   const fetch = () => {
     setLoading(true);
+    setHasError(false);
     apiService.getAnomalies(currentTicker)
       .then(d => setData(d))
-      .catch(() => setData(null))
+      .catch(() => { setHasError(true); setData(null); })
       .finally(() => setLoading(false));
   };
 
@@ -70,14 +72,21 @@ export function AnomalyPanel() {
           </div>
         )}
 
-        {!loading && (data?.error && count === 0) && (
+        {!loading && hasError && (
+          <div className="text-xs text-muted-foreground text-center py-4">
+            <AlertCircle className="h-4 w-4 mx-auto mb-1 text-red-400 opacity-60" />
+            Failed to load anomalies
+          </div>
+        )}
+
+        {!loading && !hasError && (data?.error && count === 0) && (
           <div className="text-xs text-muted-foreground text-center py-4">
             <AlertTriangle className="h-5 w-5 mx-auto mb-1 opacity-20" />
             {data.error.includes('No OHLCV') ? 'No market data available' : 'Anomaly detection unavailable'}
           </div>
         )}
 
-        {!loading && !data?.error && count === 0 && (
+        {!loading && !hasError && !data?.error && count === 0 && (
           <div className="text-xs text-muted-foreground text-center py-4">
             <div className="text-emerald-400 text-sm font-mono mb-1">✓ Normal</div>
             No anomalies detected - price action within normal bounds
@@ -87,7 +96,7 @@ export function AnomalyPanel() {
           </div>
         )}
 
-        {!loading && count > 0 && (
+        {!loading && !hasError && count > 0 && (
           <div className="space-y-2">
             {anomalies.map((a, i) => {
               const style = TYPE_STYLE[a.type] || { label: a.type, color: 'bg-secondary/50 text-muted-foreground' };

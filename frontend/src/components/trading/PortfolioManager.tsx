@@ -99,7 +99,7 @@ export function PortfolioManager() {
       setLoadingSummary(true);
       apiService.getPortfolioSummary()
         .then(s => setSummary(s))
-        .catch(() => {})
+        .catch(() => setError('Failed to load portfolio data'))
         .finally(() => setLoadingSummary(false));
     }
   }, []);

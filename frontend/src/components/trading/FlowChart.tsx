@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { apiService } from '@/services/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
-import { ArrowRightLeft, RefreshCw } from 'lucide-react';
+import { ArrowRightLeft, RefreshCw, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FlowDay {
@@ -14,9 +14,11 @@ interface FlowDay {
 export function FlowChart() {
     const [data, setData] = useState<FlowDay[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
 
     const fetchFlows = async () => {
         setLoading(true);
+        setError(false);
         try {
             const resp = await apiService.getFlows(30);
             const flows = resp.flows || resp.data || resp;
@@ -32,7 +34,9 @@ export function FlowChart() {
                     };
                 }));
             }
-        } catch { /* graceful degradation */ }
+        } catch {
+            setError(true);
+        }
         setLoading(false);
     };
 
@@ -54,7 +58,12 @@ export function FlowChart() {
             <CardContent>
                 {data.length === 0 ? (
                     <div className="h-[200px] flex items-center justify-center text-xs text-muted-foreground">
-                        {loading ? 'Loading flow data...' : 'No FII/DII data available'}
+                        {loading ? 'Loading flow data...' : error ? (
+                            <div className="flex flex-col items-center gap-1">
+                                <AlertCircle className="h-4 w-4 text-red-400 opacity-60" />
+                                Failed to load FII/DII data
+                            </div>
+                        ) : 'No FII/DII data available'}
                     </div>
                 ) : (
                     <ResponsiveContainer width="100%" height={220}>

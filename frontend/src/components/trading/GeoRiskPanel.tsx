@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield } from 'lucide-react';
+import { Shield, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/services/api';
 
@@ -58,10 +58,15 @@ export function GeoRiskPanel() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!risk ? (
+        {error ? (
+          <div className="text-xs text-muted-foreground text-center py-4">
+            <AlertCircle className="h-4 w-4 mx-auto mb-1 text-red-400 opacity-60" />
+            Geo risk data unavailable
+          </div>
+        ) : !risk ? (
           <div className="text-xs text-muted-foreground text-center py-4">
             <Shield className="h-6 w-6 mx-auto mb-2 opacity-20 animate-pulse" />
-            {error ? 'Geo-risk data unavailable' : 'Loading geo-risk...'}
+            Loading geo-risk...
           </div>
         ) : (
           <div>
