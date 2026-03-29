@@ -1,17 +1,17 @@
-# AlphaStream Architecture
+# AlphaStream India — Architecture
 
-Detailed technical architecture for the AlphaStream Live AI trading system.
+Detailed technical architecture for the AlphaStream India AI trading terminal.
 
 ---
 
 ## System Overview
 
-AlphaStream implements a **streaming RAG (Retrieval-Augmented Generation)** architecture with **multi-agent reasoning**. The system is designed for:
+AlphaStream India implements a **streaming RAG + multi-agent** architecture focused on the Indian equity market (NSE/BSE). The system is designed for:
 
-1. **Real-time data ingestion** - No batch processing
-2. **Incremental updates** - Knowledge base updates in <1 second
-3. **Explainable AI** - Track which sources influenced decisions
-4. **Production-ready** - Rate limiting, error handling, fallbacks
+1. **Real-time data ingestion** — Pathway streaming, <2s latency from news to recommendation
+2. **Incremental updates** — Knowledge base updates continuously via Adaptive RAG
+3. **Explainable AI** — Every recommendation traces back to sources, agent scores, and signals
+4. **India-first context** — ₹ currency, IST timezone, NSE/BSE tickers, Nifty 50 universe
 
 ---
 
@@ -19,45 +19,83 @@ AlphaStream implements a **streaming RAG (Retrieval-Augmented Generation)** arch
 
 ```mermaid
 graph LR
-    subgraph "Data Sources"
-        A1[NewsAPI]
-        A2[SEC EDGAR]
-        A3[yfinance]
+    subgraph "Indian Data Sources"
+        A1[NewsAPI / RSS]
+        A2[NSE / BSE API]
+        A3[Groww API]
+        A4[NSDL FII/DII]
+        A5[FRED Macro]
+    end
+
+    subgraph "Global Data Sources"
+        G1[WorldMonitor]
+        G2[CNN Fear&Greed]
+        G3[yfinance Indices]
     end
 
     subgraph "Ingestion Layer"
-        B1[News Connector]
-        B2[SEC Connector]
+        B1[Pathway Streaming]
+        B2[Threat Classifier]
+        B3[DuckDB Ingest]
     end
 
-    subgraph "Processing Layer"
-        C1[Chunking]
-        C2[Embedding]
-        C3[Vector Index]
+    subgraph "Analytics Layer (DuckDB)"
+        C1[fact_articles]
+        C2[fact_signals]
+        C3[v_stock_screener]
+        C4[dim_stocks Nifty50]
     end
 
-    subgraph "Reasoning Layer"
-        D1[Sentiment Agent]
-        D2[Technical Agent]
-        D3[Risk Agent]
-        D4[Insider Agent]
-        D5[Decision Agent]
+    subgraph "Agent System (13 agents)"
+        D1[Sentiment]
+        D2[Technical + RSI/SMA]
+        D3[Risk]
+        D4[Decision]
+        D5[Flow + Anomaly]
+        D6[Pattern + Backtest]
     end
 
-    subgraph "Output Layer"
-        E1[REST API]
-        E2[WebSocket]
-        E3[PDF Reports]
+    subgraph "API Layer (FastAPI)"
+        E1[Market Router]
+        E2[Global Router]
+        E3[NLQ Router]
+        E4[WebSocket]
+    end
+
+    subgraph "React Terminal (5 tabs)"
+        F1[Overview: Chart+Fundamentals]
+        F2[Signals: Screener+Radar]
+        F3[Global: Crypto+FX+Sectors]
+        F4[Company: Filings+News]
+        F5[Portfolio: P&L]
     end
 
     A1 --> B1
-    A2 --> B2
-    B1 --> C1
-    C1 --> C2
-    C2 --> C3
-    C3 --> D1
+    A2 --> B1
+    B1 --> B2
+    B2 --> B3
+    B3 --> C1
+    A2 --> D2
     A3 --> D2
-    D2 --> D3
+    A4 --> D5
+    A5 --> D4
+    G1 --> E2
+    G2 --> E2
+    G3 --> E2
+    C1 --> D1
+    C2 --> D6
+    C3 --> E1
+    C4 --> E1
+    D1 --> D4
+    D2 --> D4
+    D3 --> D4
+    D5 --> D4
+    D4 --> E4
+    E1 --> F1
+    E1 --> F2
+    E2 --> F3
+    E1 --> F4
+    E1 --> F5
     B2 --> D4
     D1 & D3 & D4 --> D5
     D5 --> E1 & E2

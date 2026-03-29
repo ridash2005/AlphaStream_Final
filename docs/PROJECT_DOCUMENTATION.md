@@ -1,16 +1,22 @@
-# AlphaStream: Real-Time AI Trading Intelligence
+# AlphaStream India: Real-Time AI Investment Intelligence
 ## Comprehensive Project Documentation
-### DataQuest 2026 Hackathon Submission
+### ET AI Hackathon 2026 — Problem Statement 6: AI for the Indian Investor
 
 ---
 
 ## Executive Summary
 
-AlphaStream is a **production-grade, real-time AI trading recommendation system** built on the **Pathway streaming framework**. It addresses the critical "stale knowledge" problem in financial AI by providing instant, explainable trading decisions that automatically update as new market information arrives.
+AlphaStream India is a **production-grade Bloomberg-style terminal** for the Indian retail investor, built on **Pathway streaming RAG + multi-agent AI**. It addresses the critical gap between institutional-grade analytics and what 14 crore+ Indian demat account holders actually have access to.
 
-**Key Innovation**: Our **Pathway Adaptive RAG** architecture uses the official `pw.xpacks.llm` components with a geometric retrieval strategy that optimizes token usage while maintaining accuracy. The system demonstrates <2 second latency from data arrival to recommendation update.
+**Key Innovations**:
+1. **Pathway Adaptive RAG** — <2s latency from news arrival to recommendation update
+2. **13-agent reasoning pipeline** — Sentiment, Technical (RSI/SMA), Risk, Decision, Flow, Pattern, Backtest, Filing, Insider, Chart, Report, Search, Anomaly (River ML)
+3. **5-tab Bloomberg terminal** — Overview · Signals · Global Intel · Company · Portfolio
+4. **WorldMonitor global backbone** — Live global indices, commodities, crypto, FX, macro signals, geopolitical risk wired into every recommendation
+5. **DuckDB analytics layer** — Pre-aggregated views (v_stock_screener, v_signal_summary, v_sector_heatmap) powering the screener and NLQ engine
+6. **India-first context** — ₹ currency, IST timezone, NSE/BSE, Nifty 50 universe, Crores/Lakhs formatting throughout
 
-**Team**: DataQuest 2026 Participants
+**Team**: ET AI Hackathon 2026 Participants
 
 ---
 
@@ -503,12 +509,25 @@ curl -X POST http://localhost:8000/report/AAPL
 
 ## 11. Future Enhancements
 
-1. **Social Media Integration** - Twitter/X, Reddit sentiment
-2. **Options Flow Analysis** - Unusual options activity
-3. **Earnings Calendar** - Scheduled event tracking
-4. **Portfolio Mode** - Multi-ticker monitoring
-5. **Alert System** - Push notifications for significant changes
-6. **Backtesting** - Historical recommendation accuracy
+### Delivered in v2 (ET AI Hackathon 2026)
+
+The following features from the original roadmap have been **fully implemented**:
+
+| Feature | Status | Component |
+|---------|--------|-----------|
+| Portfolio Mode | ✅ Done | `PortfolioManager` — holdings, real-time P&L, BarChart by ticker |
+| Alert System | ✅ Done | `NotificationBell` + `AnomalyPanel` — River ML anomaly detection with badges |
+| Backtesting | ✅ Done | `PatternAgent` + `/api/backtest/{ticker}/{pattern}` — 5-year pattern backtest |
+| Options Flow | ✅ Done (FII/DII) | `FlowChart` + `FlowAgent` — FII/DII net flow analysis |
+
+### Remaining Roadmap
+
+1. **Social Media Integration** — Twitter/X, Reddit WallStreetBets India sentiment scraping for retail investor mood
+2. **Earnings Calendar** — Scheduled BSE result announcements with pre/post earnings drift analysis
+3. **SMS / Push Alerts** — WhatsApp Business API or FCM for critical threat_level=critical article alerts
+4. **Options Chain Analysis** — NSE F&O open interest, max pain, PCR ratio with visual strike overlay
+5. **Multi-Language NLQ** — Hindi language support for NLQ queries (Devanagari input, mixed-language response)
+6. **Mobile PWA** — Progressive Web App with offline caching for watchlist and last recommendation
 
 ---
 
@@ -517,38 +536,52 @@ curl -X POST http://localhost:8000/report/AAPL
 ### File Structure
 
 ```
-Data Quest/
+AlphaStream_India/
 ├── backend/
 │   ├── src/
-│   │   ├── agents/           # 7 specialized AI agents
-│   │   ├── connectors/       # Data source connectors
-│   │   ├── pipeline/         # RAG implementations
+│   │   ├── agents/           # 13 specialized AI agents
+│   │   ├── connectors/       # Data source connectors (NSE, BSE, Groww, WorldMonitor)
+│   │   ├── pipeline/         # Pathway streaming + RAG
 │   │   └── api/              # FastAPI application
-│   ├── pathway_rag.yaml      # Adaptive RAG config
+│   ├── data/
+│   │   └── articles/         # Pathway-persisted article cache
+│   ├── market_analytics.duckdb  # Analytics DB (Nifty 50, signals, articles)
 │   └── pyproject.toml
 ├── frontend/
 │   └── src/
-│       └── components/       # React UI components
+│       ├── components/trading/  # 25+ Bloomberg terminal components
+│       ├── pages/               # Dashboard (5-tab layout)
+│       ├── services/api.ts      # Typed API client
+│       └── store/appStore.ts    # Zustand state + persistence
 ├── docs/
-│   ├── ARCHITECTURE.md
-│   └── *.png                 # Architecture diagrams
-└── docker-compose.yml
+│   ├── ARCHITECTURE.md          # Mermaid data flow + component details
+│   └── PROJECT_DOCUMENTATION.md
+└── start_demo.sh
 ```
 
 ### Environment Variables
 
 ```bash
-OPENROUTER_API_KEY=your_key_here
-NEWS_API_KEY=optional
-FINNHUB_API_KEY=optional
-ALPHAVANTAGE_API_KEY=optional
-MEDIASTACK_API_KEY=optional
-SEC_USER_AGENT=YourApp/1.0 your@email.com
+# Required
+OPENROUTER_API_KEY=sk-or-...
+NEWS_API_KEY=...
+GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
+GCP_PROJECT_ID=your-project
+
+# Indian market data
+GROWW_API_TOKEN=...
+GROWW_TOTP_SECRET=...
+
+# Optional enrichment
+FINNHUB_API_KEY=...
+ALPHAVANTAGE_API_KEY=...
+MEDIASTACK_API_KEY=...
+FRED_API_KEY=...
 ```
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: January 2026  
-**Competition**: DataQuest 2026 Hackathon  
-**Team**: AlphaStream
+**Document Version**: 2.0
+**Last Updated**: March 2026
+**Competition**: ET AI Hackathon 2026 — Problem Statement 6
+**Team**: AlphaStream India

@@ -10,15 +10,24 @@ Built for **ET AI Hackathon 2026** — Problem Statement 6: AI for the Indian In
 
 ## What It Does
 
-AlphaStream India is a real-time investment intelligence platform that combines **multi-agent signal detection**, **NLQ (Natural Language Query)** analytics, and **backtested signals** to surface opportunities other investors miss.
+AlphaStream India is a real-time investment intelligence terminal that combines **multi-agent signal detection**, **technical analysis overlays**, **NLQ analytics**, and **global market intelligence** to surface opportunities other investors miss.
 
-### Three Core Features (PS6)
+### Core Features
 
 | Feature | Description |
 |---|---|
+| **Tabbed Bloomberg Terminal** | 5-tab layout: Overview · Signals · Global Intel · Company · Portfolio — each focused on a different investor workflow |
 | **Opportunity Radar** | AI monitors NSE/BSE filings, insider trades, FII/DII flows, chart patterns — surfaces signals with Alpha Score (0-100) |
-| **Chart Pattern Intelligence** | Rule-based detection (RSI divergence, MACD crossover, Bollinger breakout, golden cross) with historical backtest success rates |
-| **Market ChatGPT Next Gen** | NLQ agent with Text2SQL pipeline — grounded answers from real data, not LLM hallucination. Portfolio-aware, source-cited responses |
+| **Technical Indicator Overlays** | RSI(14) sub-chart + SMA20/SMA50 line overlays on TradingView candlestick, togglable per ticker |
+| **Fundamentals Panel** | PE, PB, ROE, Dividend Yield, Market Cap, 52-week H/L from Groww API — wired live |
+| **Stock Screener** | Filter Nifty 50 universe by sector, signal direction, and alpha score using DuckDB `v_stock_screener` view |
+| **Portfolio Manager** | Add/remove NSE holdings, track real-time P&L, ₹ totals, horizontal bar chart by ticker |
+| **Watchlist** | Persistent (localStorage) watchlist of up to 20 NSE tickers with live sentiment scores |
+| **Corporate Filings** | BSE announcements (dividends, results, board meetings) per ticker — 7/30/90-day view |
+| **Anomaly Detection** | Online ML (River HalfSpaceTrees) flags price/volume anomalies fed from 3mo NSE OHLCV |
+| **Global Market Intelligence** | Crypto (BTC/ETH/SOL/XRP) + Currencies (INR/USD, DXY) + US Sector ETFs — India-impact annotated |
+| **Threat-aware News** | Articles sorted by threat level (critical/warning/info) with sentiment distribution donut chart |
+| **Market ChatGPT Next Gen** | NLQ agent with Text2SQL pipeline — grounded answers from real data, portfolio-aware, source-cited |
 
 ---
 
@@ -28,36 +37,41 @@ AlphaStream India is a real-time investment intelligence platform that combines 
 ┌─────────────────────────────────────────────────────────────────────┐
 │  Indian Data Sources                                                 │
 │  NSE API · BSE API · FII/DII (NSDL) · Groww API · ET Markets RSS   │
+│  FRED (macro) · WorldMonitor (global indices/commodities/crypto/FX)  │
 └──────────────┬──────────────────────────────────────────────────────┘
                │
 ┌──────────────▼──────────────────────────────────────────────────────┐
 │  Pathway Streaming Engine (Real-time <2s)                            │
 │  News ingestion → Chunking → Embedding → Adaptive RAG               │
+│  Threat classification (critical/warning/info) → DuckDB persist      │
 └──────────────┬──────────────────────────────────────────────────────┘
                │
 ┌──────────────▼──────────────────────────────────────────────────────┐
-│  Multi-Agent System (11 agents)                                      │
+│  Multi-Agent System (13 agents)                                      │
 │  Sentiment · Technical · Risk · Decision · Pattern · Backtest        │
-│  Filing · Flow · Insider · Chart · Report                            │
+│  Filing · Flow · Insider · Chart · Report · Search · Anomaly         │
 └──────────────┬──────────────────────────────────────────────────────┘
                │
 ┌──────────────▼──────────────────────────────────────────────────────┐
-│  NLQ Agent (LangGraph)                                               │
-│  Router → Text2SQL (schema link → plan → generate → guardrails       │
-│  → correction loop) → Narrate (source-cited, chart specs)            │
-│  MCP Servers: market_data · signals · portfolio                      │
+│  Analytics Layer (DuckDB)                                            │
+│  fact_articles · fact_signals · fact_insider_trades · fact_filings   │
+│  fact_fii_dii_flows · dim_stocks (Nifty 50)                         │
+│  Views: v_stock_screener · v_signal_summary · v_sector_heatmap       │
 └──────────────┬──────────────────────────────────────────────────────┘
                │
 ┌──────────────▼──────────────────────────────────────────────────────┐
-│  Fusion Engine                                                       │
-│  Alpha Score = weighted(filing + technical + insider/flow             │
-│               + sentiment + backtest)                                 │
+│  NLQ Agent (LangGraph 8-node)                                        │
+│  Guardrail → Enrich (web search) → Route → Text2SQL → Narrate        │
+│  MCP Servers: market_data · signals · portfolio · search             │
 └──────────────┬──────────────────────────────────────────────────────┘
                │
 ┌──────────────▼──────────────────────────────────────────────────────┐
-│  React Dashboard                                                     │
-│  Opportunity Radar · NLQ Chat Panel · Market Heatmap · Agent Radar   │
-│  Insider Activity · PDF Reports · WebSocket Real-time                │
+│  React Terminal (5 tabs)                                             │
+│  Overview: Candlestick+RSI/SMA · Recommendation · Fundamentals       │
+│  Signals:  Screener · Opportunity Radar · Flow Chart                 │
+│  Global:   Crypto/FX/Sectors · Fear&Greed · Macro · Commodities      │
+│  Company:  Filings · News+Threat Badges · Watchlist                  │
+│  Portfolio: Holdings · P&L Chart · Sector Allocation                 │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -126,19 +140,42 @@ GROWW_TOTP_SECRET=...
 
 ## API Endpoints
 
+### Market Intelligence
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/ohlcv/{ticker}` | GET | OHLCV + optional RSI/SMA20/SMA50 (`?indicators=true`) |
+| `/api/fundamentals/{ticker}` | GET | PE, PB, ROE, Div Yield, 52w H/L (Groww API) |
+| `/api/radar` | GET | Top signals by Alpha Score |
+| `/api/screener` | GET | Filter stocks by sector/direction/alpha (DuckDB view) |
+| `/api/patterns/{ticker}` | GET | Chart pattern detection |
+| `/api/backtest/{ticker}/{pattern}` | GET | Historical backtest (5yr) |
+| `/api/flows` | GET | FII/DII flow analysis |
+| `/api/anomalies/{ticker}` | GET | Price/volume anomaly detection (River ML) |
+| `/api/filings/{ticker}` | GET | BSE corporate announcements |
+| `/api/portfolio` | POST | Set user portfolio holdings |
+| `/api/portfolio/summary` | GET | Live P&L summary |
+
+### Global Market (WorldMonitor)
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/global/indices` | GET | NIFTY, SENSEX, S&P 500, DOW, etc. |
+| `/api/global/commodities` | GET | Gold, Crude, Silver, Copper, etc. |
+| `/api/global/crypto` | GET | BTC, ETH, SOL, XRP |
+| `/api/global/currencies` | GET | INR/USD, DXY |
+| `/api/global/sectors` | GET | 12 US sector ETF returns |
+| `/api/global/fear-greed` | GET | CNN Fear & Greed index |
+| `/api/global/macro` | GET | FRED macro signals + verdict |
+| `/api/global/vix` | GET | VIX volatility index |
+| `/api/global/geo-risk` | GET | India geopolitical risk score |
+
+### NLQ & Core
 | Endpoint | Method | Description |
 |---|---|---|
 | `/api/nlq` | POST | Natural language query (blocking) |
 | `/api/nlq/stream` | GET/POST | NLQ with SSE streaming |
-| `/api/radar` | GET | Top signals by Alpha Score |
-| `/api/patterns/{ticker}` | GET | Chart pattern detection |
-| `/api/backtest/{ticker}/{pattern}` | GET | Historical backtest |
-| `/api/flows` | GET | FII/DII flow analysis |
-| `/api/portfolio` | POST | Set user portfolio |
-| `/api/ohlcv/{ticker}` | GET | OHLCV for charting |
 | `/api/insights` | GET | Ambient AI alerts |
-| `/recommend` | POST | Trading recommendation |
-| `/ws/stream/{ticker}` | WS | Real-time updates |
+| `/recommend` | POST | Full multi-agent recommendation |
+| `/ws/stream/{ticker}` | WS | Real-time updates (rec, market, global) |
 
 ---
 
