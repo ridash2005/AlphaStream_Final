@@ -461,7 +461,9 @@ function DynamicNumber({ spec }) {
 
 // Render a donut/pie chart for chart_spec.type === 'donut'
 function DynamicDonut({ spec }) {
-  const { x, y, data } = spec
+  const { x, y: yRaw, data } = spec
+  const y = Array.isArray(yRaw) ? yRaw[0] : yRaw
+  if (!y || !Array.isArray(data) || data.length === 0) return null
   const total = data.reduce((s, r) => s + Number(r[y] ?? 0), 0)
   if (total === 0) return null
   const COLORS = ['#e63946', '#4caf50', '#ff9800', '#2196f3', '#ce93d8', '#64b5f6', '#81c784']
@@ -561,7 +563,11 @@ function DynamicLine({ spec }) {
 
 // Render a scatter plot for chart_spec.type === 'scatter'
 function DynamicScatter({ spec }) {
-  const { x: xKey, y: yKey, label: labelKey, data } = spec
+  const { x: xKey, y: yRaw, label: labelKey, data } = spec
+  const yKey = Array.isArray(yRaw) && yRaw.length > 0 ? yRaw[0] : yRaw
+  if (!xKey || !yKey || !Array.isArray(data) || data.length === 0) {
+    return <p className="text-xs text-muted-foreground text-center py-4">No chart data.</p>
+  }
   const xVals = data.map((r) => Number(r[xKey] ?? 0))
   const yVals = data.map((r) => Number(r[yKey] ?? 0))
   const xMin = Math.min(...xVals)

@@ -21,62 +21,87 @@ class PortfolioInput(BaseModel):
 @router.get("/radar")
 async def get_radar(top_n: int = Query(10, le=50)):
     """Top N opportunity signals by Alpha Score."""
-    from src.pipeline.fusion_engine import FusionEngine
-    from src.data.ticker_universe import get_all_tickers
+    try:
+        from src.pipeline.fusion_engine import FusionEngine
+        from src.data.ticker_universe import get_all_tickers
 
-    tickers = get_all_tickers()
-    fe = FusionEngine()
-    return fe.scan_opportunities(tickers[:20], top_n=top_n)
+        tickers = get_all_tickers()
+        fe = FusionEngine()
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: fe.scan_opportunities(tickers[:20], top_n=top_n))
+    except Exception as e:
+        logger.error(f"Radar scan failed: {e}")
+        return []
 
 
 @router.get("/patterns/{ticker}")
 async def get_patterns(ticker: str):
     """Detected chart patterns for a ticker."""
-    from src.agents.pattern_agent import PatternAgent
+    try:
+        from src.agents.pattern_agent import PatternAgent
 
-    pa = PatternAgent()
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, lambda: pa.detect_all(ticker, period="6mo"))
+        pa = PatternAgent()
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: pa.detect_all(ticker, period="6mo"))
+    except Exception as e:
+        logger.error(f"Pattern detection failed for {ticker}: {e}")
+        return []
 
 
 @router.get("/backtest/{ticker}/{pattern}")
 async def get_backtest(ticker: str, pattern: str, years: int = Query(3, le=10)):
     """Historical backtest for a signal pattern on a ticker."""
-    from src.agents.backtest_agent import BacktestAgent
+    try:
+        from src.agents.backtest_agent import BacktestAgent
 
-    ba = BacktestAgent()
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, lambda: ba.backtest_signal(ticker, pattern, lookback_years=years))
+        ba = BacktestAgent()
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: ba.backtest_signal(ticker, pattern, lookback_years=years))
+    except Exception as e:
+        logger.error(f"Backtest failed for {ticker}/{pattern}: {e}")
+        return {"ticker": ticker, "pattern": pattern, "instances_found": 0, "results": {}, "error": str(e)}
 
 
 @router.get("/flows")
 async def get_flows(days: int = Query(30, le=90)):
     """FII/DII flow analysis."""
-    from src.agents.flow_agent import FlowAgent
+    try:
+        from src.agents.flow_agent import FlowAgent
 
-    fa = FlowAgent()
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, lambda: fa.analyze(days=days))
+        fa = FlowAgent()
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: fa.analyze(days=days))
+    except Exception as e:
+        logger.error(f"Flow analysis failed: {e}")
+        return {"flow_signal": "neutral", "confidence": 0, "observations": [str(e)], "flows": []}
 
 
 @router.post("/portfolio")
 async def set_portfolio(body: PortfolioInput):
     """Set user portfolio for personalized analysis."""
-    from src.pipeline.portfolio_manager import PortfolioManager
+    try:
+        from src.pipeline.portfolio_manager import PortfolioManager
 
-    pm = PortfolioManager()
-    loop = asyncio.get_running_loop()
-    await loop.run_in_executor(None, lambda: pm.set_holdings(body.holdings))
-    return await loop.run_in_executor(None, pm.get_portfolio_value)
+        pm = PortfolioManager()
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, lambda: pm.set_holdings(body.holdings))
+        return await loop.run_in_executor(None, pm.get_portfolio_value)
+    except Exception as e:
+        logger.error(f"Portfolio set failed: {e}")
+        return {"error": str(e), "holdings": []}
 
 
 @router.get("/portfolio/summary")
 async def get_portfolio_summary():
     """Get portfolio summary with live P&L."""
-    from src.pipeline.portfolio_manager import PortfolioManager
-    pm = PortfolioManager()
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, pm.get_portfolio_value)
+    try:
+        from src.pipeline.portfolio_manager import PortfolioManager
+        pm = PortfolioManager()
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, pm.get_portfolio_value)
+    except Exception as e:
+        logger.error(f"Portfolio summary failed: {e}")
+        return {"total_invested": 0, "total_current": 0, "total_pnl": 0, "total_pnl_pct": 0, "holdings": []}
 
 
 @router.get("/portfolio/import-groww")
@@ -87,11 +112,15 @@ async def import_groww_portfolio():
     Requires GROWW_API_TOKEN (and optionally GROWW_TOTP_SECRET) in backend/.env.
     Returns the same shape as /portfolio/summary so the frontend can render P&L immediately.
     """
-    from src.connectors.groww_connector import get_groww_connector
-    from src.pipeline.portfolio_manager import PortfolioManager
+    try:
+        from src.connectors.groww_connector import get_groww_connector
+        from src.pipeline.portfolio_manager import PortfolioManager
 
-    connector = get_groww_connector()
-    holdings = connector.get_portfolio_holdings()
+        connector = get_groww_connector()
+        holdings = connector.get_portfolio_holdings()
+    except Exception as e:
+        logger.error(f"Groww import connector failed: {e}")
+        return {"error": f"Groww connector error: {e}", "holdings": []}
 
     if not holdings:
         return {
@@ -100,25 +129,33 @@ async def import_groww_portfolio():
             "holdings": [],
         }
 
-    pm = PortfolioManager()
-    pm.set_holdings([
-        {"ticker": h["ticker"], "quantity": h["quantity"], "buy_price": h["buy_price"]}
-        for h in holdings
-    ])
-    result = pm.get_portfolio_value()
-    result["imported_count"] = len(holdings)
-    result["source"] = "Groww"
-    return result
+    try:
+        pm = PortfolioManager()
+        pm.set_holdings([
+            {"ticker": h["ticker"], "quantity": h["quantity"], "buy_price": h["buy_price"]}
+            for h in holdings
+        ])
+        result = pm.get_portfolio_value()
+        result["imported_count"] = len(holdings)
+        result["source"] = "Groww"
+        return result
+    except Exception as e:
+        logger.error(f"Groww portfolio processing failed: {e}")
+        return {"error": f"Portfolio processing error: {e}", "holdings": []}
 
 
 @router.get("/filings/{ticker}")
 async def get_filings(ticker: str, days: int = Query(30, le=90)):
     """Get analyzed corporate filings for a ticker."""
-    from src.connectors.bse_connector import get_bse_connector
+    try:
+        from src.connectors.bse_connector import get_bse_connector
 
-    bse = get_bse_connector()
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, lambda: bse.get_announcements(days=days))
+        bse = get_bse_connector()
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: bse.get_announcements(days=days))
+    except Exception as e:
+        logger.error(f"Filings fetch failed for {ticker}: {e}")
+        return []
 
 
 @router.get("/news")
@@ -151,10 +188,14 @@ async def get_news(ticker: str = Query(""), limit: int = Query(20, le=50)):
 @router.get("/tickers")
 async def get_tickers(sector: str = Query("", description="Filter by sector")):
     """Get available tickers (dynamic from DuckDB, not hardcoded)."""
-    from src.data.ticker_universe import get_all_tickers, get_tickers_by_sector, get_sectors
-    if sector:
-        return {"tickers": get_tickers_by_sector(sector)}
-    return {"tickers": get_all_tickers(), "sectors": get_sectors()}
+    try:
+        from src.data.ticker_universe import get_all_tickers, get_tickers_by_sector, get_sectors
+        if sector:
+            return {"tickers": get_tickers_by_sector(sector)}
+        return {"tickers": get_all_tickers(), "sectors": get_sectors()}
+    except Exception as e:
+        logger.error(f"Tickers fetch failed: {e}")
+        return {"tickers": ["RELIANCE", "TCS", "INFY", "HDFCBANK", "SBIN"], "sectors": []}
 
 
 @router.get("/tickers/popular")
@@ -184,11 +225,15 @@ async def get_ohlcv(ticker: str, period: str = Query("6mo"), indicators: bool = 
     """
     from src.connectors.nse_connector import get_nse_connector
 
-    nse = get_nse_connector()
-    loop = asyncio.get_event_loop()
-    df = await loop.run_in_executor(None, lambda: nse.get_historical_data(ticker, period=period))
+    try:
+        nse = get_nse_connector()
+        loop = asyncio.get_running_loop()
+        df = await loop.run_in_executor(None, lambda: nse.get_historical_data(ticker, period=period))
+    except Exception as e:
+        logger.error(f"OHLCV fetch failed for {ticker}: {e}")
+        return [] if not indicators else {"candles": [], "sma20": [], "sma50": [], "rsi": []}
     if df.empty:
-        return []
+        return [] if not indicators else {"candles": [], "sma20": [], "sma50": [], "rsi": []}
 
     records = []
     for date, row in df.iterrows():

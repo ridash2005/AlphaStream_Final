@@ -94,11 +94,11 @@ export function MacroSignalPanel() {
               <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden flex">
                 <div
                   className="h-full bg-emerald-400 transition-all"
-                  style={{ width: `${(data.bullish_count / data.total_signals) * 100}%` }}
+                  style={{ width: `${data.total_signals > 0 ? (data.bullish_count / data.total_signals) * 100 : 0}%` }}
                 />
                 <div
                   className="h-full bg-red-400 transition-all"
-                  style={{ width: `${(data.bearish_count / data.total_signals) * 100}%` }}
+                  style={{ width: `${data.total_signals > 0 ? (data.bearish_count / data.total_signals) * 100 : 0}%` }}
                 />
               </div>
               <span className="text-[10px] text-muted-foreground font-mono">

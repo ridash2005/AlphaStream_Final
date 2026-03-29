@@ -83,7 +83,7 @@ export function StockFundamentals() {
                     style={{ width: '100%' }} />
                   {data.current_price && (
                     <div className="absolute top-0 h-full w-0.5 bg-white"
-                      style={{ left: `${Math.min(100, Math.max(0, ((data.current_price - data.year_low) / (data.year_high - data.year_low)) * 100))}%` }} />
+                      style={{ left: `${Math.min(100, Math.max(0, ((data.current_price - data.year_low) / ((data.year_high - data.year_low) || 1)) * 100))}%` }} />
                   )}
                 </div>
               </div>

@@ -761,6 +761,30 @@ async def get_ticker_articles(ticker: str, limit: int = 10) -> dict[str, Any]:
     }
 
 
+async def _broadcast_fresh_recommendations(tickers: list[str]):
+    """Background task: re-run recommendation for connected tickers and push via WebSocket."""
+    for ticker in tickers:
+        conns = ws_manager.active_connections.get(ticker, [])
+        if not conns:
+            continue
+        try:
+            rec = await generate_recommendation_logic(ticker)
+            market_state.update(ticker, rec.sentiment_score)
+            msg = {"type": "recommendation", "data": rec.model_dump()}
+            for ws in conns:
+                try:
+                    await ws.send_json(msg)
+                except Exception:
+                    pass
+            await ws_manager.broadcast_global({
+                "type": "market_update",
+                "data": market_state.get_heatmap(),
+            })
+            logger.info(f"📡 Live update pushed for {ticker} after article ingestion")
+        except Exception as e:
+            logger.warning(f"Live update failed for {ticker}: {e}")
+
+
 @app.post("/ingest")
 async def ingest_article(article: dict[str, Any]) -> dict[str, Any]:
     """
@@ -821,12 +845,19 @@ async def ingest_article(article: dict[str, Any]) -> dict[str, Any]:
     # Track last ingestion time - forces manual RAG for 30 seconds
     with _ingestion_lock:
         last_ingestion_time = time.time()
-    
+
+    # Live update: re-generate recommendations for all connected WebSocket tickers
+    # so the dashboard updates automatically without the user re-searching.
+    connected_tickers = list(ws_manager.active_connections.keys())
+    if connected_tickers:
+        asyncio.create_task(_broadcast_fresh_recommendations(connected_tickers))
+
     return {
         "status": "success",
         "chunks_created": chunks_created,
         "document_count": rag_pipeline.document_count,
-        "note": "Article immediately available in manual RAG"
+        "note": "Article immediately available in manual RAG",
+        "live_update_tickers": connected_tickers,
     }
 
 

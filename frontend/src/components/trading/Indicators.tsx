@@ -54,7 +54,7 @@ export function SentimentBadge({ sentiment, score }: SentimentBadgeProps) {
     return (
         <div className="flex items-center gap-2">
             <span className={cn('font-medium', colorClasses[sentiment])}>{sentiment}</span>
-            <span className="text-muted-foreground">({score.toFixed(2)})</span>
+            <span className="text-muted-foreground">({(score ?? 0).toFixed(2)})</span>
         </div>
     );
 }
@@ -75,12 +75,12 @@ export function ConfidenceBar({ confidence, recommendation }: ConfidenceBarProps
         <div className="w-full">
             <div className="flex justify-between text-xs mb-1">
                 <span className="text-muted-foreground">Confidence</span>
-                <span className="font-mono">{confidence.toFixed(1)}%</span>
+                <span className="font-mono">{(confidence ?? 0).toFixed(1)}%</span>
             </div>
             <div className="h-2 bg-secondary rounded-full overflow-hidden">
                 <div
                     className={cn('h-full rounded-full transition-all duration-500', colorClasses[recommendation])}
-                    style={{ width: `${Math.min(100, confidence)}%` }}
+                    style={{ width: `${Math.min(100, confidence ?? 0)}%` }}
                 />
             </div>
         </div>
@@ -92,16 +92,17 @@ interface LatencyIndicatorProps {
 }
 
 export function LatencyIndicator({ latency }: LatencyIndicatorProps) {
+    const l = latency ?? 0;
     const getColor = () => {
-        if (latency < 500) return 'text-emerald-400';
-        if (latency < 1000) return 'text-amber-400';
+        if (l < 500) return 'text-emerald-400';
+        if (l < 1000) return 'text-amber-400';
         return 'text-red-400';
     };
 
     return (
         <div className="flex items-center gap-1 text-xs">
             <div className={cn('h-2 w-2 rounded-full animate-pulse', getColor().replace('text-', 'bg-'))} />
-            <span className={cn('font-mono', getColor())}>{latency.toFixed(0)}ms</span>
+            <span className={cn('font-mono', getColor())}>{l.toFixed(0)}ms</span>
         </div>
     );
 }

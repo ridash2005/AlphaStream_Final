@@ -46,14 +46,14 @@ const INDIA_IMPACT: Record<string, string> = {
 
 // Crypto India rupee equivalent note
 function CryptoCard({ q, usdInr }: { q: Quote; usdInr: number }) {
-  const pos = q.change >= 0;
-  const inrPrice = usdInr > 0 ? `₹${(q.price * usdInr).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : null;
+  const pos = (q.change ?? 0) >= 0;
+  const inrPrice = q.price != null && usdInr > 0 ? `₹${(q.price * usdInr).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : null;
   return (
     <div className="bg-secondary/20 rounded-lg p-2.5">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-semibold font-mono">{q.display || q.symbol.replace('-USD', '')}</span>
         <span className={cn("text-[10px] font-mono px-1.5 py-0.5 rounded", pos ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400")}>
-          {pos ? '+' : ''}{q.change?.toFixed(2)}%
+          {pos ? '+' : ''}{(q.change ?? 0).toFixed(2)}%
         </span>
       </div>
       <div className="text-sm font-mono font-bold">${Number.isFinite(q.price) ? q.price.toLocaleString('en-US', q.price >= 100 ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '—'}</div>
@@ -143,7 +143,7 @@ export function GlobalMarketsPanel() {
         {!loading && activeTab === 'currencies' && (
           <div className="space-y-2">
             {currencies.map(c => {
-              const pos = c.change >= 0;
+              const pos = (c.change ?? 0) >= 0;
               const isInr = c.symbol === 'INR=X' || c.symbol?.includes('INR');
               return (
                 <div key={c.symbol} className="flex items-center justify-between bg-secondary/20 rounded-lg p-2.5">
@@ -151,7 +151,7 @@ export function GlobalMarketsPanel() {
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold font-mono">{c.display || c.name}</span>
                       <span className={cn("text-[10px] px-1.5 py-0.5 rounded", pos ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400")}>
-                        {pos ? '+' : ''}{c.change?.toFixed(3)}%
+                        {pos ? '+' : ''}{(c.change ?? 0).toFixed(3)}%
                       </span>
                     </div>
                     {isInr && <div className="text-[10px] text-muted-foreground mt-0.5">
@@ -159,7 +159,7 @@ export function GlobalMarketsPanel() {
                     </div>}
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-mono font-bold">{c.price?.toFixed(4)}</div>
+                    <div className="text-sm font-mono font-bold">{c.price != null ? c.price.toFixed(4) : 'N/A'}</div>
                     <MiniSparkline data={c.sparkline} positive={pos} />
                   </div>
                 </div>

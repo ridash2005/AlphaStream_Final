@@ -15,7 +15,7 @@ export function PerformanceTicker() {
         items.push({
             ticker: rec.ticker,
             label: rec.recommendation,
-            value: `${rec.confidence.toFixed(0)}%`,
+            value: `${(rec.confidence ?? 0).toFixed(0)}%`,
             positive: rec.recommendation === 'BUY',
         });
     }
@@ -25,7 +25,7 @@ export function PerformanceTicker() {
             items.push({
                 ticker: h.ticker,
                 label: h.score > 0 ? 'BULL' : h.score < 0 ? 'BEAR' : 'FLAT',
-                value: `${(h.score * 100).toFixed(0)}%`,
+                value: `${((h.score ?? 0) * 100).toFixed(0)}%`,
                 positive: h.score > 0,
             });
         }

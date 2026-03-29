@@ -23,16 +23,47 @@ export function FlowChart() {
             const resp = await apiService.getFlows(30);
             const flows = resp.flows || resp.data || resp;
             if (Array.isArray(flows)) {
-                setData(flows.slice(-20).map((f: any) => {
-                    const raw: string = f.date || f.Date || '';
-                    // Handles YYYY-MM-DD → MM-DD or DD-Mon-YY → as-is
-                    const date = raw.length >= 7 && raw[4] === '-' ? raw.slice(5) : raw.slice(0, 5) || raw;
-                    return {
-                        date,
-                        fii_net: f.fii_net_cr ?? (f.fii_buy_cr ?? 0) - (f.fii_sell_cr ?? 0),
-                        dii_net: f.dii_net_cr ?? (f.dii_buy_cr ?? 0) - (f.dii_sell_cr ?? 0),
-                    };
-                }));
+                // API may return per-category rows (one DII row + one FII row per date)
+                // or pre-merged rows with fii_net_cr / dii_net_cr fields.
+                const isSplit = flows.length > 0 && ('category' in flows[0] || 'netValue' in flows[0]);
+
+                // NSE returns dates as "DD-Mon-YYYY" (e.g. "29-Mar-2026") or ISO "YYYY-MM-DD".
+                // Numbers may be comma-formatted strings like "1,234.56".
+                const fmtDate = (raw: string): string => {
+                    if (!raw) return raw;
+                    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(5);    // ISO → "MM-DD"
+                    if (/^\d{2}-[A-Za-z]{3}-\d{4}/.test(raw)) return raw.slice(0, 6); // NSE → "DD-Mon"
+                    return raw.slice(0, 5) || raw;
+                };
+                const parseNum = (v: any): number => parseFloat(String(v ?? 0).replace(/,/g, '')) || 0;
+
+                let merged: FlowDay[];
+                if (isSplit) {
+                    // Group by date, merge FII and DII into a single row
+                    const byDate: Record<string, FlowDay> = {};
+                    for (const f of flows) {
+                        const date = fmtDate(f.date || f.Date || '');
+                        if (!date) continue;
+                        if (!byDate[date]) byDate[date] = { date, fii_net: 0, dii_net: 0 };
+                        const net = parseNum(f.netValue ?? f.net);
+                        const cat: string = (f.category || '').toLowerCase();
+                        if (cat.includes('fii') || cat.includes('fpi')) {
+                            byDate[date].fii_net = net;
+                        } else if (cat.includes('dii')) {
+                            byDate[date].dii_net = net;
+                        }
+                    }
+                    merged = Object.values(byDate);
+                } else {
+                    merged = flows.map((f: any) => ({
+                        date: fmtDate(f.date || f.Date || ''),
+                        fii_net: f.fii_net_cr != null ? parseNum(f.fii_net_cr)
+                            : parseNum(f.fii_buy_cr) - parseNum(f.fii_sell_cr),
+                        dii_net: f.dii_net_cr != null ? parseNum(f.dii_net_cr)
+                            : parseNum(f.dii_buy_cr) - parseNum(f.dii_sell_cr),
+                    })).filter((r: FlowDay) => r.date);
+                }
+                setData(merged.slice(-20));
             }
         } catch {
             setError(true);

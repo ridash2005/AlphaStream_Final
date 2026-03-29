@@ -147,7 +147,7 @@ export function PortfolioManager() {
                 {holdings.map((h, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs bg-secondary/20 rounded px-2 py-1">
                     <span className="font-mono font-semibold w-24 truncate">{h.ticker}</span>
-                    <span className="text-muted-foreground">{h.quantity} @ ₹{h.buy_price.toLocaleString('en-IN')}</span>
+                    <span className="text-muted-foreground">{h.quantity} @ ₹{(h.buy_price ?? 0).toLocaleString('en-IN')}</span>
                     <button onClick={() => removeHolding(i)} className="ml-auto text-muted-foreground hover:text-destructive">
                       <Trash2 className="h-3 w-3" />
                     </button>

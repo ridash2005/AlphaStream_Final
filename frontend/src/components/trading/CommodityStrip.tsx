@@ -73,7 +73,7 @@ export function CommodityStrip() {
                     "text-[10px] font-mono",
                     item.change > 0 ? "text-emerald-400" : item.change < 0 ? "text-red-400" : "text-muted-foreground"
                   )}>
-                    {item.change > 0 ? '+' : ''}{item.change.toFixed(1)}%
+                    {(item.change ?? 0) > 0 ? '+' : ''}{(item.change ?? 0).toFixed(1)}%
                   </span>
                 </div>
               </div>

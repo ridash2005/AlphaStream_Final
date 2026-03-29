@@ -112,7 +112,7 @@ export function ReportDownload() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Confidence:</span>
-                                    <span>{result.confidence.toFixed(1)}%</span>
+                                    <span>{(result.confidence ?? 0).toFixed(1)}%</span>
                                 </div>
                             </div>
 

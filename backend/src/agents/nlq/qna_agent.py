@@ -678,7 +678,7 @@ def _generate_financial_narrative(
             "Question 1?\n"
             "Question 2?\n"
             "Question 3?\n\n"
-            "CHART_TYPE: number|bar|line|table|donut\n"
+            "CHART_TYPE: number|bar|line|table|donut|scatter\n"
         )
         raw = complete(prompt, max_tokens=512)
 
@@ -718,7 +718,7 @@ def _parse_chart_line(chart_line: str, data: list[dict]) -> dict:
         return _infer_chart_heuristic(data)
 
     chart_type, x_col, y_col = parts[0].lower(), parts[1], parts[2]
-    if chart_type not in ("number", "donut", "line", "bar", "table"):
+    if chart_type not in ("number", "donut", "line", "bar", "scatter", "table"):
         chart_type = "bar"
 
     first = data[0] if data else {}
@@ -734,6 +734,8 @@ def _parse_chart_line(chart_line: str, data: list[dict]) -> dict:
         return {"type": "donut", "x": x_col, "y": y_col, "data": data[:10]}
     if chart_type == "line":
         return {"type": "line", "x": x_col, "y": [y_col], "data": data[:100]}
+    if chart_type == "scatter":
+        return {"type": "scatter", "x": x_col, "y": [y_col], "data": data[:100]}
     if chart_type == "table":
         return {"type": "table", "data": data[:50]}
     return {"type": "bar", "x": x_col, "y": [y_col], "data": data[:50]}

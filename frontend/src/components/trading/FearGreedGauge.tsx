@@ -133,9 +133,9 @@ export function FearGreedGauge() {
                 </span>
                 <span className={cn(
                   "text-[10px] font-mono",
-                  vix.change > 0 ? "text-red-400" : vix.change < 0 ? "text-emerald-400" : "text-muted-foreground"
+                  (vix.change ?? 0) > 0 ? "text-red-400" : (vix.change ?? 0) < 0 ? "text-emerald-400" : "text-muted-foreground"
                 )}>
-                  {vix.change > 0 ? '+' : ''}{vix.change.toFixed(1)}%
+                  {(vix.change ?? 0) > 0 ? '+' : ''}{(vix.change ?? 0).toFixed(1)}%
                 </span>
                 <span className={cn("text-[10px] px-1 py-0.5 rounded", {
                   "bg-emerald-500/20 text-emerald-400": vix.status === 'LOW',

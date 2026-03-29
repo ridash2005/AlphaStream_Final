@@ -87,8 +87,8 @@ export function GeoRiskPanel() {
 
             {/* Stats row */}
             <div className="flex gap-4 text-xs text-muted-foreground mb-3">
-              <span>{risk.recent_events} event{risk.recent_events !== 1 ? 's' : ''} (24h)</span>
-              <span>{risk.hotspot_alerts.length} hotspot{risk.hotspot_alerts.length !== 1 ? 's' : ''}</span>
+              <span>{risk.recent_events ?? 0} event{(risk.recent_events ?? 0) !== 1 ? 's' : ''} (24h)</span>
+              <span>{(risk.hotspot_alerts ?? []).length} hotspot{(risk.hotspot_alerts ?? []).length !== 1 ? 's' : ''}</span>
             </div>
 
             {/* Score bar */}
@@ -105,9 +105,9 @@ export function GeoRiskPanel() {
             </div>
 
             {/* Hotspot Alerts */}
-            {risk.hotspot_alerts.length > 0 && (
+            {(risk.hotspot_alerts ?? []).length > 0 && (
               <div className="space-y-1.5 pt-2 border-t border-border/30">
-                {risk.hotspot_alerts.map((h) => (
+                {(risk.hotspot_alerts ?? []).map((h) => (
                   <div key={h.name} className="flex items-center gap-2 text-xs group">
                     <span className="text-orange-400 shrink-0">●</span>
                     <span className="text-foreground truncate">{h.name}</span>

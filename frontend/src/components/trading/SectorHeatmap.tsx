@@ -16,18 +16,19 @@ export function SectorHeatmap() {
     useEffect(() => {
         const load = async () => {
             try {
-                const radar = await apiService.getRadar(50);
-                const signals = radar.opportunities || radar || [];
-                if (!Array.isArray(signals) || signals.length === 0) return;
+                // Use screener (has sector field) rather than radar (no sector field)
+                const res = await apiService.getScreener({ limit: 50 });
+                const stocks: any[] = res?.stocks || [];
+                if (stocks.length === 0) return;
 
                 // Group by sector
                 const map = new Map<string, { scores: number[]; tickers: string[] }>();
-                for (const sig of signals) {
-                    const sector = sig.sector || 'Other';
+                for (const stock of stocks) {
+                    const sector = stock.sector || 'Other';
                     if (!map.has(sector)) map.set(sector, { scores: [], tickers: [] });
                     const entry = map.get(sector)!;
-                    entry.scores.push(sig.alpha_score ?? sig.confidence ?? 50);
-                    entry.tickers.push(sig.ticker);
+                    entry.scores.push(stock.latest_alpha_score ?? 50);
+                    entry.tickers.push(stock.ticker);
                 }
 
                 const result: SectorData[] = [];

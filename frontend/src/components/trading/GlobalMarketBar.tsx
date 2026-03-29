@@ -63,10 +63,10 @@ export function GlobalMarketBar() {
               <span className="text-[9px] text-muted-foreground">F&G</span>
               <span className={cn(
                 "text-xs font-bold font-mono",
-                fearGreed.score > 55 ? "text-emerald-400" :
-                fearGreed.score < 45 ? "text-red-400" : "text-yellow-400"
+                (fearGreed.score ?? 50) > 55 ? "text-emerald-400" :
+                (fearGreed.score ?? 50) < 45 ? "text-red-400" : "text-yellow-400"
               )}>
-                {fearGreed.score.toFixed(0)}
+                {(fearGreed.score ?? 50).toFixed(0)}
               </span>
             </div>
           )}
@@ -99,7 +99,7 @@ export function GlobalMarketBar() {
                   "text-[10px] font-mono",
                   item.change > 0 ? "text-emerald-400" : item.change < 0 ? "text-red-400" : "text-muted-foreground"
                 )}>
-                  {item.change > 0 ? '+' : ''}{item.change.toFixed(2)}%
+                  {(item.change ?? 0) > 0 ? '+' : ''}{(item.change ?? 0).toFixed(2)}%
                 </span>
                 {item.sparkline?.length > 1 && (
                   <MiniSparkline data={item.sparkline} change={item.change} width={36} height={12} />

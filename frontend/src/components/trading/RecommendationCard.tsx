@@ -112,7 +112,7 @@ export function RecommendationCard() {
                                 <TrendingUp className="h-3 w-3 text-blue-400" />
                                 <span className="text-muted-foreground">Technical:</span>
                                 <span className={recommendation.technical_score > 0 ? 'text-green-400' : recommendation.technical_score < 0 ? 'text-red-400' : 'text-muted-foreground'}>
-                                    {recommendation.technical_score > 0 ? '+' : ''}{recommendation.technical_score.toFixed(2)}
+                                    {(recommendation.technical_score ?? 0) > 0 ? '+' : ''}{(recommendation.technical_score ?? 0).toFixed(2)}
                                 </span>
                             </div>
                         )}
@@ -121,7 +121,7 @@ export function RecommendationCard() {
                                 <Shield className="h-3 w-3 text-amber-400" />
                                 <span className="text-muted-foreground">Risk:</span>
                                 <span className={recommendation.risk_score < 3 ? 'text-green-400' : recommendation.risk_score > 7 ? 'text-red-400' : 'text-amber-400'}>
-                                    {recommendation.risk_score.toFixed(1)}/10
+                                    {(recommendation.risk_score ?? 0).toFixed(1)}/10
                                 </span>
                             </div>
                         )}

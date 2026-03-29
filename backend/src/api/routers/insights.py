@@ -2,10 +2,13 @@
 Insights API router — ambient AI alerts and notifications.
 Adapted from MediaFlowAI insights system.
 """
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -40,7 +43,8 @@ async def get_insights(
             sql += " ORDER BY created_at DESC LIMIT ?"
             params.append(limit)
             return con.execute(sql, params).fetchdf().to_dict(orient="records")
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Insights fetch failed: {e}")
         return []
 
 
@@ -66,12 +70,16 @@ async def mark_read(body: MarkReadRequest):
     import duckdb
     from src.data.market_schema import get_db_path
 
-    with duckdb.connect(get_db_path()) as con:
-        if body.id:
-            con.execute("UPDATE insights SET read = true WHERE id = ?", [body.id])
-        else:
-            con.execute("UPDATE insights SET read = true")
-    return {"status": "ok"}
+    try:
+        with duckdb.connect(get_db_path()) as con:
+            if body.id:
+                con.execute("UPDATE insights SET read = true WHERE id = ?", [body.id])
+            else:
+                con.execute("UPDATE insights SET read = true")
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Mark-read failed: {e}")
+        return {"status": "error", "detail": str(e)}
 
 
 @router.post("/insights/dismiss/{insight_id}")
@@ -80,14 +88,22 @@ async def dismiss_insight(insight_id: str):
     import duckdb
     from src.data.market_schema import get_db_path
 
-    with duckdb.connect(get_db_path()) as con:
-        con.execute("UPDATE insights SET dismissed = true WHERE id = ?", [insight_id])
-    return {"status": "ok"}
+    try:
+        with duckdb.connect(get_db_path()) as con:
+            con.execute("UPDATE insights SET dismissed = true WHERE id = ?", [insight_id])
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Dismiss insight failed: {e}")
+        return {"status": "error", "detail": str(e)}
 
 
 @router.post("/insights/generate")
 async def force_generate():
     """Force regeneration of insights (for demo/testing)."""
-    from src.api.insights import generate_insights
-    count = generate_insights()
-    return {"status": "ok", "generated": count}
+    try:
+        from src.api.insights import generate_insights
+        count = generate_insights()
+        return {"status": "ok", "generated": count}
+    except Exception as e:
+        logger.error(f"Insight generation failed: {e}")
+        return {"status": "error", "generated": 0, "detail": str(e)}

@@ -62,14 +62,17 @@ export function ChartView() {
         rsiChartRef.current = null;
       }
 
+      // Always clear the old main chart before deciding what to render
+      if (chartRef.current) {
+        try { chartRef.current.remove(); } catch { /* already removed */ }
+        chartRef.current = null;
+      }
+
       // Render TradingView chart
       if (ohlcv.length === 0) {
         setNoData(true);
       }
       if (chartContainerRef.current && ohlcv.length > 0) {
-        if (chartRef.current) {
-          chartRef.current.remove();
-        }
         const chart = createChart(chartContainerRef.current, {
           layout: { background: { type: ColorType.Solid, color: '#0a0a1a' }, textColor: '#888' },
           grid: { vertLines: { color: '#1a1a2e' }, horzLines: { color: '#1a1a2e' } },

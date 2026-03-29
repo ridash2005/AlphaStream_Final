@@ -105,7 +105,7 @@ export function InsiderActivity() {
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-muted-foreground">Insider Score</span>
                             <span className={cn("font-mono text-sm font-bold", getScoreColor(data.insider_score))}>
-                                {data.insider_score > 0 ? '+' : ''}{data.insider_score.toFixed(2)}
+                                {(data.insider_score ?? 0) > 0 ? '+' : ''}{(data.insider_score ?? 0).toFixed(2)}
                             </span>
                         </div>
 
@@ -114,13 +114,13 @@ export function InsiderActivity() {
                             <div className="text-center">
                                 <div className="text-xs text-muted-foreground">Total Buys</div>
                                 <div className="text-sm font-bold text-emerald-400">
-                                    ₹{(data.total_buy_value / 10000000).toFixed(2)} Cr
+                                    ₹{((data.total_buy_value ?? 0) / 100).toFixed(2)} Cr
                                 </div>
                             </div>
                             <div className="text-center">
                                 <div className="text-xs text-muted-foreground">Total Sells</div>
                                 <div className="text-sm font-bold text-red-400">
-                                    ₹{(data.total_sell_value / 10000000).toFixed(2)} Cr
+                                    ₹{((data.total_sell_value ?? 0) / 100).toFixed(2)} Cr
                                 </div>
                             </div>
                         </div>

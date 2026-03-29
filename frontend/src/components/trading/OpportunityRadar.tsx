@@ -37,7 +37,7 @@ function AlphaScoreBar({ score }: { score: number }) {
       <div className="flex-1 h-2 bg-secondary/50 rounded-full overflow-hidden">
         <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${score}%` }} />
       </div>
-      <span className="text-sm font-bold tabular-nums w-10 text-right">{score.toFixed(0)}</span>
+      <span className="text-sm font-bold tabular-nums w-10 text-right">{(score ?? 0).toFixed(0)}</span>
     </div>
   );
 }
@@ -62,7 +62,7 @@ function SignalCard({ signal }: { signal: Signal }) {
             <div key={i} className="flex items-center gap-2 text-xs">
               <Badge variant="outline" className="text-[10px] px-1.5">{s.type}</Badge>
               <span className="text-muted-foreground flex-1">{s.detail}</span>
-              <span className="font-mono tabular-nums text-muted-foreground">{s.score.toFixed(0)}</span>
+              <span className="font-mono tabular-nums text-muted-foreground">{(s.score ?? 0).toFixed(0)}</span>
             </div>
           ))}
         </div>

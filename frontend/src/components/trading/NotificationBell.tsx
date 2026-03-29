@@ -40,15 +40,19 @@ export function NotificationBell() {
   };
 
   const handleDismiss = async (id: string) => {
-    await apiService.dismissInsight(id);
-    setInsights((prev) => prev.filter((i) => i.id !== id));
-    setUnread((prev) => Math.max(0, prev - 1));
+    try {
+      await apiService.dismissInsight(id);
+      setInsights((prev) => prev.filter((i) => i.id !== id));
+      setUnread((prev) => Math.max(0, prev - 1));
+    } catch {}
   };
 
   const handleMarkAllRead = async () => {
-    await apiService.markInsightRead();
-    setUnread(0);
-    setInsights((prev) => prev.map((i) => ({ ...i, read: true })));
+    try {
+      await apiService.markInsightRead();
+      setUnread(0);
+      setInsights((prev) => prev.map((i) => ({ ...i, read: true })));
+    } catch {}
   };
 
   // Poll every 60s
