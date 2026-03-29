@@ -255,21 +255,22 @@ def run_demonstration(ticker: str = "AAPL", output_path: str = "demo_output.json
     
     # Step 2: Inject Breaking News
     console.print(Panel("[bold]Step 2: Injecting Breaking News (Bearish)[/bold]", style="yellow"))
-    
-    bearish_title = f"{ticker} Faces Major Regulatory Investigation"
+
+    bearish_title = f"{ticker} Under SEBI Scanner; FII Selling Accelerates"
     bearish_content = f"""
-    BREAKING: {ticker} is facing a significant regulatory investigation that could result 
-    in billions of dollars in fines. Sources close to the matter indicate that the 
-    investigation has been ongoing for months and could lead to serious consequences 
-    for the company's operations.
-    
-    Analysts are downgrading the stock in response to this news, with several major 
-    firms issuing sell recommendations. The company's market capitalization has already 
-    dropped significantly in pre-market trading as investors react to the uncertainty.
-    
-    Key concerns include potential antitrust violations, data privacy issues, and 
-    possible fraud allegations. Legal experts suggest the case could take years to 
-    resolve and may result in leadership changes.
+    BREAKING: SEBI has initiated a preliminary inquiry into suspected insider trading at
+    {ticker} ahead of a major acquisition announcement last quarter. Simultaneously,
+    FII net selling in {ticker} crossed ₹2,400 Cr over the past five sessions — the
+    highest monthly outflow in 18 months.
+
+    Emkay and Nuvama have downgraded the stock to 'Reduce', cutting price targets by
+    20–25%. The company's upcoming Q4 earnings are expected to disappoint with
+    margin contraction of 200–250 bps due to rising raw material costs and rupee
+    depreciation.
+
+    Legal experts estimate SEBI penalties could reach ₹500 Cr if violations are confirmed.
+    Technical charts show the stock approaching its 52-week low with RSI at 32 —
+    signalling potential for further downside.
     """
     
     console.print(f"[dim]Title:[/dim] [yellow]{bearish_title}[/yellow]")
@@ -410,15 +411,103 @@ def run_demonstration(ticker: str = "AAPL", output_path: str = "demo_output.json
         }
     
     console.print()
-    
+
+    # Step 6: Opportunity Radar
+    console.print(Panel("[bold]Step 6: Opportunity Radar — Top Alpha Signals[/bold]", style="blue"))
+
+    try:
+        radar_resp = httpx.get(f"{BACKEND_URL}/api/radar", timeout=30.0)
+        radar_resp.raise_for_status()
+        radar_data = radar_resp.json()
+        signals = radar_data if isinstance(radar_data, list) else radar_data.get("signals", [])
+
+        if signals:
+            radar_table = Table(title="Top Signals by Alpha Score", box=box.ROUNDED)
+            radar_table.add_column("Ticker", style="cyan")
+            radar_table.add_column("Signal", style="white")
+            radar_table.add_column("Alpha Score", style="magenta")
+            radar_table.add_column("Direction", style="green")
+
+            for s in signals[:5]:
+                direction = s.get("direction", "NEUTRAL")
+                dir_color = "green" if direction == "BULLISH" else "red" if direction == "BEARISH" else "yellow"
+                radar_table.add_row(
+                    s.get("ticker", "?"),
+                    s.get("signal_type", "?"),
+                    str(s.get("alpha_score", "?")),
+                    f"[{dir_color}]{direction}[/{dir_color}]",
+                )
+
+            console.print(radar_table)
+            proof.add_step("opportunity_radar", {"signals_count": len(signals), "top_signals": signals[:5]})
+        else:
+            console.print("[yellow]No signals available yet — run market_schema first[/yellow]")
+    except Exception as e:
+        console.print(f"[yellow]Radar unavailable: {e}[/yellow]")
+
+    console.print()
+
+    # Step 7: FII/DII Flow Analysis
+    console.print(Panel("[bold]Step 7: FII / DII Flow Analysis[/bold]", style="cyan"))
+
+    try:
+        flows_resp = httpx.get(f"{BACKEND_URL}/api/flows", timeout=30.0)
+        flows_resp.raise_for_status()
+        flows_data = flows_resp.json()
+
+        flows_table = Table(title="Institutional Flow Summary", box=box.ROUNDED)
+        flows_table.add_column("Category", style="cyan")
+        flows_table.add_column("Net (₹ Cr)", style="white")
+        flows_table.add_column("Streak", style="yellow")
+
+        for category in ("FII", "DII"):
+            entry = flows_data.get(category.lower(), flows_data.get(category, {}))
+            if entry:
+                net = entry.get("net_value", entry.get("net", 0))
+                streak = entry.get("streak_days", entry.get("streak", "?"))
+                color = "green" if float(net or 0) > 0 else "red"
+                flows_table.add_row(category, f"[{color}]{net}[/{color}]", str(streak))
+
+        console.print(flows_table)
+        proof.add_step("fii_dii_flows", {"flows": flows_data})
+    except Exception as e:
+        console.print(f"[yellow]Flows unavailable: {e}[/yellow]")
+
+    console.print()
+
+    # Step 8: NLQ Demo — grounded answer from real DuckDB data
+    console.print(Panel("[bold]Step 8: NLQ Agent — Natural Language Query[/bold]", style="magenta"))
+
+    nlq_question = f"What is the current alpha score and sentiment for {ticker}?"
+    console.print(f"[dim]Query:[/dim] [cyan]{nlq_question}[/cyan]")
+
+    try:
+        nlq_resp = httpx.post(
+            f"{BACKEND_URL}/api/nlq",
+            json={"query": nlq_question},
+            timeout=60.0,
+        )
+        nlq_resp.raise_for_status()
+        nlq_data = nlq_resp.json()
+        answer = nlq_data.get("answer", nlq_data.get("response", str(nlq_data)))
+
+        console.print(Panel(answer, title="NLQ Answer", border_style="magenta"))
+        proof.add_step("nlq_demo", {"question": nlq_question, "answer": answer})
+    except Exception as e:
+        console.print(f"[yellow]NLQ unavailable: {e}[/yellow]")
+
+    console.print()
+
     # Summary
     console.print(Panel.fit(
         "[bold green]DEMONSTRATION COMPLETE[/bold green]\n\n"
         "[bold]Key Points Proven:[/bold]\n"
-        "  1. Streaming ingestion of breaking news\n"
-        "  2. Real-time RAG transformation\n"
-        "  3. Live recommendation updates\n"
-        "  4. Multi-agent reasoning system\n\n"
+        "  1. Streaming ingestion of breaking India market news\n"
+        "  2. Real-time RAG transformation (Pathway)\n"
+        "  3. Live multi-agent recommendation updates\n"
+        "  4. Opportunity Radar — alpha-scored signals\n"
+        "  5. FII/DII institutional flow analysis\n"
+        "  6. NLQ agent — grounded Text2SQL answers from DuckDB\n\n"
         f"[bold]Proof saved to:[/bold] [cyan]{output_path}[/cyan]",
         border_style="green"
     ))
@@ -432,7 +521,7 @@ def run_demonstration(ticker: str = "AAPL", output_path: str = "demo_output.json
 
 def main():
     parser = argparse.ArgumentParser(description="AlphaStream Live Demonstration")
-    parser.add_argument("--ticker", "-t", default="AAPL", help="Stock ticker (default: AAPL)")
+    parser.add_argument("--ticker", "-t", default="RELIANCE", help="NSE ticker (default: RELIANCE)")
     parser.add_argument("--output", "-o", default="demo_output.json", help="Output JSON path (default: demo_output.json)")
     args = parser.parse_args()
     

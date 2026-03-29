@@ -2,37 +2,40 @@
     "bullish": {
         "news": [
             {
-                "title": "{ticker} Announces Breakthrough AI Technology",
-                "content": "{ticker} today unveiled a revolutionary new AI chip that promises to double processing speeds while halving energy consumption. Analysts predict this could add billions to the company's bottom line over the next year. 'This is a game-changer,' said leading tech analyst Jane Doe.",
-                "source": "TechCrunch",
+                "title": "{ticker} Announces Record Q3 PAT; Board Approves ₹5,000 Cr Buyback",
+                "content": "{ticker} reported a 28% YoY jump in net profit to ₹18,500 Cr for Q3 FY26, beating Street estimates by 12%. The board approved a ₹5,000 Cr share buyback at ₹3,200 per share — a 15% premium to the current market price. EBITDA margins expanded 180 bps to 24.3%. Management guided for sustained double-digit growth driven by capacity additions and new product launches in the premium segment.",
+                "source": "ET Markets",
+                "url": "https://economictimes.indiatimes.com/markets/stocks/earnings/demo-bullish-1",
                 "published_at": "NOW"
             },
             {
-                "title": "Major Partnership Deal for {ticker}",
-                "content": "In a surprise move, {ticker} announced a strategic partnership with a major cloud provider. The deal is expected to significantly expand {ticker}'s market reach in enterprise sectors. Shares rose 5% in pre-market trading.",
-                "source": "Bloomberg",
+                "title": "{ticker} Bags ₹12,000 Cr Government Contract; FII Buying Surges",
+                "content": "{ticker} secured a five-year ₹12,000 Cr infrastructure contract from NHAI, the largest order in the company's history. Simultaneously, FII net buying in the stock crossed ₹2,200 Cr over the past five sessions — the highest monthly inflow in four years. Three brokerages upgraded the stock to 'Buy' with revised price targets implying 22–30% upside.",
+                "source": "Business Standard",
+                "url": "https://www.business-standard.com/markets/news/demo-bullish-2",
                 "published_at": "NOW"
             },
             {
-                "title": "{ticker} Q4 Earnings Preview: Record Growth Expected",
-                "content": "Wall Street is buzzing with anticipation for {ticker}'s upcoming earnings report. innovative product launches and strong demand in key markets are driving expectations of record-breaking revenue growth.",
-                "source": "CNBC",
+                "title": "{ticker} Q3 FY26 Revenue Preview: Analysts Expect 25% Growth",
+                "content": "Ahead of {ticker}'s earnings on Monday, consensus estimates point to a 25% topline growth driven by strong domestic demand and export momentum. The stock has outperformed Nifty 50 by 18% in the last six months. Technical analysts note a golden cross on the daily chart — SMA50 crossing above SMA200 — historically a strong bullish signal for this counter.",
+                "source": "Moneycontrol",
+                "url": "https://www.moneycontrol.com/news/business/markets/demo-bullish-3",
                 "published_at": "NOW"
             }
         ],
         "insider": [
             {
-                "insider_name": "Cook Tim",
+                "insider_name": "Mukesh Ambani",
                 "transaction_type": "Purchase",
                 "shares": 50000,
-                "price": 185.50,
+                "price": 2950.50,
                 "filing_date": "TODAY"
             },
             {
-                "insider_name": "Maestri Luca",
+                "insider_name": "Nita Ambani",
                 "transaction_type": "Purchase",
-                "shares": 15000,
-                "price": 184.75,
+                "shares": 20000,
+                "price": 2940.75,
                 "filing_date": "YESTERDAY"
             }
         ]
@@ -40,37 +43,40 @@
     "bearish": {
         "news": [
             {
-                "title": "{ticker} Faces Regulatory Scrutiny Over Data Privacy",
-                "content": "Federal regulators have opened an investigation into {ticker}'s data handling practices. The news sent shares tumbling 8% as investors fear potential fines and operational restrictions.",
-                "source": "Wall Street Journal",
+                "title": "{ticker} Under SEBI Scanner for Insider Trading; Stock Tanks 8%",
+                "content": "SEBI has initiated an inquiry into suspected insider trading at {ticker} ahead of a major acquisition announcement last quarter. The regulator issued notices to 12 entities believed to have traded ahead of the board disclosure. The stock fell 8.3% intraday on heavy volume — the steepest single-day decline in 18 months. Legal experts estimate potential penalties could reach ₹500 Cr if violations are proven.",
+                "source": "ET Markets",
+                "url": "https://economictimes.indiatimes.com/markets/stocks/news/demo-bearish-1",
                 "published_at": "NOW"
             },
             {
-                "title": "Supply Chain Issues Hit {ticker} Production",
-                "content": "{ticker} warned that ongoing supply chain disruptions will impact shipment volumes for the next two quarters. The company lowered its guidance, citing component shortages.",
-                "source": "Reuters",
+                "title": "{ticker} Cuts FY26 Revenue Guidance by 12% Citing Margin Pressure",
+                "content": "{ticker} issued a profit warning, revising FY26 revenue guidance downward by 12% to ₹85,000 Cr from ₹97,000 Cr earlier. Rising raw material costs and rupee depreciation are squeezing operating margins, which are now expected to contract by 200–250 bps. Two FII custodians have begun reducing their stakes, with combined net selling exceeding ₹1,800 Cr in the past week.",
+                "source": "Reuters India",
+                "url": "https://in.reuters.com/business/markets/demo-bearish-2",
                 "published_at": "NOW"
             },
             {
-                "title": "Analyst Downgrades {ticker} to Sell",
-                "content": "Leading investment firm Goldman Sachs has downgraded {ticker} from Neutral to Sell, citing slowing growth and increased competition. The price target was cut by 20%.",
-                "source": "MarketWatch",
+                "title": "Goldman Sachs Downgrades {ticker} to Sell; Cuts Target by 25%",
+                "content": "Goldman Sachs has downgraded {ticker} from 'Neutral' to 'Sell', slashing its 12-month price target by 25% to ₹2,100. The note cites deteriorating cash conversion, higher-than-expected capex, and intensifying competition from Chinese imports. Emkay and Nuvama have followed with 'Reduce' ratings. The stock is now trading near its 52-week low with RSI approaching oversold territory at 31.",
+                "source": "CNBC TV18",
+                "url": "https://www.cnbctv18.com/market/stocks/demo-bearish-3",
                 "published_at": "NOW"
             }
         ],
         "insider": [
             {
-                "insider_name": "Cook Tim",
+                "insider_name": "Anil Agarwal",
                 "transaction_type": "Sale",
-                "shares": 100000,
-                "price": 170.25,
+                "shares": 75000,
+                "price": 2200.25,
                 "filing_date": "TODAY"
             },
             {
-                "insider_name": "Williams Jeff",
+                "insider_name": "Priya Agarwal",
                 "transaction_type": "Sale",
-                "shares": 45000,
-                "price": 169.80,
+                "shares": 30000,
+                "price": 2195.80,
                 "filing_date": "YESTERDAY"
             }
         ]
