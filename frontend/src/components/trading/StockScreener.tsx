@@ -29,11 +29,13 @@ export function StockScreener() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [sectors, setSectors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [sectorFilter, setSectorFilter] = useState('');
   const [dirFilter, setDirFilter] = useState('');
   const [minAlpha, setMinAlpha] = useState(0);
 
   const fetchScreener = useCallback(() => {
+    setFetchError(false);
     setLoading(true);
     apiService
       .getScreener({ sector: sectorFilter, direction: dirFilter, minAlpha, limit: 20 })
@@ -41,7 +43,10 @@ export function StockScreener() {
         setStocks(d?.stocks || []);
         if (d?.sectors?.length) setSectors(d.sectors);
       })
-      .catch(() => setStocks([]))
+      .catch(() => {
+        setFetchError(true);
+        setStocks([]);
+      })
       .finally(() => setLoading(false));
   }, [sectorFilter, dirFilter, minAlpha]);
 
@@ -152,9 +157,15 @@ export function StockScreener() {
           </div>
         )}
         {!loading && stocks.length === 0 && (
-          <div className="text-xs text-muted-foreground text-center py-4">
-            No signals match filters - try reducing the alpha threshold
-          </div>
+          fetchError ? (
+            <div className="text-xs text-destructive text-center py-4">
+              Failed to fetch signals — <button onClick={fetchScreener} className="underline">retry</button>
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground text-center py-4">
+              No signals match filters - try reducing the alpha threshold
+            </div>
+          )
         )}
         {!loading && stocks.length > 0 && (
           <div className="overflow-x-auto">

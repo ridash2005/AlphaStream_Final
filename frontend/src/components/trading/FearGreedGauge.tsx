@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Gauge } from 'lucide-react';
+import { Gauge, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/services/api';
 
@@ -20,6 +20,7 @@ interface VixData {
 export function FearGreedGauge() {
   const [data, setData] = useState<FearGreedData | null>(null);
   const [vix, setVix] = useState<VixData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -29,6 +30,7 @@ export function FearGreedGauge() {
       ]);
       if (fgRes.status === 'fulfilled') setData(fgRes.value?.data || fgRes.value);
       if (vixRes.status === 'fulfilled') setVix(vixRes.value?.data || vixRes.value);
+      setLoading(false);
     };
     load();
     const interval = setInterval(load, 10 * 60 * 1000); // 10min
@@ -75,6 +77,12 @@ export function FearGreedGauge() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {loading ? (
+          <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-xs">Loading...</span>
+          </div>
+        ) : (
         <div className="flex flex-col items-center">
           <svg width="140" height="80" viewBox="0 0 140 80">
             {/* Background arc */}
@@ -141,6 +149,7 @@ export function FearGreedGauge() {
             </div>
           )}
         </div>
+        )}
       </CardContent>
     </Card>
   );

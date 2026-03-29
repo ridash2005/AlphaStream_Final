@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Activity, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown, Minus, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/services/api';
 
@@ -22,13 +22,17 @@ interface MacroData {
 
 export function MacroSignalPanel() {
   const [data, setData] = useState<MacroData | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const load = async () => {
+      setError(false);
       try {
         const res = await apiService.getMacroSignals();
         setData(res?.data || res);
-      } catch {}
+      } catch {
+        setError(true);
+      }
     };
     load();
     const interval = setInterval(load, 30 * 60 * 1000);
@@ -72,7 +76,13 @@ export function MacroSignalPanel() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!data ? (
+        {!data && error ? (
+          <div className="text-xs text-muted-foreground text-center py-4">
+            <AlertCircle className="h-6 w-6 mx-auto mb-2 opacity-40 text-red-400" />
+            <p>Macro data unavailable</p>
+            <p className="text-[10px] mt-1 opacity-60">Retrying in 30 min</p>
+          </div>
+        ) : !data && !error ? (
           <div className="text-xs text-muted-foreground text-center py-4">
             <Activity className="h-6 w-6 mx-auto mb-2 opacity-20 animate-pulse" />
             Loading macro signals...
