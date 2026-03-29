@@ -209,7 +209,7 @@ class GrowwConnector(IndianDataSource):
         return holdings
 
     def get_fundamentals(self, symbol: str) -> dict[str, Any]:
-        """Fetch stock fundamentals from Groww."""
+        """Fetch stock fundamentals from Groww, falling back to yfinance on failure."""
         clean = strip_suffix(symbol)
         data = self._api_get(
             f"{GROWW_API_BASE}/stocks_data/v1/company/search_id/{clean.lower()}/fundamental",
@@ -225,7 +225,22 @@ class GrowwConnector(IndianDataSource):
                 "market_cap_cr": data.get("marketCap", 0) / 1e7 if data.get("marketCap") else 0,
                 "source": "Groww",
             }
-        return {"ticker": clean, "error": "Fundamentals unavailable", "source": "Groww"}
+        # Groww unavailable — fall back to yfinance
+        try:
+            import yfinance as yf
+            tk = yf.Ticker(f"{clean}.NS")
+            info = tk.info or {}
+            return {
+                "ticker": clean,
+                "pe_ratio": round(info.get("trailingPE") or info.get("forwardPE") or 0, 2),
+                "pb_ratio": round(info.get("priceToBook") or 0, 2),
+                "dividend_yield": round((info.get("dividendYield") or 0) * 100, 2),
+                "roe": round((info.get("returnOnEquity") or 0) * 100, 2),
+                "market_cap_cr": round((info.get("marketCap") or 0) / 1e7, 2),
+                "source": "yfinance",
+            }
+        except Exception:
+            return {"ticker": clean, "error": "Fundamentals unavailable", "source": "none"}
 
 
 _groww_connector: Optional[GrowwConnector] = None

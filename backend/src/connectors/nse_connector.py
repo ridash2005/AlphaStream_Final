@@ -144,15 +144,21 @@ class NSEConnector(IndianDataSource):
         return {"ticker": clean, "price": 0, "error": "No data available", "source": "none"}
 
     _hist_cache: dict[str, tuple[float, "pd.DataFrame"]] = {}
-    _HIST_CACHE_TTL = 900  # 15 min cache for historical data
+    _HIST_CACHE_TTL = 900   # 15 min cache for successful data
+    _EMPTY_CACHE_TTL = 3600  # 1 hr negative cache for delisted/missing symbols
 
     def get_historical_data(self, symbol: str, period: str = "1y") -> pd.DataFrame:
-        """Fetch historical OHLCV data via yfinance with 15-min cache."""
+        """Fetch historical OHLCV data via yfinance with 15-min cache.
+
+        Empty results (delisted / no data) are cached for 1 hour to avoid
+        hammering yfinance on every radar/screener refresh cycle.
+        """
         cache_key = f"hist:{strip_suffix(symbol)}:{period}"
         now = time.time()
         if cache_key in self._hist_cache:
             ts, df = self._hist_cache[cache_key]
-            if now - ts < self._HIST_CACHE_TTL:
+            ttl = self._EMPTY_CACHE_TTL if df.empty else self._HIST_CACHE_TTL
+            if now - ts < ttl:
                 return df
 
         if not YFINANCE_AVAILABLE:
@@ -160,16 +166,17 @@ class NSEConnector(IndianDataSource):
         try:
             tk = yf.Ticker(ensure_ns_suffix(strip_suffix(symbol)))
             hist = tk.history(period=period, interval="1d")
-            if not hist.empty:
-                self._hist_cache[cache_key] = (now, hist)
-                # Evict old entries if cache grows too large
-                if len(self._hist_cache) > 200:
-                    cutoff = now - self._HIST_CACHE_TTL
-                    self._hist_cache = {k: (t, d) for k, (t, d) in self._hist_cache.items() if t > cutoff}
+            # Cache both hits and misses (empty df cached for 1 hr)
+            self._hist_cache[cache_key] = (now, hist)
+            if len(self._hist_cache) > 200:
+                cutoff = now - self._HIST_CACHE_TTL
+                self._hist_cache = {k: (t, d) for k, (t, d) in self._hist_cache.items() if t > cutoff}
             return hist
         except Exception as e:
             logger.error(f"Historical data failed for {symbol}: {e}")
-            return pd.DataFrame()
+            empty = pd.DataFrame()
+            self._hist_cache[cache_key] = (now, empty)  # negative-cache the failure
+            return empty
 
     def get_insider_trades(self, symbol: str = "", days: int = 90) -> list[dict]:
         """Fetch PIT (Prohibition of Insider Trading) data from NSE."""
