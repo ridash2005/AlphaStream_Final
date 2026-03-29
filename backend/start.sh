@@ -66,7 +66,9 @@ echo "  🚀 Backend API:  http://localhost:8000"
 echo "  📊 Health check: http://localhost:8000/health"
 [ -n "$RAG_PID" ] && echo "  📡 Adaptive RAG: http://localhost:8001"
 echo ""
-echo -e "${YELLOW}Press Ctrl+C to stop${NC}"
+echo -e "${YELLOW}Press Ctrl+C to stop  |  Logs: logs/backend.log${NC}"
 echo ""
 
-wait "$BACKEND_PID"
+# Keep script alive so the trap can catch Ctrl+C and cleanly kill children.
+# 'wait' with no args waits for all background jobs; it is interruptible by signals.
+wait

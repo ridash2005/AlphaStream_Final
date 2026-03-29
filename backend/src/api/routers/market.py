@@ -74,6 +74,38 @@ async def get_portfolio_summary():
     return pm.get_portfolio_value()
 
 
+@router.get("/portfolio/import-groww")
+async def import_groww_portfolio():
+    """
+    Fetch holdings from Groww and load them into the session portfolio.
+
+    Requires GROWW_API_TOKEN (and optionally GROWW_TOTP_SECRET) in backend/.env.
+    Returns the same shape as /portfolio/summary so the frontend can render P&L immediately.
+    """
+    from src.connectors.groww_connector import get_groww_connector
+    from src.pipeline.portfolio_manager import PortfolioManager
+
+    connector = get_groww_connector()
+    holdings = connector.get_portfolio_holdings()
+
+    if not holdings:
+        return {
+            "error": "No holdings returned from Groww. "
+                     "Ensure GROWW_API_TOKEN is set in backend/.env and the account has equity holdings.",
+            "holdings": [],
+        }
+
+    pm = PortfolioManager()
+    pm.set_holdings([
+        {"ticker": h["ticker"], "quantity": h["quantity"], "buy_price": h["buy_price"]}
+        for h in holdings
+    ])
+    result = pm.get_portfolio_value()
+    result["imported_count"] = len(holdings)
+    result["source"] = "Groww"
+    return result
+
+
 @router.get("/filings/{ticker}")
 async def get_filings(ticker: str, days: int = Query(30, le=90)):
     """Get analyzed corporate filings for a ticker."""

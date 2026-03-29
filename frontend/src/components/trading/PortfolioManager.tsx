@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, Plus, Trash2, Save, RefreshCw, AlertCircle } from 'lucide-react';
+import { Briefcase, Plus, Trash2, Save, RefreshCw, AlertCircle, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/services/api';
 import { useAppStore } from '@/store/appStore';
@@ -39,6 +39,8 @@ export function PortfolioManager() {
   const [buyPrice, setBuyPrice] = useState('');
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [loadingSummary, setLoadingSummary] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const addHolding = () => {
@@ -68,9 +70,37 @@ export function PortfolioManager() {
     }
   };
 
+  const importFromGroww = async () => {
+    setImporting(true);
+    setError(null);
+    try {
+      const result = await apiService.importGrowwPortfolio();
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      const imported = (result.holdings || []).map((h: { ticker: string; quantity: number; buy_price: number }) => ({
+        ticker: h.ticker,
+        quantity: h.quantity,
+        buy_price: h.buy_price,
+      }));
+      setHoldings(imported);
+      setPortfolio(imported);
+      setSummary(result);
+    } catch {
+      setError('Failed to import from Groww. Ensure GROWW_API_TOKEN is set in backend/.env.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   useEffect(() => {
     if (holdings.length > 0) {
-      apiService.getPortfolioSummary().then(s => setSummary(s)).catch(() => {});
+      setLoadingSummary(true);
+      apiService.getPortfolioSummary()
+        .then(s => setSummary(s))
+        .catch(() => {})
+        .finally(() => setLoadingSummary(false));
     }
   }, []);
 
@@ -126,17 +156,29 @@ export function PortfolioManager() {
               </div>
             )}
 
-            <button onClick={savePortfolio} disabled={saving || holdings.length === 0}
-              className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors text-xs font-medium disabled:opacity-50">
-              {saving ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-              {saving ? 'Saving...' : 'Save Portfolio'}
-            </button>
+            <div className="flex gap-1.5">
+              <button onClick={savePortfolio} disabled={saving || holdings.length === 0}
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors text-xs font-medium disabled:opacity-50">
+                {saving ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+              <button onClick={importFromGroww} disabled={importing}
+                title="Import holdings from your Groww account (requires GROWW_API_TOKEN in backend/.env)"
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors text-xs font-medium disabled:opacity-50">
+                {importing ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                {importing ? 'Importing...' : 'Groww'}
+              </button>
+            </div>
             {error && <p className="text-xs text-destructive mt-1">{error}</p>}
           </div>
 
           {/* Right: Summary */}
           <div>
-            {summary ? (
+            {loadingSummary ? (
+              <div className="flex items-center justify-center h-full min-h-[80px]">
+                <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : summary ? (
               <div>
                 <div className="grid grid-cols-3 gap-1.5 mb-3">
                   {[
@@ -158,7 +200,7 @@ export function PortfolioManager() {
                     <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
                       <XAxis type="number" tick={{ fontSize: 9, fill: '#666' }} tickFormatter={v => `${v}%`} />
                       <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: '#888', fontFamily: 'monospace' }} width={50} />
-                      <Tooltip formatter={(v: number) => [`${v.toFixed(2)}%`, 'P&L']} contentStyle={{ background: '#0a0a1a', border: '1px solid #333', fontSize: 11 }} />
+                      <Tooltip formatter={(v: number | undefined) => [`${(v ?? 0).toFixed(2)}%`, 'P&L']} contentStyle={{ background: '#0a0a1a', border: '1px solid #333', fontSize: 11 }} />
                       <Bar dataKey="pnl" radius={2}>
                         {chartData.map((entry, i) => (
                           <Cell key={i} fill={entry.pnl >= 0 ? '#22c55e' : '#ef4444'} />

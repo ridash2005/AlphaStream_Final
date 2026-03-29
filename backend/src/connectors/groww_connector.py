@@ -158,6 +158,56 @@ class GrowwConnector(IndianDataSource):
             ]
         return []
 
+    def get_portfolio_holdings(self) -> list[dict[str, Any]]:
+        """
+        Fetch user's equity holdings from Groww.
+
+        Requires a valid JWT token (GROWW_API_TOKEN in .env).
+        Returns a list of dicts with keys: ticker, quantity, buy_price, current_price, isin.
+
+        Note: Groww's private holdings API is reverse-engineered and may break
+        without notice if they update their app.
+        """
+        data = self._api_get(f"{GROWW_API_BASE}/user/portfolio/v1/holdings")
+        if not data:
+            # Some versions nest under 'data' or 'holdingDetails'
+            logger.warning("Groww holdings API returned empty response")
+            return []
+
+        # Normalise various response shapes seen in the wild
+        raw: list = (
+            data.get("holdingDetails")
+            or data.get("holdings")
+            or data.get("data", {}).get("holdingDetails")
+            or []
+        )
+
+        holdings = []
+        for item in raw:
+            try:
+                ticker = (
+                    item.get("tradingSymbol")
+                    or item.get("nseScripCode")
+                    or item.get("ticker", "")
+                ).upper().replace("-EQ", "")
+                if not ticker:
+                    continue
+                holdings.append({
+                    "ticker": ticker,
+                    "quantity": int(item.get("quantity", 0) or item.get("holdingQty", 0)),
+                    "buy_price": float(
+                        item.get("averagePrice", 0)
+                        or item.get("avgBuyPrice", 0)
+                        or 0
+                    ),
+                    "current_price": float(item.get("ltp", 0) or item.get("lastPrice", 0) or 0),
+                    "isin": item.get("isin", ""),
+                })
+            except (KeyError, ValueError, TypeError) as exc:
+                logger.debug("Skipping malformed Groww holding: %s — %s", item, exc)
+
+        return holdings
+
     def get_fundamentals(self, symbol: str) -> dict[str, Any]:
         """Fetch stock fundamentals from Groww."""
         clean = strip_suffix(symbol)

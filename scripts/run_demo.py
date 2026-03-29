@@ -3,13 +3,23 @@ import json
 import argparse
 import requests
 import os
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
+
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.table import Table
+from rich.text import Text
+from rich import box
 
 # Configuration
 BACKEND_URL = "http://localhost:8000"
 DATA_FILE = Path(__file__).parent / "demo_data.json"
 INSIDER_DATA_FILE = Path(__file__).parent.parent / "backend/data/demo_insider.json"
+
+console = Console()
 
 def load_scenarios():
     with open(DATA_FILE, "r") as f:
@@ -26,92 +36,160 @@ NIFTY_50 = {
 }
 
 
-def inject_news(ticker: str, articles: list) -> None:
-    print(f"Injecting {len(articles)} news articles for {ticker}...")
-
-    for article in articles:
+def inject_news(ticker: str, articles: list, progress: Progress, task_id) -> tuple[int, int]:
+    ok = fail = 0
+    for i, article in enumerate(articles):
         payload = article.copy()
-
-        # Replace placeholders
         payload["title"] = payload["title"].format(ticker=ticker)
         payload["content"] = payload["content"].format(ticker=ticker)
-
-        # Set timestamp
         if payload["published_at"] == "NOW":
             payload["published_at"] = datetime.utcnow().isoformat()
-
-        # Always include tickers field so the ingestion endpoint can associate the article
         payload.setdefault("tickers", [ticker.upper()])
 
+        progress.update(task_id, description=f"[cyan]Injecting article {i+1}/{len(articles)}[/cyan]")
         try:
-            response = requests.post(f"{BACKEND_URL}/ingest", json=payload, timeout=30)
-            if response.status_code == 200:
-                print(f"  ✓ Injected: {payload['title']}")
+            resp = requests.post(f"{BACKEND_URL}/ingest", json=payload, timeout=30)
+            if resp.status_code == 200:
+                ok += 1
+                console.print(f"  [green]✓[/green] {payload['title'][:70]}")
             else:
-                print(f"  ✗ Failed: {payload['title']} ({response.status_code})")
+                fail += 1
+                console.print(f"  [red]✗[/red] {payload['title'][:70]} ([yellow]{resp.status_code}[/yellow])")
         except Exception as e:
-            print(f"  ✗ Error: {e}")
+            fail += 1
+            console.print(f"  [red]✗ Error:[/red] {e}")
+        progress.advance(task_id)
+    return ok, fail
 
-def create_insider_override(ticker, transactions):
-    print(f"Creating insider data override for {ticker}...")
-    
-    # Ensure directory exists
+
+def create_insider_override(ticker: str, transactions: list) -> None:
     INSIDER_DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
-    
-    # Process transactions
-    processed_txs = []
+    today = datetime.now()
+    processed = []
     for tx in transactions:
-        tx_data = tx.copy()
-        tx_data["ticker"] = ticker
-        
-        # Handle dates
-        today = datetime.now()
-        if tx_data["filing_date"] == "TODAY":
-            tx_data["filing_date"] = today.strftime("%Y-%m-%d")
-        elif tx_data["filing_date"] == "YESTERDAY":
-            tx_data["filing_date"] = (today - timedelta(days=1)).strftime("%Y-%m-%d")
-            
-        processed_txs.append(tx_data)
-        
-    # Write to override file
+        t = tx.copy()
+        t["ticker"] = ticker
+        if t["filing_date"] == "TODAY":
+            t["filing_date"] = today.strftime("%Y-%m-%d")
+        elif t["filing_date"] == "YESTERDAY":
+            t["filing_date"] = (today - timedelta(days=1)).strftime("%Y-%m-%d")
+        processed.append(t)
     with open(INSIDER_DATA_FILE, "w") as f:
-        json.dump({ticker: processed_txs}, f, indent=2)
-        
-    print(f"  ✓ Wrote {len(processed_txs)} transactions to {INSIDER_DATA_FILE}")
+        json.dump({ticker: processed}, f, indent=2)
+
+
+def check_backend() -> bool:
+    try:
+        r = requests.get(f"{BACKEND_URL}/health", timeout=5)
+        return r.status_code == 200
+    except Exception:
+        return False
+
 
 def main():
     parser = argparse.ArgumentParser(description="Run AlphaStream Demo Scenario")
     parser.add_argument("--ticker", type=str, default="RELIANCE", help="NSE ticker symbol (default: RELIANCE)")
-    parser.add_argument("--scenario", type=str, choices=["bullish", "bearish"], required=True, help="Scenario to run")
-    
+    parser.add_argument("--scenario", type=str, choices=["bullish", "bearish"], required=True)
     args = parser.parse_args()
-
     ticker = args.ticker.upper()
+    scenario = args.scenario
 
+    color = "green" if scenario == "bullish" else "red"
+    icon  = "📈" if scenario == "bullish" else "📉"
+
+    console.print(Panel.fit(
+        f"[bold {color}]{icon}  AlphaStream India — {scenario.upper()} Demo[/bold {color}]\n"
+        f"[dim]Ticker:[/dim] [bold white]{ticker}[/bold white]   "
+        f"[dim]Backend:[/dim] [bold white]{BACKEND_URL}[/bold white]",
+        border_style=color,
+        padding=(1, 4),
+    ))
+
+    # Validate ticker
     if ticker not in NIFTY_50:
-        print(f"⚠️  Warning: '{ticker}' is not in the Nifty 50 universe. Continuing anyway.")
+        console.print(f"[yellow]⚠  '{ticker}' is not in the Nifty 50 universe — continuing anyway.[/yellow]")
+
+    # Check backend alive
+    with console.status("[bold cyan]Checking backend health...[/bold cyan]"):
+        alive = check_backend()
+    if not alive:
+        console.print(f"[bold red]✗ Backend not reachable at {BACKEND_URL}[/bold red]")
+        console.print("[dim]  Start it with:  cd backend && bash start.sh[/dim]")
+        raise SystemExit(1)
+    console.print("[green]✓ Backend is healthy[/green]\n")
 
     scenarios = load_scenarios()
-    scenario_data = scenarios.get(args.scenario)
-
+    scenario_data = scenarios.get(scenario)
     if not scenario_data:
-        print(f"Error: Scenario '{args.scenario}' not found.")
-        return
+        console.print(f"[red]Error: scenario '{scenario}' not found in demo_data.json[/red]")
+        raise SystemExit(1)
 
-    print(f"🚀 Starting {args.scenario.upper()} demo for {ticker}...")
+    articles = scenario_data["news"]
+    insider  = scenario_data["insider"]
 
-    # 1. Update Insider Data (File Override)
-    create_insider_override(ticker, scenario_data["insider"])
+    # ── Step 1: Insider override ──────────────────────────────────────────────
+    console.rule("[bold]Step 1/2 — Insider Activity Override[/bold]")
+    with console.status("[cyan]Writing insider transactions...[/cyan]"):
+        create_insider_override(ticker, insider)
+    # Print a summary table
+    tbl = Table(box=box.SIMPLE_HEAVY, show_header=True, header_style="bold magenta")
+    tbl.add_column("Name", style="white")
+    tbl.add_column("Type", style="cyan")
+    tbl.add_column("Qty", justify="right", style="yellow")
+    tbl.add_column("Value", justify="right")
+    for tx in insider:
+        sign = "+" if tx.get("transaction_type", "BUY") == "BUY" else "-"
+        val  = tx.get("transaction_value", 0)
+        tbl.add_row(
+            tx.get("insider_name", "—"),
+            tx.get("transaction_type", "—"),
+            f"{sign}{tx.get('quantity', 0):,}",
+            f"₹{val/1e7:.1f}Cr" if val else "—",
+        )
+    console.print(tbl)
+    console.print(f"[green]✓ {len(insider)} insider transaction(s) written[/green]\n")
 
-    # 2. Inject News (API)
-    inject_news(ticker, scenario_data["news"])
+    # ── Step 2: News injection ────────────────────────────────────────────────
+    console.rule("[bold]Step 2/2 — News Article Injection[/bold]")
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(bar_width=30),
+        TaskProgressColumn(),
+        console=console,
+        transient=False,
+    ) as progress:
+        task = progress.add_task("[cyan]Starting...[/cyan]", total=len(articles))
+        ok, fail = inject_news(ticker, articles, progress, task)
 
-    print("\n✅ Demo setup complete!")
-    print(f"1. Open AlphaStream frontend at http://localhost:5173")
-    print(f"2. Search for: {ticker}")
-    print(f"3. Check the 'Overview' tab — recommendation and alpha score should reflect {args.scenario} sentiment.")
-    print(f"4. Check 'Signals' tab → Opportunity Radar for new signals.")
-    print(f"5. Ask the NLQ agent: 'What is the latest news on {ticker}?'")
+    status_color = "green" if fail == 0 else "yellow"
+    console.print(f"\n[{status_color}]Injected {ok}/{len(articles)} articles ({fail} failed)[/{status_color}]\n")
+
+    # ── Summary panel ─────────────────────────────────────────────────────────
+    instructions = Text()
+    instructions.append("1. ", style="bold yellow")
+    instructions.append(f"Open frontend → ")
+    instructions.append("http://localhost:5173\n", style="bold cyan underline")
+    instructions.append("2. ", style="bold yellow")
+    instructions.append(f"Search ticker: ")
+    instructions.append(f"{ticker}\n", style="bold white")
+    instructions.append("3. ", style="bold yellow")
+    instructions.append("Overview tab → check Recommendation & Alpha Score\n")
+    instructions.append("4. ", style="bold yellow")
+    instructions.append("Signals tab → Opportunity Radar for new signals\n")
+    instructions.append("5. ", style="bold yellow")
+    instructions.append("Global Intelligence → FII/DII Flows chart\n")
+    instructions.append("6. ", style="bold yellow")
+    instructions.append("Ask NLQ: ")
+    instructions.append(f"\"What is the latest news on {ticker}?\"\n", style="italic cyan")
+
+    console.print(Panel(
+        instructions,
+        title=f"[bold {color}]✅ Demo Ready — {scenario.upper()}[/bold {color}]",
+        border_style=color,
+        padding=(1, 2),
+    ))
+
 
 if __name__ == "__main__":
     main()
