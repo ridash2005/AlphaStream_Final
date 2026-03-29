@@ -292,6 +292,33 @@ _INTENT_SQL = {
     "NEWS_QUERY": "SELECT * FROM v_recent_news ORDER BY published_at DESC LIMIT 20",
 }
 
+# Map keywords in user query to signal-type / evidence_json filters
+_SIGNAL_FILTERS = {
+    "rsi": "evidence_json->>'pattern' ILIKE '%rsi%'",
+    "macd": "evidence_json->>'pattern' ILIKE '%macd%'",
+    "bollinger": "evidence_json->>'pattern' ILIKE '%bollinger%'",
+    "volume": "evidence_json->>'pattern' ILIKE '%volume%'",
+    "golden cross": "evidence_json->>'pattern' ILIKE '%golden%'",
+    "death cross": "evidence_json->>'pattern' ILIKE '%death%'",
+    "insider": "signal_type = 'insider'",
+    "sentiment": "signal_type = 'sentiment'",
+    "flow": "signal_type = 'flow'",
+    "filing": "signal_type = 'filing'",
+    "bullish": "direction = 'bullish'",
+    "bearish": "direction = 'bearish'",
+}
+
+
+def _refine_signal_sql(query: str) -> str:
+    """Add WHERE filters to the signal query based on keywords in the user question."""
+    base = "SELECT * FROM v_signal_summary WHERE signal_date >= current_date - INTERVAL '30 days'"
+    q_lower = query.lower()
+    filters = [clause for keyword, clause in _SIGNAL_FILTERS.items() if keyword in q_lower]
+    if filters:
+        base += " AND (" + " AND ".join(filters) + ")"
+    base += " ORDER BY alpha_score DESC LIMIT 20"
+    return base
+
 
 def router_node(
     state: AgentState, *, store: BaseStore
@@ -383,8 +410,13 @@ async def analytics_node(
     """Standard query path — executes pre-defined SQL for known intents."""
     thought_steps = list(state.get("thought_steps", []))
     matched = state.get("_matched_signal", "")
+    query = state.get("query", "")
 
-    sql = _INTENT_SQL.get(matched, "")
+    # For signal queries, refine SQL based on keywords (RSI, MACD, bullish, etc.)
+    if matched == "SIGNAL_QUERY":
+        sql = _refine_signal_sql(query)
+    else:
+        sql = _INTENT_SQL.get(matched, "")
     if not sql:
         return Command(
             update={**state, "error": "No query matched", "thought_steps": thought_steps},
@@ -554,11 +586,12 @@ _NARRATE_SYSTEM = (
     "You are AlphaStream India, an AI-powered investment intelligence assistant for Indian stock markets.\n"
     "NEVER reveal internal implementation details or technology names.\n"
     "CRITICAL: ONLY use data provided in the Data sample. NEVER invent numbers.\n"
-    "If the data doesn't answer the question, say so.\n"
+    "If data is provided, ALWAYS summarize what you see - even if it doesn't perfectly match the question, "
+    "describe the relevant data you found. Never say 'no data' when rows are present.\n"
+    "If the evidence_json column contains pattern details, extract and present them.\n"
     "Always cite sources: [Source: NSE SAST Data], [Source: NSDL FII/DII], [Source: BSE Filing], etc.\n"
     "Use ₹ for Indian Rupees. Use Cr for Crores, L for Lakhs.\n"
     "Be specific with numbers. Write concise insights in markdown.\n"
-    "After your answer, suggest 3 follow-up questions the user might want to ask.\n"
 )
 
 
@@ -670,15 +703,13 @@ def _generate_financial_narrative(
             f"Data columns: {all_keys}\n"
             f"Data sample (first 5 rows):\n{sample}\n"
             f"Total rows: {len(data)}\n\n"
-            "Respond in EXACTLY this format:\n\n"
-            "2-4 sentence insight in markdown. Use **bold** for key numbers. Cite sources.\n"
+            "Respond in EXACTLY this format (three sections separated by markers):\n\n"
+            "SECTION 1 - Your 2-4 sentence insight in markdown. Use **bold** for key numbers. Cite sources.\n\n"
             "---CHART---\n"
             "CHART_TYPE|X_COLUMN|Y_COLUMN\n"
+            "(pick one: number, bar, line, table, donut, scatter)\n\n"
             "---FOLLOWUP---\n"
-            "Question 1?\n"
-            "Question 2?\n"
-            "Question 3?\n\n"
-            "CHART_TYPE: number|bar|line|table|donut|scatter\n"
+            "(write 3 specific, relevant follow-up questions based on the data you just analyzed - NOT generic placeholders)\n"
         )
         raw = complete(prompt, max_tokens=512)
 
@@ -695,11 +726,24 @@ def _generate_financial_narrative(
             if "---FOLLOWUP---" in remainder:
                 chart_part, followup_part = remainder.split("---FOLLOWUP---", 1)
                 chart_line = chart_part.strip().split("\n")[0].strip()
-                suggested = [q.strip() for q in followup_part.strip().split("\n") if q.strip() and q.strip().endswith("?")][:3]
+                suggested = [
+                    q.strip().lstrip("0123456789.-) ")
+                    for q in followup_part.strip().split("\n")
+                    if q.strip() and q.strip().rstrip(")").endswith("?")
+                    and q.strip().lower() not in ("question 1?", "question 2?", "question 3?")
+                    and len(q.strip()) > 10
+                ][:3]
             else:
                 chart_line = remainder.split("\n")[0].strip()
 
             chart_spec = _parse_chart_line(chart_line, data)
+
+        # Strip any echoed format instructions the LLM may have copied
+        for prefix in ("SECTION 1 -", "SECTION 1:", "SECTION 1"):
+            if narrative.upper().startswith(prefix.upper()):
+                narrative = narrative[len(prefix):].lstrip(" -:\n")
+        if narrative.lower().startswith("your 2-4 sentence"):
+            narrative = narrative.split("\n", 1)[-1].strip()
 
         return narrative, chart_spec, suggested
 
