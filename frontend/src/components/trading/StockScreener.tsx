@@ -125,7 +125,7 @@ export function StockScreener() {
             <BarChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
               <YAxis hide />
               <Tooltip
-                formatter={(v: number) => [`α: ${v.toFixed(1)}`, '']}
+                formatter={(v: number | string | undefined) => [`α: ${Number(v ?? 0).toFixed(1)}`, '']}
                 contentStyle={{ background: '#0a0a1a', border: '1px solid #333', fontSize: 10 }}
               />
               <Bar dataKey="alpha" radius={2}>

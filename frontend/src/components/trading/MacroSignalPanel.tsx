@@ -87,7 +87,7 @@ export function MacroSignalPanel() {
             <Activity className="h-6 w-6 mx-auto mb-2 opacity-20 animate-pulse" />
             Loading macro signals...
           </div>
-        ) : (
+        ) : data ? (
           <div className="space-y-1.5">
             {/* Score bar */}
             <div className="flex items-center gap-2 mb-2">
@@ -124,7 +124,7 @@ export function MacroSignalPanel() {
               </div>
             ))}
           </div>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

@@ -217,8 +217,9 @@ export const useAppStore = create<AppState>()(
     connectStream: (ticker) => {
         const { socket, setRecommendation, setLoading } = get();
 
-        // Close existing
+        // Close existing — mark intentional so onclose doesn't trigger reconnect
         if (socket) {
+            (socket as WebSocket & { _intentionalClose?: boolean })._intentionalClose = true;
             socket.close();
         }
 
@@ -275,6 +276,8 @@ export const useAppStore = create<AppState>()(
             };
 
             ws.onclose = () => {
+                // Skip reconnect if this close was intentional (ticker switch)
+                if ((ws as WebSocket & { _intentionalClose?: boolean })._intentionalClose) return;
                 // Auto-reconnect with exponential backoff
                 if (retryCount < maxRetries && get().currentTicker === ticker) {
                     const delay = Math.min(1000 * Math.pow(2, retryCount), 16000);
@@ -293,6 +296,7 @@ export const useAppStore = create<AppState>()(
     disconnectStream: () => {
         const { socket } = get();
         if (socket) {
+            (socket as WebSocket & { _intentionalClose?: boolean })._intentionalClose = true;
             socket.close();
             set({ socket: null });
         }

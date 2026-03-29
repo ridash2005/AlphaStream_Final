@@ -5,6 +5,8 @@ Provides endpoints for global indices, commodities, VIX, Fear & Greed,
 sector performance, and macro signals.
 """
 
+import asyncio
+
 from fastapi import APIRouter
 
 from src.connectors.global_market_connector import get_global_market_connector
@@ -87,7 +89,9 @@ async def get_global_context():
 async def get_geopolitical_risk():
     """India geopolitical risk score (0-100) with hotspot alerts."""
     geo = get_geopolitical_connector()
-    return {"data": geo.get_india_risk()}
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, geo.get_india_risk)
+    return {"data": result}
 
 
 @router.post("/refresh")
