@@ -333,30 +333,30 @@ in DuckDB, and delivers actionable signals via a Bloomberg-style React terminal.
     node[midway, above, font=\scriptsize\sffamily\color{teal!70}] {Unified Stream};
 
   % ── News Intelligence (top-left) ──
-  \node[srcnavy, left=2.8cm of agg.west, yshift=3.2cm] (newsapi) {NewsAPI (Breaking)};
-  \node[srcnavy, below=0.25cm of newsapi]              (finnhub) {Finnhub (Company)};
-  \node[srcnavy, below=0.25cm of finnhub]              (alphav)  {Alpha Vantage (Sentiment)};
-  \node[srcnavy, below=0.25cm of alphav]               (media)   {MediaStack (Global)};
-  \node[srcnavy, below=0.25cm of media]                (rss)     {RSS Feeds (Always-on)};
-  \node[font=\scriptsize\sffamily\bfseries\color{navy!80!black}, above=0.2cm of newsapi] {News Intelligence (5)};
+  \node[srcnavy, left=3.2cm of agg.west, yshift=3.8cm] (newsapi) {NewsAPI (Breaking)};
+  \node[srcnavy, below=0.35cm of newsapi]              (finnhub) {Finnhub (Company)};
+  \node[srcnavy, below=0.35cm of finnhub]              (alphav)  {Alpha Vantage (Sentiment)};
+  \node[srcnavy, below=0.35cm of alphav]               (media)   {MediaStack (Global)};
+  \node[srcnavy, below=0.35cm of media]                (rss)     {RSS Feeds (Always-on)};
+  \node[font=\scriptsize\sffamily\bfseries\color{navy!80!black}, above=0.3cm of newsapi] {News Intelligence (5)};
 
   % ── Market Data (bottom-left) ──
-  \node[srcgreen, left=2.8cm of agg.west, yshift=-2.2cm] (nse)   {NSE (OHLCV)};
-  \node[srcgreen, below=0.25cm of nse]                  (bse)   {BSE (Filings)};
-  \node[srcgreen, below=0.25cm of bse]                  (groww) {Groww (Fundamentals)};
-  \node[font=\scriptsize\sffamily\bfseries\color{green!80!black}, above=0.2cm of nse] {Market Data (3)};
+  \node[srcgreen, left=3.2cm of agg.west, yshift=-3.0cm] (nse)   {NSE (OHLCV)};
+  \node[srcgreen, below=0.35cm of nse]                  (bse)   {BSE (Filings)};
+  \node[srcgreen, below=0.35cm of bse]                  (groww) {Groww (Fundamentals)};
+  \node[font=\scriptsize\sffamily\bfseries\color{green!80!black}, above=0.3cm of nse] {Market Data (3)};
 
   % ── Institutional (top-right) ──
-  \node[srcorange, right=2.4cm of out.east, yshift=2.4cm] (fii)     {FII/DII Flows (NSDL)};
-  \node[srcorange, below=0.25cm of fii]                   (insider) {Insider (SAST/PIT)};
-  \node[srcorange, below=0.25cm of insider]               (sec)     {SEC / Corp Filings};
-  \node[font=\scriptsize\sffamily\bfseries\color{orange!80!black}, above=0.2cm of fii] {Institutional (3)};
+  \node[srcorange, right=2.8cm of out.east, yshift=2.8cm] (fii)     {FII/DII Flows (NSDL)};
+  \node[srcorange, below=0.35cm of fii]                   (insider) {Insider (SAST/PIT)};
+  \node[srcorange, below=0.35cm of insider]               (sec)     {SEC / Corp Filings};
+  \node[font=\scriptsize\sffamily\bfseries\color{orange!80!black}, above=0.3cm of fii] {Institutional (3)};
 
   % ── Global Intelligence (bottom-right) ──
-  \node[srcred, right=2.4cm of out.east, yshift=-1.8cm] (world) {WorldMonitor (Indices)};
-  \node[srcred, below=0.25cm of world]                   (macro) {FRED Macro (CPI/Yield)};
-  \node[srcred, below=0.25cm of macro]                   (geo)   {Geopolitical Risk};
-  \node[font=\scriptsize\sffamily\bfseries\color{red!70!black}, above=0.2cm of world] {Global Intelligence (3)};
+  \node[srcred, right=2.8cm of out.east, yshift=-2.2cm] (world) {WorldMonitor (Indices)};
+  \node[srcred, below=0.35cm of world]                   (macro) {FRED Macro (CPI/Yield)};
+  \node[srcred, below=0.35cm of macro]                   (geo)   {Geopolitical Risk};
+  \node[font=\scriptsize\sffamily\bfseries\color{red!70!black}, above=0.3cm of world] {Global Intelligence (3)};
 
   % ── Arrows ──
   \foreach \n in {newsapi,finnhub,alphav,media,rss}
