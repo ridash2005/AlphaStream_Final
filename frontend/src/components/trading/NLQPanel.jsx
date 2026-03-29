@@ -348,9 +348,12 @@ function MessageBubble({ msg, onSendMessage }) {
 function DynamicBarChart({ spec }) {
   const { x, y, data } = spec
   const xKey = x
-  const yKey = y[0]
+  const yKey = Array.isArray(y) && y.length > 0 ? y[0] : null
+  if (!xKey || !yKey || !Array.isArray(data) || data.length === 0) {
+    return <p className="text-xs text-muted-foreground text-center py-4">No chart data returned.</p>
+  }
   const maxVal = Math.max(...data.map((r) => Number(r[yKey] ?? 0)))
-  if (maxVal === 0) return null
+  if (maxVal === 0) return <p className="text-xs text-muted-foreground text-center py-4">All values are zero.</p>
   return (
     <div className="space-y-2 mt-1">
       {data.slice(0, 12).map((row, i) => {

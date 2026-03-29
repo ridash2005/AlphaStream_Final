@@ -21,11 +21,16 @@ export function FlowChart() {
             const resp = await apiService.getFlows(30);
             const flows = resp.flows || resp.data || resp;
             if (Array.isArray(flows)) {
-                setData(flows.slice(-20).map((f: any) => ({
-                    date: (f.date || '').slice(5), // MM-DD
-                    fii_net: f.fii_net_cr ?? (f.fii_buy_cr ?? 0) - (f.fii_sell_cr ?? 0),
-                    dii_net: f.dii_net_cr ?? (f.dii_buy_cr ?? 0) - (f.dii_sell_cr ?? 0),
-                })));
+                setData(flows.slice(-20).map((f: any) => {
+                    const raw: string = f.date || f.Date || '';
+                    // Handles YYYY-MM-DD → MM-DD or DD-Mon-YY → as-is
+                    const date = raw.length >= 7 && raw[4] === '-' ? raw.slice(5) : raw.slice(0, 5) || raw;
+                    return {
+                        date,
+                        fii_net: f.fii_net_cr ?? (f.fii_buy_cr ?? 0) - (f.fii_sell_cr ?? 0),
+                        dii_net: f.dii_net_cr ?? (f.dii_buy_cr ?? 0) - (f.dii_sell_cr ?? 0),
+                    };
+                }));
             }
         } catch { /* graceful degradation */ }
         setLoading(false);
@@ -58,7 +63,7 @@ export function FlowChart() {
                             <YAxis tick={{ fill: '#64748b', fontSize: 9 }} tickFormatter={(v) => `${v > 0 ? '+' : ''}${(v / 1000).toFixed(1)}k`} />
                             <Tooltip
                                 contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: 8, fontSize: 11 }}
-                                formatter={(v: number, name: string) => [`₹${v.toFixed(0)} Cr`, name === 'fii_net' ? 'FII Net' : 'DII Net']}
+                                formatter={(v: number | undefined, name: string | undefined) => [`₹${(v ?? 0).toFixed(0)} Cr`, name === 'fii_net' ? 'FII Net' : 'DII Net']}
                             />
                             <ReferenceLine y={0} stroke="#333" strokeDasharray="3 3" />
                             <Bar dataKey="fii_net" name="FII Net" radius={[2, 2, 0, 0]} maxBarSize={12}>

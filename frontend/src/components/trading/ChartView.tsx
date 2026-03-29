@@ -34,6 +34,7 @@ export function ChartView() {
   const [backtest, setBacktest] = useState<BacktestResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [noData, setNoData] = useState(false);
   const [showIndicators, setShowIndicators] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>(null);
@@ -42,6 +43,7 @@ export function ChartView() {
 
   const loadChart = async () => {
     setError(null);
+    setNoData(false);
     setLoading(true);
     try {
       const [data, pats] = await Promise.all([
@@ -61,6 +63,9 @@ export function ChartView() {
       }
 
       // Render TradingView chart
+      if (ohlcv.length === 0) {
+        setNoData(true);
+      }
       if (chartContainerRef.current && ohlcv.length > 0) {
         if (chartRef.current) {
           chartRef.current.remove();
@@ -209,7 +214,7 @@ export function ChartView() {
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         )}
-        {!loading && error ? (
+        {!loading && error && (
           <div className="flex flex-col items-center justify-center h-[480px] text-slate-400 gap-2">
             <span className="text-sm">{error}</span>
             <button
@@ -219,11 +224,25 @@ export function ChartView() {
               Retry
             </button>
           </div>
-        ) : (
+        )}
+        {!loading && !error && (
           <>
-            <div ref={chartContainerRef} className="w-full" style={{ height: loading ? 0 : 480 }} />
+            {/* chartContainerRef stays mounted so lightweight-charts can attach;
+                the "no data" overlay sits on top when ohlcv is empty */}
+            <div className="relative">
+              <div ref={chartContainerRef} className="w-full" style={{ height: 480 }} />
+              {/* Overlay shown when ohlcv was empty */}
+              {noData && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground gap-2">
+                  <BarChart2 className="h-10 w-10 opacity-20" />
+                  <p className="text-sm">No OHLCV data for <span className="font-mono font-semibold">{ticker}</span></p>
+                  <p className="text-xs opacity-60">The symbol may be delisted or the backend data feed is unavailable.</p>
+                  <button onClick={() => loadChart()} className="text-xs text-cyan-400 hover:text-cyan-300 underline mt-1">Retry</button>
+                </div>
+              )}
+            </div>
             {showIndicators && (
-              <div ref={rsiContainerRef} className="w-full border-t border-border/20" style={{ height: showIndicators ? 110 : 0 }} />
+              <div ref={rsiContainerRef} className="w-full border-t border-border/20" style={{ height: 110 }} />
             )}
           </>
         )}

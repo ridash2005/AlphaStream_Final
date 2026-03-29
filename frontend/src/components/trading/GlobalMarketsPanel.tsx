@@ -171,14 +171,17 @@ export function GlobalMarketsPanel() {
 
         {!loading && activeTab === 'sectors' && (
           <div>
+            {sectorChartData.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-4">Sector data unavailable</p>
+            )}
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={sectorChartData} layout="vertical" margin={{ top: 0, right: 40, left: 0, bottom: 0 }}>
                 <XAxis type="number" tick={{ fontSize: 9, fill: '#666' }} tickFormatter={(v: number) => `${v}%`} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: '#888' }} width={55} />
                 <Tooltip
-                  formatter={(v: number, _name: string, props: { payload?: { symbol?: string } }) => {
+                  formatter={(v: number | undefined, _name: string | undefined, props: { payload?: { symbol?: string } }) => {
                     const note = INDIA_IMPACT[props.payload?.symbol ?? ''] || '';
-                    return [`${v.toFixed(2)}%${note ? ` - ${note}` : ''}`, 'Change'];
+                    return [`${(v ?? 0).toFixed(2)}%${note ? ` - ${note}` : ''}`, 'Change'];
                   }}
                   contentStyle={{ background: '#0a0a1a', border: '1px solid #333', fontSize: 11 }}
                 />

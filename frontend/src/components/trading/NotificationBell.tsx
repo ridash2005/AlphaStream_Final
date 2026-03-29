@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, AlertTriangle, TrendingUp, Info } from 'lucide-react';
 import { apiService } from '@/services/api';
 
@@ -13,7 +13,7 @@ interface Insight {
   read: boolean;
 }
 
-const SEVERITY_CONFIG: Record<string, { icon: JSX.Element; color: string }> = {
+const SEVERITY_CONFIG: Record<string, { icon: React.ReactElement; color: string }> = {
   warning: { icon: <AlertTriangle className="h-3.5 w-3.5" />, color: 'text-amber-400' },
   success: { icon: <TrendingUp className="h-3.5 w-3.5" />, color: 'text-emerald-400' },
   info:    { icon: <Info className="h-3.5 w-3.5" />, color: 'text-blue-400' },

@@ -1,13 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
-import { BarChart2 } from 'lucide-react';
+import { BarChart2, Loader2 } from 'lucide-react';
 import { apiService } from '@/services/api';
 
 export function MarketHeatmap() {
     const { marketHeatmap } = useAppStore();
+    const [loading, setLoading] = useState(true);
 
     // Fetch initial heatmap data on mount
     useEffect(() => {
@@ -17,8 +18,10 @@ export function MarketHeatmap() {
                 if (response.data && response.data.length > 0) {
                     useAppStore.setState({ marketHeatmap: response.data });
                 }
-            } catch (error) {
-                console.log('No initial heatmap data available');
+            } catch {
+                // Will show empty state; WebSocket may populate later
+            } finally {
+                setLoading(false);
             }
         };
         fetchInitialHeatmap();
@@ -36,9 +39,14 @@ export function MarketHeatmap() {
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                {sortedData.length === 0 ? (
+                {loading ? (
+                    <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-xs">Loading market data...</span>
+                    </div>
+                ) : sortedData.length === 0 ? (
                     <div className="text-xs text-muted-foreground text-center py-4">
-                        Waiting for market data...
+                        Waiting for live market data...
                     </div>
                 ) : (
                     <ScrollArea className="h-[300px] pr-4">

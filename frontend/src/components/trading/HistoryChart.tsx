@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppStore } from '@/store/appStore';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area, ComposedChart } from 'recharts';
+import { Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area, ComposedChart } from 'recharts';
 import { Activity } from 'lucide-react';
 
 export function HistoryChart() {
@@ -47,7 +47,7 @@ export function HistoryChart() {
                         <YAxis domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 9 }} />
                         <Tooltip
                             contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: 8, fontSize: 11 }}
-                            formatter={(v: number, name: string) => [`${v.toFixed(0)}%`, name.charAt(0).toUpperCase() + name.slice(1)]}
+                            formatter={(v: number | undefined, name: string | undefined) => [`${(v ?? 0).toFixed(0)}%`, name ? name.charAt(0).toUpperCase() + name.slice(1) : '']}
                         />
                         <Area type="monotone" dataKey="confidence" fill="#8b5cf6" fillOpacity={0.1} stroke="none" />
                         <Line type="monotone" dataKey="confidence" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} name="Confidence" />

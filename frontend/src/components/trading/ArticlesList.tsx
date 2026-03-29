@@ -85,7 +85,7 @@ export function ArticlesList() {
                             <Pie data={sentimentBuckets} dataKey="value" outerRadius={28} innerRadius={14} startAngle={90} endAngle={-270} strokeWidth={0}>
                                 {sentimentBuckets.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                             </Pie>
-                            <Tooltip formatter={(v: number, name: string) => [v, name]} contentStyle={{ background: '#0a0a1a', border: '1px solid #333', fontSize: 10 }} />
+                            <Tooltip formatter={(v: number | undefined, name: string | undefined) => [v ?? 0, name ?? '']} contentStyle={{ background: '#0a0a1a', border: '1px solid #333', fontSize: 10 }} />
                         </PieChart>
                         <div className="text-[10px] space-y-0.5">
                             {sentimentBuckets.map(b => (

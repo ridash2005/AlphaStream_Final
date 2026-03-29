@@ -11,7 +11,7 @@ import {
 import { Clock, TrendingUp, Shield, Newspaper, Bot, Cpu } from 'lucide-react';
 
 export function RecommendationCard() {
-    const { recommendation, isLoading, currentTicker, agentStatus } = useAppStore();
+    const { recommendation, isLoading, agentStatus } = useAppStore();
 
     if (isLoading) {
         return (

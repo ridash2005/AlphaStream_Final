@@ -112,6 +112,11 @@ export const apiService = {
         return response.data;
     },
 
+    async importGrowwPortfolio() {
+        const response = await api.get('/api/portfolio/import-groww');
+        return response.data;
+    },
+
     async getOHLCV(ticker: string, period = '6mo', indicators = false) {
         const response = await api.get(`/api/ohlcv/${ticker}`, {
             params: { period, ...(indicators ? { indicators: true } : {}) },
@@ -197,7 +202,7 @@ export const apiService = {
 
     // ── Filings endpoints ─────────────────────────
 
-    async getFilings(ticker: string, days = 30): Promise<any[]> {
+    async getFilings(ticker: string, days = 30): Promise<any> {
         const response = await api.get(`/api/filings/${ticker}`, { params: { days } });
         return response.data;
     },
