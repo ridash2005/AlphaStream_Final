@@ -228,8 +228,12 @@ export const useAppStore = create<AppState>()(
         const wsUrl = `${wsBase}/ws/stream/${ticker}`;
         let retryCount = 0;
         const maxRetries = 5;
+        // Generation token: if connectStream is called again (same or different ticker),
+        // this flag goes true and all pending retries from this closure silently drop.
+        let cancelled = false;
 
         const connect = () => {
+            if (cancelled) return;
             console.log(`Connecting to stream: ${wsUrl}`);
             const ws = new WebSocket(wsUrl);
 
@@ -276,6 +280,8 @@ export const useAppStore = create<AppState>()(
             };
 
             ws.onclose = () => {
+                // Skip reconnect if superseded by a newer connectStream call
+                if (cancelled) return;
                 // Skip reconnect if this close was intentional (ticker switch)
                 if ((ws as WebSocket & { _intentionalClose?: boolean })._intentionalClose) return;
                 // Auto-reconnect with exponential backoff
@@ -289,6 +295,11 @@ export const useAppStore = create<AppState>()(
 
             set({ socket: ws });
         };
+
+        // Cancel any retries from the previous connectStream closure
+        const prev = (get() as { _cancelPrevConnect?: () => void })._cancelPrevConnect;
+        if (prev) prev();
+        (set as (s: object) => void)({ _cancelPrevConnect: () => { cancelled = true; } });
 
         connect();
     },
