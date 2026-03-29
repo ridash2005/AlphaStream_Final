@@ -44,7 +44,21 @@ demo_output.json
 Thumbs.db
 *.log
 backend/logs/
-!backend/logs/.gitkeep*.duckdb
+!backend/logs/.gitkeep
+
+# DuckDB (runtime-generated analytics store)
+*.duckdb
 *.duckdb.wal
+
+# Runtime-generated article files (ingested by Pathway / news connector)
+backend/data/articles/
+
+# Claude Code tooling
+.claude/
+
+# Development plan (not part of submission)
+PLAN.md
+
+# JSON outputs (agrowise leftovers)
 *.json
 agrowise-*.json
