@@ -11,6 +11,7 @@ import json
 import logging
 import subprocess
 import sys
+import threading
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -132,7 +133,6 @@ async def lifespan(app: FastAPI):
 
     # Pre-warm heavy imports (PydanticOutputParser, jsonpatch) in background
     # so they don't block the first API request
-    import threading
     def _prewarm_imports():
         try:
             from langchain_core.output_parsers import PydanticOutputParser  # noqa: F401
@@ -387,7 +387,6 @@ async def lifespan(app: FastAPI):
     if os.environ.get("ENABLE_PATHWAY", "false").lower() == "true":
         try:
             from src.connectors.news_connector import create_news_table
-            import threading
             import pathway as pw
 
             news_table = create_news_table(refresh_interval=60)
