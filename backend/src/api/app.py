@@ -4,6 +4,7 @@ FastAPI application for AlphaStream Live AI.
 Provides REST API endpoints for trading recommendations.
 """
 
+import math
 import os
 
 import asyncio
@@ -664,22 +665,32 @@ async def generate_recommendation_logic(ticker: str, update_callback: Callable[[
         combined_factors.append(global_ctx["summary"])
     combined_factors = [f for f in combined_factors if f]
 
+    def _safe_float(v, default=0.0):
+        """Replace NaN / inf with a default so JSON serialization never fails."""
+        if v is None:
+            return None if default is None else default
+        try:
+            f = float(v)
+            return default if (math.isnan(f) or math.isinf(f)) else f
+        except (TypeError, ValueError):
+            return default
+
     return RecommendationResponse(
         ticker=ticker,
         timestamp=datetime.utcnow().isoformat(),
         recommendation=final_decision.get("recommendation", "HOLD").upper(),
-        confidence=final_decision.get("confidence", 0.0) * 100,
-        sentiment_score=sentiment["sentiment_score"],
-        sentiment_label=sentiment["sentiment_label"],
-        technical_score=technical.get("technical_score", 0.0),
-        risk_score=risk.get("risk_score", 0.0),
+        confidence=_safe_float(final_decision.get("confidence", 0.0)) * 100,
+        sentiment_score=_safe_float(sentiment.get("sentiment_score", 0.0)),
+        sentiment_label=sentiment.get("sentiment_label", "NEUTRAL"),
+        technical_score=_safe_float(technical.get("technical_score", 0.0)),
+        risk_score=_safe_float(risk.get("risk_score", 0.0)),
         key_factors=combined_factors[:5],
         sources=rag_sources if rag_sources else [doc.get("source", "Unknown") for doc in retrieved_docs],
         latency_ms=round(latency_ms, 2),
         rag_engine=rag_engine,
         global_verdict=global_ctx.get("global_verdict", ""),
-        vix=global_ctx.get("vix"),
-        fear_greed_score=global_ctx.get("fear_greed_score"),
+        vix=_safe_float(global_ctx.get("vix"), default=None),
+        fear_greed_score=_safe_float(global_ctx.get("fear_greed_score"), default=None),
     )
 
 
