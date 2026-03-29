@@ -52,6 +52,14 @@ else
     STEP="[1/1]"
 fi
 
+# ── Kill any stale process on port 8000 ──────────────────────────────────────
+STALE_PID=$(lsof -ti:8000 2>/dev/null)
+if [ -n "$STALE_PID" ]; then
+    echo -e "${YELLOW}  Port 8000 in use (PID $STALE_PID) — killing stale process...${NC}"
+    kill "$STALE_PID" 2>/dev/null
+    sleep 1
+fi
+
 # ── Main Backend ──────────────────────────────────────────────────────────────
 echo -e "\n${GREEN}${STEP} Starting backend (port 8000)...${NC}"
 uv run python -m uvicorn src.api.app:app --host 0.0.0.0 --port 8000 2>&1 | tee logs/backend.log &
