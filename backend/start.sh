@@ -54,7 +54,7 @@ fi
 
 # ── Main Backend ──────────────────────────────────────────────────────────────
 echo -e "\n${GREEN}${STEP} Starting backend (port 8000)...${NC}"
-uv run uvicorn src.api.app:app --host 0.0.0.0 --port 8000 2>&1 | tee logs/backend.log &
+uv run python -m uvicorn src.api.app:app --host 0.0.0.0 --port 8000 2>&1 | tee logs/backend.log &
 BACKEND_PID=$!
 
 echo ""

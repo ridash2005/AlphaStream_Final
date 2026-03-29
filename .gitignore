@@ -24,6 +24,7 @@ wheels/
 # Generated reports
 reports/
 *.pdf
+!docs/*.pdf
 
 # Node
 node_modules/
