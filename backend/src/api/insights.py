@@ -62,16 +62,16 @@ def generate_insights() -> int:
 
 def _generate_signal_alerts(con, thresholds: dict) -> int:
     """High Alpha Score signals."""
-    alpha_min = thresholds.get("alpha_score_high", 80)
-    rows = con.execute(f"""
+    alpha_min = float(thresholds.get("alpha_score_high", 80))
+    rows = con.execute("""
         SELECT s.ticker, d.company_name, s.signal_type, s.direction,
                s.alpha_score, s.confidence, s.evidence_json
         FROM fact_signals s
         JOIN dim_stocks d ON s.ticker = d.ticker
-        WHERE s.alpha_score >= {alpha_min}
+        WHERE s.alpha_score >= ?
           AND s.signal_date >= current_date - INTERVAL '3 days'
         ORDER BY s.alpha_score DESC LIMIT 5
-    """).fetchall()
+    """, [alpha_min]).fetchall()
 
     count = 0
     for ticker, name, sig_type, direction, score, conf, evidence in rows:
@@ -191,7 +191,8 @@ def _generate_technical_alerts(con, thresholds: dict) -> int:
 def _generate_insider_alerts(con, thresholds: dict) -> int:
     """Insider cluster buying/selling alerts."""
     count = 0
-    cluster_days = thresholds.get("insider_cluster_days", 30)
+    cluster_days = int(thresholds.get("insider_cluster_days", 30))
+    cluster_count = int(thresholds.get("insider_cluster_count", 3))
 
     # Find stocks with 3+ insider trades in recent period
     rows = con.execute(f"""
@@ -202,10 +203,10 @@ def _generate_insider_alerts(con, thresholds: dict) -> int:
         FROM fact_insider_trades
         WHERE trade_date >= current_date - INTERVAL '{cluster_days} days'
         GROUP BY ticker, trade_type
-        HAVING COUNT(DISTINCT person_name) >= {thresholds.get('insider_cluster_count', 3)}
+        HAVING COUNT(DISTINCT person_name) >= ?
         ORDER BY total_value_lakhs DESC
         LIMIT 5
-    """).fetchall()
+    """, [cluster_count]).fetchall()
 
     for ticker, trade_type, insider_count, total_value, total_qty in rows:
         severity = "success" if trade_type == "buy" else "warning"

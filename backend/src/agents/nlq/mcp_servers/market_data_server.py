@@ -50,20 +50,24 @@ def get_stock_quote(ticker: str) -> dict:
 def get_latest_signals(top_n: int = 10, sector: str = "") -> list[dict]:
     """Get top N signals by alpha score, optionally filtered by sector."""
     sql = "SELECT * FROM v_signal_summary WHERE signal_date >= current_date - INTERVAL '7 days'"
+    params = []
     if sector:
-        sql += f" AND sector = '{sector}'"
+        sql += " AND sector = ?"
+        params.append(sector)
     sql += f" ORDER BY alpha_score DESC LIMIT {top_n}"
-    return _db().execute(sql).fetchdf().to_dict(orient="records")
+    return _db().execute(sql, params).fetchdf().to_dict(orient="records")
 
 
 @mcp.tool()
 def get_insider_activity(ticker: str = "", days: int = 30) -> list[dict]:
     """Get insider trading activity, optionally for a specific ticker."""
     sql = f"SELECT * FROM v_insider_activity_30d WHERE trade_date >= current_date - INTERVAL '{days} days'"
+    params = []
     if ticker:
-        sql += f" AND ticker = '{ticker.upper()}'"
+        sql += " AND ticker = ?"
+        params.append(ticker.upper())
     sql += " ORDER BY trade_date DESC LIMIT 50"
-    return _db().execute(sql).fetchdf().to_dict(orient="records")
+    return _db().execute(sql, params).fetchdf().to_dict(orient="records")
 
 
 @mcp.tool()

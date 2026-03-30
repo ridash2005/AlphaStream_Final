@@ -21,7 +21,8 @@ export function SystemStatus() {
                     useAppStore.getState().setDocumentCount(healthData.document_count);
                 }
                 setIsConnected(true);
-            } catch {
+            } catch (err) {
+                console.error('Health check failed:', err);
                 setIsConnected(false);
             }
         };

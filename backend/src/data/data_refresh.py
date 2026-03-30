@@ -108,7 +108,8 @@ def _refresh_signals() -> int:
                     )
                     if written:
                         count += 1
-            except Exception:
+            except Exception as e:
+                logger.warning(f"Pattern detection failed for {ticker}: {e}")
                 continue
 
         logger.info(f"Signal refresh: {count} new signals from {len(tickers)} stocks")

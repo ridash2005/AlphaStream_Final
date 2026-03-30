@@ -39,7 +39,7 @@ def generate_sql(question: str, plan: Union["QueryPlan", str]) -> GeneratedSQL: 
             "DuckDB rules:\n"
             "- current_date for today, INTERVAL for date math\n"
             "- 'nifty50' = ANY(index_membership) for array contains\n"
-            "- evidence_json->>'pattern' for JSON access\n"
+            "- json_extract_string(evidence_json, '$.pattern') for JSON access\n"
             "- ONLY SELECT — no DDL/DML"
         )
         result = llm.invoke(prompt)
@@ -67,7 +67,18 @@ def generate_sql(question: str, plan: Union["QueryPlan", str]) -> GeneratedSQL: 
 
 
 def _postprocess_sql(raw: str) -> str:
-    """Strip markdown fences."""
+    """Strip markdown fences and rewrite unsupported DuckDB syntax."""
     raw = re.sub(r"```(?:sql)?\s*", "", raw)
     raw = re.sub(r"```", "", raw)
+    # Rewrite PostgreSQL-style JSON operator to DuckDB json_extract_string()
+    raw = re.sub(
+        r"(\w+)->>\'([^\']+)\'",
+        r"json_extract_string(\1, '$.\2')",
+        raw,
+    )
+    raw = re.sub(
+        r"(\w+)->>\"([^\"]+)\"",
+        r"json_extract_string(\1, '$.\2')",
+        raw,
+    )
     return raw.strip()

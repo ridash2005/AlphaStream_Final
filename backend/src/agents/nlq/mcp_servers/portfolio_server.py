@@ -42,14 +42,14 @@ def get_portfolio_summary() -> dict:
         return {"error": "No portfolio set. Use set_portfolio first."}
 
     tickers = [h["ticker"] for h in _holdings]
-    placeholders = ",".join(f"'{t}'" for t in tickers)
+    placeholders = ",".join(["?"] * len(tickers))
 
     prices = _db().execute(f"""
         SELECT ticker, close FROM (
             SELECT ticker, close, ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY date DESC) AS rn
             FROM fact_daily_prices WHERE ticker IN ({placeholders})
         ) WHERE rn = 1
-    """).fetchdf().set_index("ticker").to_dict(orient="index")
+    """, tickers).fetchdf().set_index("ticker").to_dict(orient="index")
 
     total_invested = 0
     total_current = 0
@@ -92,14 +92,14 @@ def get_portfolio_signals() -> list[dict]:
         return [{"error": "No portfolio set"}]
 
     tickers = [h["ticker"] for h in _holdings]
-    placeholders = ",".join(f"'{t}'" for t in tickers)
+    placeholders = ",".join(["?"] * len(tickers))
 
     return _db().execute(f"""
         SELECT * FROM v_signal_summary
         WHERE ticker IN ({placeholders})
           AND signal_date >= current_date - INTERVAL '7 days'
         ORDER BY alpha_score DESC
-    """).fetchdf().to_dict(orient="records")
+    """, tickers).fetchdf().to_dict(orient="records")
 
 
 if __name__ == "__main__":

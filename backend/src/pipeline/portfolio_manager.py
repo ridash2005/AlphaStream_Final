@@ -36,7 +36,9 @@ class PortfolioManager:
         total_current = 0
 
         for h in self.holdings:
-            ticker = h["ticker"]
+            ticker = h.get("ticker", "")
+            if not ticker:
+                continue
             qty = h.get("quantity", 0)
             buy_price = h.get("buy_price", 0)
             current = self._get_current_price(ticker) or buy_price
@@ -64,7 +66,9 @@ class PortfolioManager:
         total_current = 0
 
         for h in self.holdings:
-            ticker = h["ticker"]
+            ticker = h.get("ticker", "")
+            if not ticker:
+                continue
             qty = h.get("quantity", 0)
             buy_price = h.get("buy_price", 0)
             current = self._get_current_price(ticker) or buy_price
@@ -96,7 +100,7 @@ class PortfolioManager:
 
     def get_tickers(self) -> list[str]:
         """Return tickers in portfolio."""
-        return [h["ticker"] for h in self.holdings]
+        return [h["ticker"] for h in self.holdings if "ticker" in h]
 
     def get_concentration_warnings(self) -> list[str]:
         """Check sector concentration and return warnings."""
@@ -117,6 +121,8 @@ class PortfolioManager:
         sector_value: dict[str, float] = {}
         total = 0
         for h in self.holdings:
+            if "ticker" not in h:
+                continue
             sector = sector_map.get(h["ticker"], "Unknown")
             price = self._get_current_price(h["ticker"]) or h.get("buy_price", 0)
             val = h.get("quantity", 0) * price

@@ -38,15 +38,15 @@ def check_thresholds() -> list[dict]:
 
     # High alpha score signals
     alpha_threshold = thresholds.get("alpha_score_high", 80)
-    rows = _db().execute(f"""
+    rows = _db().execute("""
         SELECT s.ticker, d.company_name, s.signal_type, s.direction,
                s.alpha_score, s.confidence
         FROM fact_signals s
         JOIN dim_stocks d ON s.ticker = d.ticker
-        WHERE s.alpha_score >= {alpha_threshold}
+        WHERE s.alpha_score >= ?
           AND s.signal_date >= current_date - INTERVAL '3 days'
         ORDER BY s.alpha_score DESC LIMIT 5
-    """).fetchall()
+    """, [alpha_threshold]).fetchall()
     for ticker, name, sig_type, direction, score, conf in rows:
         alerts.append({
             "type": "ALPHA_SCORE", "ticker": ticker, "company": name,

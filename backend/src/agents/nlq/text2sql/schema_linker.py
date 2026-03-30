@@ -72,7 +72,7 @@ Dimension values:
 DuckDB rules:
 - Date comparisons: use current_date, INTERVAL syntax
 - Array contains: 'nifty50' = ANY(index_membership)
-- JSON access: evidence_json->>'pattern'
+- JSON access: json_extract_string(evidence_json, '$.pattern')
 """
 
 

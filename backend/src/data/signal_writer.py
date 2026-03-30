@@ -29,7 +29,7 @@ def write_signal(
         existing = con.execute("""
             SELECT count(*) FROM fact_signals
             WHERE ticker = ? AND signal_type = ? AND signal_date = current_date
-              AND evidence_json->>'pattern' = ?
+              AND json_extract_string(evidence_json, '$.pattern') = ?
         """, [ticker, signal_type, (evidence or {}).get("pattern", "")]).fetchone()[0]
 
         if existing > 0:

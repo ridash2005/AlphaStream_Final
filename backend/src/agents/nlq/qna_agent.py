@@ -294,12 +294,12 @@ _INTENT_SQL = {
 
 # Map keywords in user query to signal-type / evidence_json filters
 _SIGNAL_FILTERS = {
-    "rsi": "evidence_json->>'pattern' ILIKE '%rsi%'",
-    "macd": "evidence_json->>'pattern' ILIKE '%macd%'",
-    "bollinger": "evidence_json->>'pattern' ILIKE '%bollinger%'",
-    "volume": "evidence_json->>'pattern' ILIKE '%volume%'",
-    "golden cross": "evidence_json->>'pattern' ILIKE '%golden%'",
-    "death cross": "evidence_json->>'pattern' ILIKE '%death%'",
+    "rsi": "json_extract_string(evidence_json, '$.pattern') ILIKE '%rsi%'",
+    "macd": "json_extract_string(evidence_json, '$.pattern') ILIKE '%macd%'",
+    "bollinger": "json_extract_string(evidence_json, '$.pattern') ILIKE '%bollinger%'",
+    "volume": "json_extract_string(evidence_json, '$.pattern') ILIKE '%volume%'",
+    "golden cross": "json_extract_string(evidence_json, '$.pattern') ILIKE '%golden%'",
+    "death cross": "json_extract_string(evidence_json, '$.pattern') ILIKE '%death%'",
     "insider": "signal_type = 'insider'",
     "sentiment": "signal_type = 'sentiment'",
     "flow": "signal_type = 'flow'",

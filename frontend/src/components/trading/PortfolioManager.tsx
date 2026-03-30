@@ -44,11 +44,13 @@ export function PortfolioManager() {
   const [error, setError] = useState<string | null>(null);
 
   const addHolding = () => {
-    if (!ticker || !qty || !buyPrice) return;
+    const parsedQty = Number(qty);
+    const parsedPrice = Number(buyPrice);
+    if (!ticker || !qty || !buyPrice || isNaN(parsedQty) || isNaN(parsedPrice) || parsedQty <= 0 || parsedPrice <= 0) return;
     setHoldings(prev => [...prev, {
       ticker: ticker.toUpperCase().trim(),
-      quantity: Number(qty),
-      buy_price: Number(buyPrice),
+      quantity: parsedQty,
+      buy_price: parsedPrice,
     }]);
     setTicker(''); setQty(''); setBuyPrice('');
   };

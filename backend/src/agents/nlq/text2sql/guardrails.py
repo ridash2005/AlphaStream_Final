@@ -3,10 +3,13 @@ Guardrails — LLM-based SQL validator for financial analytics DuckDB.
 Adapted from MediaFlowAI. DDL/DML blocking is regex (security hard-stop).
 """
 from __future__ import annotations
+import logging
 import re
 from typing import Optional
 from pydantic import BaseModel, Field
 from langchain_core.runnables import RunnableLambda
+
+logger = logging.getLogger(__name__)
 
 
 class GuardrailViolation(BaseModel):
@@ -84,7 +87,8 @@ def _llm_validate(sql: str) -> GuardrailResult:
         if result.violations and not result.primary_category:
             result.primary_category = classify_violation(result.violations)
         return result
-    except Exception:
+    except Exception as e:
+        logger.warning("LLM SQL validation failed, skipping LLM check: %s", e)
         return GuardrailResult(safe=True)
 
 

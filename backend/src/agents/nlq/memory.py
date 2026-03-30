@@ -73,7 +73,11 @@ def load_memory(session_id: str, key: str) -> Optional[Any]:
             [session_id, key],
         ).fetchone()
         if row:
-            return json.loads(row[0])
+            try:
+                return json.loads(row[0])
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning("Corrupted memory for %s/%s: %s", session_id, key, e)
+                return None
         return None
     finally:
         con.close()
@@ -88,7 +92,13 @@ def load_session_memories(session_id: str, limit: int = 20) -> list[dict]:
             "SELECT key, value_json, updated_at FROM agent_memory WHERE session_id = ? ORDER BY updated_at DESC LIMIT ?",
             [session_id, limit],
         ).fetchall()
-        return [{"key": k, "value": json.loads(v), "updated_at": str(t)} for k, v, t in rows]
+        result = []
+        for k, v, t in rows:
+            try:
+                result.append({"key": k, "value": json.loads(v), "updated_at": str(t)})
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning("Corrupted memory entry '%s' for session %s: %s", k, session_id, e)
+        return result
     finally:
         con.close()
 

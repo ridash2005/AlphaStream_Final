@@ -73,7 +73,10 @@ export const apiService = {
               console.warn('SSE event parse error:', err)
             }
         };
-        source.onerror = () => { source.close(); };
+        source.onerror = () => {
+            onEvent({ type: 'error', message: 'Stream connection failed. Please try again.' });
+            source.close();
+        };
         return source;
     },
 
