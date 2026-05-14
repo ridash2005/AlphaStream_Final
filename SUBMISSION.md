@@ -16,7 +16,7 @@
 
 ## 1. GitHub Repository
 
-**Repository:** https://github.com/wildcraft958/AlphaStream_India
+**Repository:** https://github.com/ridash2005/AlphaStream_Final
 
 **What judges will find:**
 - Full source code: 13 AI agents, 60+ REST endpoints, React 19 frontend with 30+ components

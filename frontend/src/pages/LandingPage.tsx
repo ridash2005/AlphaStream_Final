@@ -56,7 +56,7 @@ export default function LandingPage() {
             <span className="text-lg font-bold">AlphaStream India</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href="https://github.com/wildcraft958/AlphaStream_India" target="_blank" rel="noreferrer"
+            <a href="https://github.com/ridash2005/AlphaStream_Final" target="_blank" rel="noreferrer"
               className="text-sm text-gray-400 hover:text-white transition-colors">GitHub</a>
             <button onClick={() => navigate('/login')}
               className="text-sm px-4 py-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">

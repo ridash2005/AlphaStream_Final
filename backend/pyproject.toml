@@ -3,6 +3,7 @@ name = "alphastream-india"
 version = "0.2.0"
 description = "AI-powered investment intelligence for the Indian investor — Pathway streaming, multi-agent signals, NLQ analytics"
 readme = "README.md"
+authors = [{name = "Rickarya Das", email = "rickarya.das@example.com"}]
 requires-python = ">=3.11,<3.13"
 dependencies = [
     # Core framework

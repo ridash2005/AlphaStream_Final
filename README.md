@@ -1,5 +1,13 @@
 # AlphaStream India
 
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev)
+[![Gemini](https://img.shields.io/badge/Gemini-8E75C2?style=for-the-badge&logo=google-gemini&logoColor=white)](https://ai.google.dev/gemini-api)
+[![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)](https://langchain.com)
+[![Pathway](https://img.shields.io/badge/Pathway-Streaming-blue?style=for-the-badge)](https://pathway.com)
+[![DuckDB](https://img.shields.io/badge/DuckDB-FFF000?style=for-the-badge&logo=duckdb&logoColor=black)](https://duckdb.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
+
 **AI-Powered Investment Intelligence for the Indian Investor**
 
 > *14 crore+ demat accounts. Most retail investors flying blind. AlphaStream India turns ET Markets data into actionable, money-making decisions.*
@@ -107,7 +115,7 @@ AlphaStream India is a real-time investment intelligence terminal that combines 
 
 **Step 1: Clone & configure**
 ```bash
-git clone https://github.com/wildcraft958/AlphaStream_India.git
+git clone https://github.com/ridash2005/AlphaStream_Final.git
 cd AlphaStream_India
 ```
 
@@ -243,9 +251,11 @@ ENABLE_PATHWAY=false
 
 ---
 
-## Team
+## Author
 
-Built for ET AI Hackathon 2026 - Problem Statement 6
+**Rickarya Das** — [@ridash2005](https://github.com/ridash2005)
+
+Built for **ET AI Hackathon 2026** - Problem Statement 6
 
 ---
 
